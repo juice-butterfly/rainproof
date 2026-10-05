@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>汉客松 · Sepolia 链上核验台</title>
+<style>
+  :root{
+    --ink:#E8F2EF; --dim:#9DBAB3; --faint:#64827A;
+    --jade:#0E7C66; --jade-l:#2FB89A; --jade-d:#0A5A4A;
+    --gold:#C98A2E; --gold-l:#E8B45C;
+    --bg1:#08130F; --bg2:#0B1F1A;
+    --line:rgba(14,124,102,.28); --line2:rgba(201,138,46,.28);
+    --card:rgba(255,255,255,.028);
+    --ok:#2FB89A; --bad:#E06B5A; --warn:#E8B45C;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Cascadia Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans); color:var(--ink); font-size:14px; line-height:1.6;
+    background:
+      radial-gradient(1100px 620px at 12% -8%, rgba(14,124,102,.30), transparent 62%),
+      radial-gradient(900px 520px at 92% 4%, rgba(201,138,46,.16), transparent 60%),
+      linear-gradient(178deg,var(--bg1),var(--bg2) 58%,#050D0A);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+    padding:0 0 56px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+
+  /* ---------- 顶部 ---------- */
+  header{padding:30px 0 20px;border-bottom:1px solid var(--line);margin-bottom:26px}
+  .brandrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{
+    width:40px;height:40px;border-radius:11px;flex:none;
+    background:linear-gradient(145deg,var(--jade),var(--jade-d));
+    display:grid;place-items:center;font-size:20px;
+    box-shadow:0 0 0 1px rgba(47,184,154,.35), 0 6px 22px -8px rgba(14,124,102,.8);
+  }
+  h1{font-size:20px;font-weight:650;letter-spacing:.3px}
+  h1 span{color:var(--gold-l);font-weight:500;font-size:13px;margin-left:9px;letter-spacing:0}
+  .chainbar{
+    margin-left:auto;display:flex;align-items:center;gap:16px;
+    font-family:var(--mono);font-size:12px;color:var(--dim);
+    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 14px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--faint);display:inline-block;margin-right:6px;
+       transition:.3s}
+  .dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(47,184,154,.18)}
+  .dot.err{background:var(--bad);box-shadow:0 0 0 3px rgba(224,107,90,.18)}
+  .chainbar b{color:var(--ink);font-weight:600}
+  .subtitle{margin-top:12px;font-size:12.5px;color:var(--faint);max-width:760px}
+  .subtitle code{font-family:var(--mono);color:var(--jade-l)}
+
+  /* ---------- 区块标题（左侧 4px 主色条） ---------- */
+  .sec{margin:34px 0 0}
+  .sec > h2{
+    font-size:14px;font-weight:600;letter-spacing:.4px;color:var(--ink);
+    border-left:4px solid var(--jade);padding-left:11px;line-height:1.35;
+    display:flex;align-items:baseline;gap:10px;
+  }
+  .sec > h2 em{font-style:normal;font-size:11.5px;color:var(--faint);font-weight:400;letter-spacing:0}
+  .sec > h2.gold{border-left-color:var(--gold)}
+
+  /* ---------- 查询框 ---------- */
+  .searchrow{display:flex;gap:10px;margin-top:15px;flex-wrap:wrap}
+  #q{
+    flex:1 1 420px;min-width:0;
+    background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:11px;
+    color:var(--ink);font-family:var(--mono);font-size:13px;padding:13px 15px;outline:none;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  #q::placeholder{color:var(--faint);font-family:var(--sans);font-size:12.5px}
+  #q:focus{border-color:var(--jade-l);box-shadow:0 0 0 3px rgba(47,184,154,.13)}
+  .btn{
+    border:1px solid var(--line);background:linear-gradient(160deg,rgba(14,124,102,.30),rgba(14,124,102,.12));
+    color:var(--ink);font-family:var(--sans);font-size:13.5px;font-weight:550;
+    padding:13px 22px;border-radius:11px;cursor:pointer;transition:.18s;white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--jade-l);background:linear-gradient(160deg,rgba(14,124,102,.5),rgba(14,124,102,.2))}
+  .btn:active{transform:translateY(1px)}
+  .btn.gold{border-color:var(--line2);background:linear-gradient(160deg,rgba(201,138,46,.28),rgba(201,138,46,.1))}
+  .btn.gold:hover{border-color:var(--gold-l)}
+  .btn.sm{padding:7px 13px;font-size:12px;border-radius:8px;font-weight:500}
+
+  .chips{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap;align-items:center}
+  .chips > span{font-size:12px;color:var(--faint)}
+  .chip{
+    border:1px dashed var(--line);background:transparent;color:var(--dim);
+    font-family:var(--mono);font-size:11.5px;padding:6px 12px;border-radius:999px;cursor:pointer;transition:.18s;
+  }
+  .chip:hover{border-style:solid;border-color:var(--jade-l);color:var(--jade-l)}
+  .chip b{color:var(--gold-l);font-weight:600}
+
+  /* ---------- 卡片 ---------- */
+  .panel{
+    margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:20px 22px;
+  }
+  .panel.hidden{display:none}
+  .sec.hidden{display:none}
+  .panel.err{border-color:rgba(224,107,90,.5);background:rgba(224,107,90,.06)}
+
+  .ptitle{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .tag{
+    font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:6px;
+    border:1px solid var(--line);color:var(--jade-l);background:rgba(14,124,102,.12);
+  }
+  .tag.gold{border-color:var(--line2);color:var(--gold-l);background:rgba(201,138,46,.12)}
+  .tag.red{border-color:rgba(224,107,90,.5);color:var(--bad);background:rgba(224,107,90,.12)}
+  .mono{font-family:var(--mono)}
+
+  /* ---------- 键值网格 ---------- */
+  .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:1px;
+      background:var(--line);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .kv > div{background:linear-gradient(178deg,#0A1A16,#081411);padding:13px 15px;min-width:0}
+  .k{font-size:11px;color:var(--faint);letter-spacing:.4px;margin-bottom:5px}
+  .v{font-family:var(--mono);font-size:13.5px;color:var(--ink);word-break:break-all;line-height:1.45}
+  .v.big{font-size:17px;font-weight:600;color:var(--jade-l)}
+  .v.gold{color:var(--gold-l);font-weight:600}
+  .v.small{font-size:12px;color:var(--dim)}
+  .v.bad{color:var(--bad)}
+
+  .addrline{
+    display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;
+    background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:10px;
+    padding:11px 14px;word-break:break-all;line-height:1.5;
+  }
+  .addrline .a{color:var(--gold-l);flex:1 1 auto;min-width:0}
+  .cp{
+    flex:none;border:1px solid var(--line);background:transparent;color:var(--dim);
+    font-size:11px;padding:4px 9px;border-radius:6px;cursor:pointer;transition:.18s;font-family:var(--mono);
+  }
+  .cp:hover{border-color:var(--jade-l);color:var(--jade-l)}
+  .cp.done{border-color:var(--ok);color:var(--ok)}
+
+  /* ---------- 表格（区块/事件） ---------- */
+  .tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin-top:4px}
+  .tbl th{
+    text-align:left;color:var(--faint);font-weight:500;font-size:11px;letter-spacing:.4px;
+    padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  .tbl td{padding:9px 10px;border-bottom:1px solid rgba(14,124,102,.13);color:var(--dim);white-space:nowrap}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl tbody tr:hover td{background:rgba(14,124,102,.09)}
+  .tbl .hl{color:var(--jade-l)}
+  .tbl .gd{color:var(--gold-l)}
+  .tbl .lk{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(47,184,154,.35);text-underline-offset:3px}
+  .tbl .lk:hover{color:var(--jade-l)}
+
+  .empty{color:var(--faint);font-size:12.5px;font-style:italic;padding:10px 2px}
+  .loading{color:var(--dim);font-size:12.5px;padding:10px 2px}
+  .loading::after{content:"";display:inline-block;width:9px;height:9px;margin-left:8px;
+    border:1.5px solid var(--jade);border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;
+    vertical-align:middle}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);
+         font-size:12px;color:var(--faint);line-height:1.9}
+  footer b{color:var(--dim);font-weight:600}
+  footer code{font-family:var(--mono);color:var(--jade-l);font-size:11.5px}
+  .note{border-left:3px solid var(--gold);padding:2px 0 2px 12px;margin-top:14px;color:var(--dim);font-size:12.5px}
+  a{color:var(--jade-l)}
+
+  /* ---------- 手机 / 窄屏 ---------- */
+  .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  @media (max-width:760px){
+    .wrap{padding:0 14px}
+    header{padding:20px 0 16px}
+    h1{font-size:16.5px;line-height:1.35}
+    h1 span{display:block;margin-left:0;margin-top:5px}
+    .chainbar{
+      margin-left:0;width:100%;flex-wrap:wrap;gap:6px 14px;
+      justify-content:flex-start;font-size:11px;padding:8px 11px;
+    }
+    .logo{width:34px;height:34px;font-size:17px;border-radius:9px}
+    #q{font-size:12.5px;padding:12px 13px}
+    .btn{flex:1 1 auto;padding:12px 16px;font-size:13px}
+    .chips{gap:7px}
+    .chip{font-size:11px;padding:5px 10px}
+    .panel{padding:16px 14px;border-radius:12px}
+    .kv{grid-template-columns:1fr 1fr}
+    .kv > div{padding:11px 12px}
+    .v{font-size:12.5px}
+    .v.big{font-size:15.5px}
+    .addrline{font-size:11.5px;padding:10px 11px}
+    .tbl{font-size:11px}
+    .tbl th,.tbl td{padding:7px 7px}
+    .sec > h2{font-size:13px}
+  }
+  @media (max-width:420px){
+    .kv{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brandrow">
+    <div class="logo">⛓</div>
+    <h1>Sepolia 链上核验台<span>汉客松 · 不依赖任何区块浏览器</span></h1>
+    <div class="chainbar">
+      <span><span class="dot" id="dot"></span><span id="connText">连接中…</span></span>
+      <span>区块 <b id="blkNum">—</b></span>
+      <span>延迟 <b id="lat">—</b></span>
+      <span>Gas <b id="gas">—</b></span>
+    </div>
+  </div>
+  <p class="subtitle">
+    这一页直接向公开节点提问，把链上的原始数据取回来显示。<b style="color:var(--dim)">它不经过 OtterScan，
+    也不经过 Etherscan。</b>请求的是
+    <code id="rpcShown">https://ethereum-sepolia-rpc.publicnode.com</code>
+  </p>
+</header>
+
+<!-- ========== 查询 ========== -->
+<section class="sec">
+  <h2>查询<em>粘地址查合约 / 粘哈希查交易，自动识别</em></h2>
+
+  <div class="searchrow">
+    <input id="q" spellcheck="false" autocomplete="off"
+           placeholder="0x… 地址（40 位）或 0x… 交易哈希（64 位）">
+    <button class="btn" id="goBtn">查询</button>
+    <button class="btn gold" id="refreshBtn">刷新链状态</button>
+  </div>
+
+  <div class="chips">
+    <span>我这次的：</span>
+    <button class="chip" data-q="0x5f704090d2a2120806cc12a6ed538511354d82dc">合约 <b>0x5f7040…82dc</b></button>
+    <button class="chip" data-q="0xe45da6ef7ae55092d77a6c5b20e56699a7900854a9bfa3f2d8ed29f7b40a6453">部署交易 <b>0xe45da6…6453</b></button>
+    <button class="chip" data-q="0x9C7E8f1ADB7303505bF1c31ba2212FBf28B4339A">我的账户 <b>0x9C7E8f…339A</b></button>
+  </div>
+
+  <div class="panel hidden" id="errPanel"></div>
+</section>
+
+<!-- ========== 结果 ========== -->
+<section class="sec hidden" id="resultSec">
+  <h2 class="gold">查询结果<em id="resultKind"></em></h2>
+  <div id="resultBody"></div>
+</section>
+
+<!-- ========== 事件日志 ========== -->
+<section class="sec hidden" id="logSec">
+  <h2>合约事件日志<em>eth_getLogs · 这个合约发出过的事件</em></h2>
+  <div class="panel" id="logPanel"></div>
+</section>
+
+<!-- ========== 最近区块 ========== -->
+<section class="sec">
+  <h2>链上最近区块<em>证明这条链在动</em></h2>
+  <div class="panel" id="blockPanel">
+    <div class="loading">正在读最新区块</div>
+  </div>
+</section>
+
+<footer>
+  <b>为什么要有这一页：</b>Sepolia 的公共区块浏览器里，Etherscan / Blockscout 在国内连不上；
+  OtterScan 的页面能打开，但它取数据的后端节点（<code>sepolia-node.otterscan.io</code>）被 Cloudflare
+  拦成 403，所以永远转圈。<b>这一页绕开全部中间商，直接问节点要数据。</b>
+  <div class="note">
+    <b>给评委演示时的一句话：</b>「界面是记忆，链上才是事实。这一页显示的不是缓存，是节点此刻告诉我的。」
+  </div>
+  <div class="note" style="border-left-color:var(--jade)">
+    <b>打不开怎么办：</b>双击本文件即可，无需安装任何东西。若浏览器拦截本地文件发请求，
+    在文件所在目录执行 <code>python -m http.server 8000</code>，然后访问
+    <code>http://localhost:8000/</code> 打开本页。
+  </div>
+</footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* ================= 配置 ================= */
+const NODES = [
+  "https://ethereum-sepolia-rpc.publicnode.com",
+  "https://sepolia.gateway.tenderly.co",
+  "https://rpc.ankr.com/eth_sepolia"
+];
+const DEFAULT_QUERY = "0x5f704090d2a2120806cc12a6ed538511354d82dc";
+
+const S = { rpc: NODES[0], lat: null, lastAddr: null };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ================= JSON-RPC ================= */
+async function rpc(method, params, timeout = 20000) {
+  let lastErr;
+  for (const url of [S.rpc, ...NODES.filter(n => n !== S.rpc)]) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), timeout);
+    const t0 = performance.now();
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        // 用 text/plain 走「简单请求」，不触发预检，最稳
+        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+        signal: ctl.signal
+      });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error.message || "RPC error");
+      S.rpc = url;
+      S.lat = Math.round(performance.now() - t0);
+      $("rpcShown").textContent = url;
+      return json.result;
+    } catch (e) {
+      clearTimeout(timer);
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error("所有节点都连不上");
+}
+
+/* ================= 数值格式化 ================= */
+const HEX = /^0x[0-9a-fA-F]*$/;
+const big = h => (h == null ? 0n : BigInt(h));
+const fmtEth = wei => {
+  const n = big(wei);
+  const whole = n / 10n ** 18n;
+  const frac = (n % 10n ** 18n).toString().padStart(18, "0").slice(0, 8).replace(/0+$/, "");
+  return frac ? `${whole}.${frac}` : `${whole}`;
+};
+const fmtNum = n => big(n).toLocaleString("en-US");
+// Gwei：1 Gwei = 1e9 wei，做整数运算避免精度丢失
+const fmtGwei = wei => {
+  const n = big(wei);
+  const whole = n / 10n ** 9n;
+  const frac = (n % 10n ** 9n).toString().padStart(9, "0").slice(0, 6).replace(/0+$/, "");
+  return frac ? `${whole}.${frac}` : `${whole}`;
+};
+const short = a => (a && a.length > 12 ? a.slice(0, 6) + "…" + a.slice(-4) : a);
+// 区块时间戳差值
+function ago(ts) {
+  const d = Math.floor(Date.now() / 1000) - Number(ts);
+  if (d < 0) return "刚刚";
+  if (d < 60) return d + " 秒前";
+  if (d < 3600) return Math.floor(d / 60) + " 分钟前";
+  if (d < 86400) return Math.floor(d / 3600) + " 小时前";
+  return Math.floor(d / 86400) + " 天前";
+}
+const isAddr = q => /^0x[0-9a-fA-F]{40}$/.test(q);
+const isTx = q => /^0x[0-9a-fA-F]{64}$/.test(q);
+
+/* ================= UI 小件 ================= */
+function copyBtn(text, label) {
+  const id = "c" + Math.random().toString(36).slice(2, 9);
+  setTimeout(() => {
+    const el = $(id);
+    if (el) el.onclick = () => {
+      navigator.clipboard.writeText(text).then(() => {
+        el.textContent = "已复制"; el.classList.add("done");
+        setTimeout(() => { el.textContent = label || "复制"; el.classList.remove("done"); }, 1400);
+      }).catch(() => { el.textContent = "手动选"; });
+    };
+  }, 0);
+  return `<button class="cp" id="${id}">${label || "复制"}</button>`;
+}
+function addrRow(label, addr) {
+  return `<div style="margin-bottom:14px">
+    <div class="k" style="margin-bottom:7px">${esc(label)}</div>
+    <div class="addrline"><span class="a">${esc(addr)}</span>${copyBtn(addr)}</div>
+  </div>`;
+}
+function kv(items) {
+  return `<div class="kv">${items.map(([k, v, cls]) =>
+    `<div><div class="k">${esc(k)}</div><div class="v ${cls || ""}">${v}</div></div>`).join("")}</div>`;
+}
+function showErr(msg, hint) {
+  const p = $("errPanel");
+  p.className = "panel err";
+  p.innerHTML = `<div class="ptitle"><span class="tag red">出错了</span></div>
+    <div class="v" style="font-size:13px">${esc(msg)}</div>
+    ${hint ? `<div class="v small" style="margin-top:10px">${hint}</div>` : ""}`;
+}
+const clearErr = () => { $("errPanel").className = "panel hidden"; $("errPanel").innerHTML = ""; };
+
+/* ================= 链状态 ================= */
+async function chainStatus(silent) {
+  try {
+    const [blkHex, gasHex] = await Promise.all([rpc("eth_blockNumber", []), rpc("eth_gasPrice", [])]);
+    const id = await rpc("eth_chainId", []);
+    if (parseInt(id, 16) !== 11155111) throw new Error("不是 Sepolia（chainId=" + parseInt(id, 16) + "）");
+    $("blkNum").textContent = fmtNum(big(blkHex));
+    $("gas").textContent = fmtGwei(gasHex) + " Gwei";
+    $("lat").textContent = S.lat + "ms";
+    $("dot").className = "dot on";
+    $("connText").textContent = "已连接 Sepolia";
+    return Number(BigInt(blkHex));
+  } catch (e) {
+    $("dot").className = "dot err";
+    $("connText").textContent = "连不上节点";
+    $("lat").textContent = "—";
+    if (!silent) showErr("连不上 Sepolia 节点：" + e.message,
+      "检查网络。这一页访问的是 <b>ethereum-sepolia-rpc.publicnode.com</b>，是公共节点，通常能直连。");
+    throw e;
+  }
+}
+
+/* ================= 查地址 ================= */
+async function lookupAddress(addr, isPrimary) {
+  clearErr();
+  $("resultSec").classList.remove("hidden");
+  $("resultKind").textContent = "地址 / 合约";
+  $("resultBody").innerHTML = `<div class="panel"><div class="loading">正在读链上数据</div></div>`;
+
+  const [bal, nonce, code] = await Promise.all([
+    rpc("eth_getBalance", [addr, "latest"]),
+    rpc("eth_getTransactionCount", [addr, "latest"]),
+    rpc("eth_getCode", [addr, "latest"])
+  ]);
+
+  const isContract = code && code !== "0x";
+  const codeBytes = isContract ? (code.length - 2) / 2 : 0;
+  S.lastAddr = isContract ? addr : null;
+
+  const rows = [
+    ["余额", fmtEth(bal) + " <span style='font-size:12px;color:var(--dim)'>SepETH</span>", "big"],
+    ["发过多少笔交易（nonce）", fmtNum(nonce), ""],
+    ["这是不是合约", isContract
+      ? `<span style="color:var(--ok)">是合约 ✅</span>`
+      : `<span style="color:var(--warn)">普通账户（没有代码）</span>`, ""],
+    ["合约代码长度", isContract ? codeBytes + " 字节" : "0（空）", isContract ? "gold" : "small"],
+    ["查询节点", S.rpc.replace("https://", ""), "small"],
+    ["响应延迟", S.lat + " ms", "small"]
+  ];
+
+  $("resultBody").innerHTML = `<div class="panel">
+    <div class="ptitle">
+      <span class="tag ${isContract ? "" : "gold"}">${isContract ? "智能合约" : "普通账户"}</span>
+      <span style="font-size:12px;color:var(--faint)">这条记录此刻就在链上，不是缓存</span>
+    </div>
+    ${addrRow("地址", addr)}
+    ${kv(rows)}
+    ${isContract ? `<div class="note" style="border-left-color:var(--jade)">
+      <b>代码长度不为 0，说明这个地址上真的躺着一份合约。</b>
+      这就是「部署成功」的硬证据 —— 不看任何界面，只问节点。
+    </div>` : ""}
+  </div>`;
+
+  if (isContract) loadLogs(addr); else $("logSec").classList.add("hidden");
+}
+
+/* ================= 查交易 ================= */
+async function lookupTx(hash) {
+  clearErr();
+  $("logSec").classList.add("hidden");
+  $("resultSec").classList.remove("hidden");
+  $("resultKind").textContent = "交易";
+  $("resultBody").innerHTML = `<div class="panel"><div class="loading">正在读这笔交易</div></div>`;
+
+  const [tx, rc] = await Promise.all([
+    rpc("eth_getTransactionByHash", [hash]),
+    rpc("eth_getTransactionReceipt", [hash])
+  ]);
+
+  if (!tx) {
+    $("logSec").classList.add("hidden");
+    $("resultBody").innerHTML = `<div class="panel">
+      <div class="ptitle"><span class="tag red">查不到</span></div>
+      <div class="v">节点返回 null —— 这条哈希在 Sepolia 上不存在。</div>
+      <div class="v small" style="margin-top:12px">
+        最常见的原因：<b>哈希复制少了/多了字符</b>（完整哈希是 66 个字符：<code>0x</code> + 64 位）、
+        混进了空格或尖括号、或者这笔交易还在待打包。
+      </div>
+      <div class="addrline" style="margin-top:12px"><span class="a">${esc(hash)}</span>
+        <span style="color:var(--faint);font-size:12px">长度 ${hash.length} / 应为 66</span></div>
+    </div>`;
+    $("resultSec").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    return;
+  }
+
+  let ts = null;
+  if (tx.blockNumber) {
+    const blk = await rpc("eth_getBlockByNumber", [tx.blockNumber, false]);
+    if (blk) ts = blk.timestamp;
+  }
+  const ok = rc ? big(rc.status) === 1n : false;
+  const isDeploy = tx.to === null;
+
+  const rows = [
+    ["状态", rc ? (ok ? "<span style='color:var(--ok)'>成功 ✅</span>" : "<span style='color:var(--bad)'>失败 ❌</span>") : "待打包", ""],
+    ["区块号", tx.blockNumber ? fmtNum(big(tx.blockNumber)) : "待打包", tx.blockNumber ? "" : "small"],
+    ["区块时间", ts ? ago(ts) : "—", "small"],
+    ["这笔是什么", isDeploy ? "<span style='color:var(--gold-l)'>部署合约</span>" : "普通转账 / 调合约", isDeploy ? "gold" : ""],
+    ["转账金额", fmtEth(tx.value) + " SepETH", ""],
+    ["Gas 实际用了", rc ? fmtNum(big(rc.gasUsed)) : "—", ""],
+    ["Gas 价格", fmtGwei(tx.gasPrice) + " Gwei", "small"],
+    ["nonce", fmtNum(big(tx.nonce)) + "（这是该账户发的第几笔）", "small"],
+    ["查询节点", S.rpc.replace("https://", ""), "small"]
+  ];
+
+  const contractRow = rc && rc.contractAddress
+    ? `<div class="note" style="border-left-color:var(--gold);margin-top:16px">
+         <b>这笔交易创建了一个合约，地址是：</b>
+         <div class="addrline" style="margin-top:9px">
+           <span class="a">${esc(rc.contractAddress)}</span>${copyBtn(rc.contractAddress)}
+         </div>
+         <div style="margin-top:11px">
+           <button class="btn sm" onclick="document.getElementById('q').value='${rc.contractAddress}';run('${rc.contractAddress}')">
+             查看这个合约 →</button>
+         </div>
+       </div>`
+    : "";
+
+  $("resultBody").innerHTML = `<div class="panel">
+    <div class="ptitle">
+      <span class="tag ${isDeploy ? "gold" : ""}">${isDeploy ? "合约部署交易" : "普通交易"}</span>
+      <span style="font-size:12px;color:var(--faint)">数据来源：节点直读</span>
+    </div>
+    ${addrRow("交易哈希", hash)}
+    ${isDeploy ? "" : addrRow("发送方 from", tx.from)}
+    ${addrRow(isDeploy ? "发送方 from" : "接收方 to", isDeploy ? tx.from : tx.to)}
+    ${kv(rows)}
+    ${contractRow}
+  </div>`;
+
+  if (rc && rc.contractAddress) loadLogs(rc.contractAddress);
+  else if (tx.to) loadLogs(tx.to);
+  else $("logSec").classList.add("hidden");
+  $("resultSec").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+/* ================= 事件日志 ================= */
+async function loadLogs(addr) {
+  $("logSec").classList.remove("hidden");
+  $("logPanel").innerHTML = `<div class="loading">正在读事件日志</div>`;
+  let logs = null;
+  for (const [f, t] of [["0x0", "latest"], ["0x0", "latest"]]) {
+    try { logs = await rpc("eth_getLogs", [{ address: addr, fromBlock: f, toBlock: t }], 25000); break; }
+    catch (e) { logs = null; }
+  }
+  if (logs === null) {
+    $("logPanel").innerHTML = `<div class="empty">这个节点不让一次扫全部区块，或该合约没有事件。不影响结论。</div>`;
+    return;
+  }
+  if (!logs.length) {
+    $("logPanel").innerHTML = `<div class="empty">
+      这个合约到目前为止没有发出过任何事件（logs）。
+      当前部署的 <code>Hello</code> 合约里只有 <code>set</code> / <code>get</code>，没有 <code>event</code>，所以这里是空的 ——
+      <b>正常现象，不代表合约有问题</b>。等 10/4 换成带 <code>event RainfallUpdated</code> 的
+      <code>RainDeliveryInsurance</code>，这里就会长出记录。</div>`;
+    return;
+  }
+  const rows = logs.slice(-25).reverse().map(l => `<tr>
+      <td>${fmtNum(big(l.blockNumber))}</td>
+      <td class="hl">${esc(short(l.transactionHash))}</td>
+      <td class="gd">${esc(l.topics[0] ? short(l.topics[0]) : "—")}</td>
+      <td>${l.topics.length - 1} 个 indexed</td>
+    </tr>`).join("");
+  $("logPanel").innerHTML = `
+    <div class="ptitle"><span class="tag">共 ${logs.length} 条</span>
+      <span style="font-size:12px;color:var(--faint)">显示最近 25 条</span></div>
+    <div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>区块</th><th>交易</th><th>事件签名 topics[0]</th><th>参数</th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+/* ================= 最近区块 ================= */
+async function loadBlocks(n = 8) {
+  try {
+    const latest = await chainStatus();
+    const nums = [];
+    for (let i = 0; i < n; i++) nums.push(latest - i);
+    const blks = await Promise.all(nums.map(b =>
+      rpc("eth_getBlockByNumber", ["0x" + b.toString(16), false]).catch(() => null)));
+    const rows = blks.filter(Boolean).map(b => `<tr>
+        <td class="hl">${fmtNum(big(b.number))}</td>
+        <td>${ago(b.timestamp)}</td>
+        <td>${b.transactions.length}</td>
+        <td>${fmtGwei(b.baseFeePerGas || "0x0")} Gwei</td>
+        <td>${esc(short(b.miner))}</td>
+      </tr>`).join("");
+    $("blockPanel").innerHTML = `
+      <div class="ptitle"><span class="tag">实时</span>
+        <span style="font-size:12px;color:var(--faint)">Sepolia 每约 12 秒出一个块</span></div>
+      <div class="tblwrap"><table class="tbl"><thead><tr>
+        <th>区块号</th><th>出块时间</th><th>交易数</th><th>基础费率</th><th>出块节点</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>`;
+  } catch (e) {
+    $("blockPanel").innerHTML = `<div class="empty">读不到区块：${esc(e.message)}</div>`;
+  }
+}
+
+/* ================= 入口 ================= */
+async function run(q) {
+  q = (q || $("q").value).trim();
+  // 容错：去掉常见脏字符
+  q = q.replace(/^[<"'\s]+|[>"'\s]+$/g, "").replace(/\s+/g, "");
+  if (!q) { showErr("先粘一个地址或交易哈希进来。"); return; }
+  if (!q.startsWith("0x")) q = "0x" + q;
+  $("q").value = q;
+
+  try {
+    if (isTx(q)) await lookupTx(q);
+    else if (isAddr(q)) await lookupAddress(q);
+    else {
+      $("logSec").classList.add("hidden");
+      $("resultSec").classList.add("hidden");
+      showErr(`这串东西既不是地址也不是交易哈希（长度 ${q.length}）。`,
+        `地址是 <code>0x</code> + 40 位十六进制 = 共 42 字符；交易哈希是 <code>0x</code> + 64 位 = 共 66 字符。
+         你这串是 ${q.length} 字符。<b>多半是把 </b>的尖括号、空格或换行一起复制进来了。`);
+    }
+  } catch (e) {
+    showErr("查询失败：" + e.message, "换个节点试试：刷新本页会自动轮换可用节点。");
+  }
+}
+window.run = run;
+
+$("goBtn").onclick = () => run();
+$("refreshBtn").onclick = () => { clearErr(); loadBlocks(); };
+$("q").addEventListener("keydown", e => { if (e.key === "Enter") run(); });
+document.querySelectorAll(".chip").forEach(c =>
+  c.onclick = () => { $("q").value = c.dataset.q; run(c.dataset.q); });
+
+/* 支持网址传参：?q=0x… ，方便收藏某一条记录 */
+function fromUrl() {
+  const m = /[?&](?:q|tx|addr|address)=([^&#]+)/i.exec(location.search);
+  if (!m) return null;
+  try { const v = decodeURIComponent(m[1]).trim(); return v || null; } catch (e) { return null; }
+}
+
+/* 一进来就把自己的合约读出来 */
+(async () => {
+  await loadBlocks();
+  const q0 = fromUrl() || DEFAULT_QUERY;
+  $("q").value = q0;
+  run(q0);
+})();
+
+/* 每 12 秒刷一次链状态（证明它是活的） */
+setInterval(() => { chainStatus(true).then(() => loadBlocks()).catch(() => {}); }, 12000);
+</script>
+</body>
+</html>

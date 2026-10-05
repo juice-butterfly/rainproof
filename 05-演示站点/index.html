@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>雨天骑手 · 配送中断险（参数化保险 Demo）</title>
+<style>
+  :root{
+    --ink:#E8F2EF; --dim:#9DBAB3; --faint:#64827A;
+    --jade:#0E7C66; --jade-l:#2FB89A; --jade-d:#0A5A4A;
+    --gold:#C98A2E; --gold-l:#E8B45C;
+    --bg1:#08130F; --bg2:#0B1F1A;
+    --line:rgba(14,124,102,.28); --line2:rgba(201,138,46,.30);
+    --card:rgba(255,255,255,.028);
+    --ok:#2FB89A; --bad:#E06B5A; --warn:#E8B45C;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Cascadia Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:var(--sans);color:var(--ink);font-size:14px;line-height:1.6;
+    background:
+      radial-gradient(1100px 620px at 10% -8%, rgba(14,124,102,.30), transparent 62%),
+      radial-gradient(900px 540px at 94% 2%, rgba(201,138,46,.16), transparent 60%),
+      linear-gradient(178deg,var(--bg1),var(--bg2) 55%,#050D0A);
+    background-attachment:fixed; -webkit-font-smoothing:antialiased; padding-bottom:60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+  /* ---------- header ---------- */
+  header{padding:26px 0 18px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{width:42px;height:42px;border-radius:12px;flex:none;display:grid;place-items:center;font-size:21px;
+    background:linear-gradient(145deg,var(--jade),var(--jade-d));
+    box-shadow:0 0 0 1px rgba(47,184,154,.35),0 6px 22px -8px rgba(14,124,102,.85)}
+  h1{font-size:20px;font-weight:650;letter-spacing:.3px;line-height:1.3}
+  h1 span{display:block;font-size:12px;color:var(--gold-l);font-weight:400;letter-spacing:.6px;margin-top:3px}
+  .chainbar{margin-left:auto;display:flex;align-items:center;gap:15px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:12px;color:var(--dim);
+    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--faint);display:inline-block;margin-right:6px}
+  .dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(47,184,154,.18)}
+  .dot.err{background:var(--bad)}
+  .chainbar b{color:var(--ink)}
+
+  /* ---------- 通用块 ---------- */
+  .sec{margin:26px 0 0}
+  .sec > h2{font-size:14px;font-weight:600;letter-spacing:.4px;border-left:4px solid var(--jade);
+    padding-left:11px;line-height:1.35;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .sec > h2.gold{border-left-color:var(--gold)}
+  .sec > h2 em{font-style:normal;font-size:11.5px;color:var(--faint);font-weight:400}
+  .panel{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .panel.plain{background:transparent;border-style:dashed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:26px}
+  @media (max-width:980px){ .grid2{grid-template-columns:1fr} }
+  .k{font-size:11px;color:var(--faint);letter-spacing:.4px;margin-bottom:5px}
+  .v{font-family:var(--mono);font-size:13.5px;word-break:break-all}
+  .mono{font-family:var(--mono)}
+  .mlabel{font-size:12px;color:var(--dim)}
+
+  /* ---------- 按钮 ---------- */
+  .btn{border:1px solid var(--line);background:linear-gradient(160deg,rgba(14,124,102,.30),rgba(14,124,102,.12));
+    color:var(--ink);font-family:var(--sans);font-size:13.5px;font-weight:550;padding:11px 20px;
+    border-radius:10px;cursor:pointer;transition:.18s;white-space:nowrap}
+  .btn:hover:not(:disabled){border-color:var(--jade-l);background:linear-gradient(160deg,rgba(14,124,102,.5),rgba(14,124,102,.2))}
+  .btn:active:not(:disabled){transform:translateY(1px)}
+  .btn:disabled{opacity:.42;cursor:not-allowed}
+  .btn.gold{border-color:var(--line2);background:linear-gradient(160deg,rgba(201,138,46,.28),rgba(201,138,46,.1))}
+  .btn.gold:hover:not(:disabled){border-color:var(--gold-l)}
+  .btn.sm{padding:7px 13px;font-size:12px;border-radius:8px}
+  .btn.block{width:100%;padding:14px;font-size:15px;font-weight:600}
+  input,select{background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:10px;color:var(--ink);
+    font-family:var(--mono);font-size:13px;padding:11px 13px;outline:none;transition:.2s}
+  input:focus,select:focus{border-color:var(--jade-l);box-shadow:0 0 0 3px rgba(47,184,154,.13)}
+  select{cursor:pointer;font-family:var(--sans)}
+  label.mlabel{display:block;margin-bottom:6px}
+
+  /* ---------- 配置条 ---------- */
+  .cfg{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .cfg input{flex:1 1 340px;min-width:0;font-size:12px}
+  .tag{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:6px;
+    border:1px solid var(--line);color:var(--jade-l);background:rgba(14,124,102,.12);white-space:nowrap}
+  .tag.gold{border-color:var(--line2);color:var(--gold-l);background:rgba(201,138,46,.12)}
+  .tag.red{border-color:rgba(224,107,90,.5);color:var(--bad);background:rgba(224,107,90,.12)}
+  .tag.warn{border-color:rgba(232,180,92,.5);color:var(--warn);background:rgba(232,180,92,.1)}
+
+  /* ---------- 降雨看板 ---------- */
+  .region{margin-bottom:13px}
+  .region:last-child{margin-bottom:0}
+  .rtop{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;margin-bottom:5px}
+  .rtop b{font-family:var(--mono);color:var(--jade-l)}
+  .bar{height:9px;background:rgba(0,0,0,.4);border-radius:99px;overflow:hidden;position:relative;border:1px solid rgba(14,124,102,.18)}
+  .bar i{display:block;height:100%;border-radius:99px;
+    background:linear-gradient(90deg,var(--jade),var(--jade-l));transition:width .5s}
+  .bar i.hit{background:linear-gradient(90deg,var(--gold),var(--gold-l))}
+  .bar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:rgba(232,180,92,.65)}
+  .rnote{font-size:11px;color:var(--faint);margin-top:4px}
+
+  /* ---------- 保单卡片 ---------- */
+  .pol{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:11px;
+    background:linear-gradient(178deg,rgba(255,255,255,.035),rgba(0,0,0,.10))}
+  .pol:last-child{margin-bottom:0}
+  .pol.paid{border-color:rgba(47,184,154,.55);background:linear-gradient(178deg,rgba(14,124,102,.14),rgba(0,0,0,.1))}
+  .pol.claimable{border-color:rgba(201,138,46,.6);background:linear-gradient(178deg,rgba(201,138,46,.13),rgba(0,0,0,.1))}
+  .pol.expired{opacity:.6}
+  .prow{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+  .pmeta{font-family:var(--mono);font-size:11.5px;color:var(--dim);line-height:1.75}
+
+  /* ---------- 事件流 ---------- */
+  .ev{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid rgba(14,124,102,.13);font-size:12.5px;align-items:baseline;flex-wrap:wrap}
+  .ev:last-child{border-bottom:none}
+  .ev .en{font-family:var(--mono);font-size:11.5px;padding:2px 8px;border-radius:5px;white-space:nowrap;
+    border:1px solid var(--line);color:var(--jade-l);background:rgba(14,124,102,.1)}
+  .ev .en.gold{border-color:var(--line2);color:var(--gold-l);background:rgba(201,138,46,.1)}
+  .ev .en.blue{border-color:rgba(120,150,230,.35);color:#9DB4E8;background:rgba(120,150,230,.09)}
+  .ev .et{color:var(--dim);flex:1 1 auto;min-width:0;word-break:break-all}
+  .ev .ea{color:var(--faint);font-family:var(--mono);font-size:11px;white-space:nowrap}
+  .ev .etx{font-size:11px;color:var(--jade-l);text-decoration:none;white-space:nowrap;
+    border-bottom:1px dashed rgba(14,124,102,.5);padding-bottom:1px}
+  .ev .etx:hover{color:var(--gold-l);border-bottom-color:var(--gold-l)}
+
+  .empty{color:var(--faint);font-size:12.5px;font-style:italic}
+  .loading{color:var(--dim);font-size:12.5px}
+  .loading::after{content:"";display:inline-block;width:9px;height:9px;margin-left:8px;vertical-align:middle;
+    border:1.5px solid var(--jade);border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .note{border-left:3px solid var(--gold);padding:2px 0 2px 12px;margin-top:13px;color:var(--dim);font-size:12.5px;line-height:1.8}
+  .note.jade{border-left-color:var(--jade)}
+  .steps{font-size:12.5px;color:var(--dim);line-height:2}
+  .steps b{color:var(--gold-l);font-family:var(--mono)}
+  footer{margin-top:38px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--faint);line-height:1.9}
+  footer code{font-family:var(--mono);color:var(--jade-l);font-size:11.5px}
+  a{color:var(--jade-l)}
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(140%);
+    background:#0B1F1A;border:1px solid var(--line);border-radius:11px;padding:12px 20px;font-size:13px;
+    max-width:min(660px,92vw);z-index:99;transition:transform .28s;box-shadow:0 12px 40px -12px #000}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  #toast.err{border-color:rgba(224,107,90,.6)}
+  #toast.ok{border-color:rgba(47,184,154,.6)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand">
+    <div class="logo">🌧</div>
+    <h1>雨天骑手 · 配送中断险
+      <span>参数化保险 · 天气数据触发 · 链上自动赔付</span>
+    </h1>
+    <div class="chainbar">
+      <span><span class="dot" id="dot"></span><span id="netText">未连接</span></span>
+      <span>区块 <b id="blk">—</b></span>
+      <span>合约 <b id="addrMini">未配置</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 配置 ============ -->
+<section class="sec">
+  <h2>合约配置<em>部署完把合约地址填这儿，会自动记住</em></h2>
+  <div class="panel">
+    <div class="cfg">
+      <input id="addrInput" spellcheck="false" placeholder="0x… 部署出来的合约地址（42 个字符）">
+      <button class="btn" id="saveBtn">保存并连接</button>
+      <button class="btn gold" id="walletBtn">连接钱包</button>
+      <span class="tag" id="modeTag">只读模式</span>
+    </div>
+    <div class="note jade" id="cfgHint">
+      还没有合约地址？先打开 <a href="verifier.html">链上核验台</a> 确认部署成功，再把地址粘到这里。
+      地址只存在你自己的浏览器里（localStorage），不上传任何地方。
+    </div>
+  </div>
+</section>
+
+<div class="grid2">
+  <!-- ============ 左栏 ============ -->
+  <div>
+    <section class="sec">
+      <h2>投保<em>1 份 0.001 SepETH</em></h2>
+      <div class="panel">
+        <div class="row" style="align-items:flex-end">
+          <div style="flex:1 1 150px">
+            <label class="mlabel k" for="regionSel">配送区域</label>
+            <select id="regionSel" style="width:100%"></select>
+          </div>
+          <div style="flex:0 1 130px">
+            <label class="mlabel k" for="hoursInput">保障时长（小时）</label>
+            <input id="hoursInput" type="number" min="1" max="72" value="6" style="width:100%">
+          </div>
+        </div>
+        <div class="row" style="margin-top:14px;justify-content:space-between">
+          <div>
+            <div class="k">应付保费</div>
+            <div class="v" style="font-size:17px;font-weight:600;color:var(--gold-l)" id="premiumShow">—</div>
+          </div>
+          <div style="text-align:right">
+            <div class="k">触发赔付条件</div>
+            <div class="v mono" style="font-size:12.5px;color:var(--jade-l)" id="threshShow">—</div>
+          </div>
+        </div>
+        <button class="btn block" id="buyBtn" style="margin-top:14px" disabled>连接钱包后投保</button>
+        <div class="note" id="buyHint">
+          保单期间该区域<strong>累计降雨 ≥ 阈值</strong> 就能申请赔付，赔 <strong id="payoutShow">—</strong>。
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2 class="gold">我的保单<em>连钱包后显示</em></h2>
+      <div class="panel" id="myPolicies">
+        <div class="empty">连接钱包后，这里会列出你在本合约上的全部保单。</div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2>资金池<em>赔付准备金 · 偿付能力</em></h2>
+      <div class="panel">
+        <div class="row" style="justify-content:space-between;align-items:flex-end">
+          <div>
+            <div class="k">池子余额</div>
+            <div class="v" style="font-size:19px;font-weight:600;color:var(--jade-l)" id="poolBal">—</div>
+          </div>
+          <div style="text-align:right">
+            <div class="k">还能赔付</div>
+            <div class="v" style="font-size:15px;color:var(--gold-l)" id="poolCap">—</div>
+          </div>
+        </div>
+        <button class="btn sm gold" id="fundBtn" style="margin-top:13px" disabled>注资 0.05 SepETH（团队操作）</button>
+        <div class="note">
+          <strong>演示前必须先把池子喂饱。</strong>收了 1 份保费（0.001）却要赔 10 倍（0.01），
+          池子是空的就第一笔赔付都过不去 —— 这正是我在本地链上验过的那条 <code>insurance pool empty</code>。
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ 右栏 ============ -->
+  <div>
+    <section class="sec">
+      <h2>降雨看板<em>链上的累计值，由喂价脚本写入</em></h2>
+      <div class="panel" id="rainBoard">
+        <div class="loading">正在读取各区域降雨</div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2 class="gold">链上动态<em>合约发出的事件，按时间倒序</em></h2>
+      <div class="panel" id="events">
+        <div class="loading">正在读取事件日志</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<section class="sec">
+  <h2>演示动线<em>4 分钟怎么讲</em></h2>
+  <div class="panel plain">
+    <div class="steps">
+      <b>①</b> 指着「降雨看板」说：这五个数字不是前端编的，是链上读出来的，来源是链下的天气数据。<br>
+      <b>②</b> 切到骑手账号 → 投保 → MetaMask 弹窗 → 指着「我的保单」说：这张保单现在在链上，谁都能查。<br>
+      <b>③</b> 跑一次喂价脚本 → 看板数字跳上去 → 保单状态从 <span class="mono">active</span> 变 <span class="mono">claimable</span>。<br>
+      <b>④</b> 点「申请赔付」→ 钱到账 → 状态变 <span class="mono">paid</span>，链上动态里多一条 <span class="mono">ClaimPaid</span>。<br>
+      <b>⑤</b> 收尾：整条链路没有一个环节需要人工定损 —— <strong>规则写死在合约里，触发条件公开可查。</strong>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <b>这一页不依赖任何区块浏览器。</b>合约地址、账户余额、降雨值、事件日志，全部直接向节点提问取得
+  （<code>ethereum-sepolia-rpc.publicnode.com</code>）。
+  <br>
+  <b>只读模式：</b>没连钱包也能看全部数据 —— 现场万一 MetaMask 出问题，照样能演示「链上有什么」。
+  <br>
+  <b>诚实说明：</b>喂价脚本是<strong>中心化预言机</strong>，数据可信度取决于运营方。生产环境应改用去中心化预言机网络。
+  AI 的作用是在链下判断「真实损失」，链上只负责按规则付钱。
+</footer>
+</div>
+
+<div id="toast"></div>
+
+<script src="ethers.umd.min.js"></script>
+<script>
+"use strict";
+const ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"address","name":"rider","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ClaimPaid","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"}],"name":"OperatorChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"paused","type":"bool"}],"name":"PausedSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"address","name":"rider","type":"address"},{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"endTime","type":"uint256"}],"name":"PolicyBought","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newBalance","type":"uint256"}],"name":"PoolFunded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"PoolWithdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"cumulativeMm","type":"uint256"},{"indexed":true,"internalType":"address","name":"reporter","type":"address"}],"name":"RainfallUpdated","type":"event"},{"inputs":[],"name":"MAX_HOURS","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MIN_HOURS","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PAYOUT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PREMIUM","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"REGION_COUNT","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"THRESHOLD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"regionId","type":"uint8"},{"internalType":"uint256","name":"hours_","type":"uint256"}],"name":"buyPolicy","outputs":[{"internalType":"uint256","name":"id","type":"uint256"}],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"policyId","type":"uint256"}],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"fundPool","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"nextPolicyId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"operator","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"policies","outputs":[{"internalType":"address","name":"rider","type":"address"},{"internalType":"uint8","name":"regionId","type":"uint8"},{"internalType":"uint256","name":"startTime","type":"uint256"},{"internalType":"uint256","name":"endTime","type":"uint256"},{"internalType":"uint256","name":"rainfallAtBuy","type":"uint256"},{"internalType":"bool","name":"paid","type":"bool"},{"internalType":"bool","name":"exists","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"rider","type":"address"}],"name":"policiesOf","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"policyId","type":"uint256"}],"name":"policyStatus","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"poolBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"","type":"uint8"}],"name":"rainfall","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"policyId","type":"uint256"}],"name":"rainfallDuring","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"regionId","type":"uint8"}],"name":"regionName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"bool","name":"v","type":"bool"}],"name":"setPaused","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"policyId","type":"uint256"}],"name":"shortfall","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"next","type":"address"}],"name":"transferOperator","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint8","name":"regionId","type":"uint8"},{"internalType":"uint256","name":"cumulativeMm","type":"uint256"}],"name":"updateRainfall","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawPool","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+
+const QS = new URLSearchParams(location.search);
+// ?rpc=… 可临时指定节点（本地链联调用，例如 http://127.0.0.1:8545）
+const RPC_OVERRIDE = QS.get("rpc");
+const RPC_NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
+  "https://ethereum-sepolia-rpc.publicnode.com",
+  "https://sepolia.gateway.tenderly.co"
+];
+const CHAIN_ID = 11155111n;
+const LS_KEY = "hanxong_contract_addr";
+
+// 事件名 → 样式
+const EV_STYLE = { ClaimPaid:"gold", PolicyBought:"blue", RainfallUpdated:"", PoolFunded:"gold",
+                   PoolWithdrawn:"gold", OperatorChanged:"", PausedSet:"" };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const short = a => (a && a.length > 12 ? a.slice(0,6) + "…" + a.slice(-4) : a);
+const fmtEth = w => Number(ethers.formatEther(w)).toLocaleString("en-US", { maximumFractionDigits: 6 });
+
+const S = { addr:null, c:null, readC:null, provider:null, signer:null, account:null, chainOk:false, meta:null };
+
+/* ---------------- 提示条 ---------------- */
+let toastTimer;
+function toast(msg, kind) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "show" + (kind ? " " + kind : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ""; }, kind === "err" ? 12000 : 5000);
+}
+function setMode(text, cls) { const e = $("modeTag"); e.textContent = text; e.className = "tag " + (cls || ""); }
+
+/* ---------------- 只读 provider（永远可用） ---------------- */
+async function getReadProvider() {
+  for (const url of RPC_NODES) {
+    try {
+      const p = new ethers.JsonRpcProvider(url);
+      const n = await p.getNetwork();
+      if (n.chainId === CHAIN_ID) return p;
+    } catch (e) { /* 试下一个 */ }
+  }
+  throw new Error("连不上 Sepolia 节点");
+}
+
+/* ---------------- 初始化 ---------------- */
+async function boot() {
+  // 合约地址：URL 参数 > localStorage
+  const fromUrl = QS.get("addr") || QS.get("c");
+  const saved = fromUrl || localStorage.getItem(LS_KEY) || "";
+  if (saved) $("addrInput").value = saved;
+
+  // 链状态
+  try {
+    S.provider = await getReadProvider();
+    const bn = await S.provider.getBlockNumber();
+    $("blk").textContent = bn.toLocaleString("en-US");
+    $("dot").className = "dot on";
+    $("netText").textContent = "Sepolia";
+  } catch (e) {
+    $("dot").className = "dot err";
+    $("netText").textContent = "节点连不上";
+  }
+
+  if (saved) await attachContract(saved);
+
+  // 有钱包就顺手连一下（不弹窗，只看已授权账户）
+  if (window.ethereum) {
+    try {
+      const accts = await window.ethereum.request({ method: "eth_accounts" });
+      if (accts && accts.length) await connectWallet(true);
+      else $("walletBtn").textContent = "连接钱包";
+    } catch (e) {}
+  } else {
+    $("walletBtn").disabled = true;
+    $("walletBtn").textContent = "未检测到钱包扩展";
+  }
+}
+
+/* ---------------- 挂上合约 ---------------- */
+async function attachContract(addr) {
+  addr = (addr || "").trim().replace(/^[<"'\s]+|[>"'\s]+$/g, "");
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+    toast(`这不是一个合法地址（${addr.length} 个字符，应该是 42 个）。检查有没有把尖括号或空格一起复制进来。`, "err");
+    return false;
+  }
+  S.addr = addr;
+  localStorage.setItem(LS_KEY, addr);
+  $("addrMini").textContent = short(addr);
+
+  // 读合约（永远走公共节点读，不走钱包 —— 少弹窗、也更快）
+  if (!S.provider) S.provider = await getReadProvider();
+  const code = await S.provider.getCode(addr);
+  if (!code || code === "0x") {
+    toast("这个地址在链上没有合约代码。可能是地址抄错了，或者部署失败了 —— 去链上核验台确认一下。", "err");
+    return false;
+  }
+  S.readC = new ethers.Contract(addr, ABI, S.provider);
+
+  // 元信息
+  try {
+    S.meta = {
+      premium:  await S.readC.PREMIUM(),
+      payout:   await S.readC.PAYOUT(),
+      threshold:await S.readC.THRESHOLD(),
+      minH:     await S.readC.MIN_HOURS(),
+      maxH:     await S.readC.MAX_HOURS(),
+      paused:   await S.readC.paused()
+    };
+    $("premiumShow").textContent = fmtEth(S.meta.premium) + " SepETH";
+    $("payoutShow").textContent  = fmtEth(S.meta.payout) + " SepETH";
+    $("threshShow").textContent  = S.meta.threshold + " mm";
+    $("hoursInput").max = Number(S.meta.maxH);
+    $("hoursInput").min = Number(S.meta.minH);
+    if (Number($("hoursInput").value) > Number(S.meta.maxH)) $("hoursInput").value = Number(S.meta.maxH);
+    $("cfgHint").innerHTML = `已连上合约 <span class="mono">${esc(addr)}</span>（代码 ${(code.length-2)/2} 字节）。`
+      + (S.meta.paused ? ' <span class="tag red">合约已暂停</span>' : "");
+  } catch (e) {
+    toast("地址上有合约，但这个 ABI 读不出它的参数 —— 确认部署的是 RainDeliveryInsurance 吗？", "err");
+    return false;
+  }
+
+  await refreshAll();
+  return true;
+}
+
+/* ---------------- 连接钱包 ---------------- */
+async function connectWallet(silent) {
+  if (!window.ethereum) { toast("这台机器上没有浏览器钱包扩展（MetaMask）。只读模式仍可查看全部链上数据。", "err"); return; }
+  try {
+    const accts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    S.account = accts[0];
+
+    // 网络
+    const cid = BigInt(await window.ethereum.request({ method: "eth_chainId" }));
+    if (cid !== CHAIN_ID) {
+      if (!silent) {
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain", params: [{ chainId: "0xaa36a7" }]
+          });
+        } catch (e) {
+          toast("钱包当前不在 Sepolia。请在 MetaMask 里把网络切到 Sepolia 再试。", "err");
+          return;
+        }
+      } else { return; }
+    }
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    S.signer = await provider.getSigner();
+    S.chainOk = true;
+    setMode("已连接钱包 · " + short(S.account), "");
+    $("netText").textContent = "Sepolia";
+    $("dot").className = "dot on";
+    $("walletBtn").textContent = short(S.account);
+    $("buyBtn").disabled = !S.addr;
+    $("fundBtn").disabled = !S.addr;
+    $("buyBtn").textContent = S.addr ? "投保" : "先填合约地址";
+    await refreshAll();
+    if (!silent) toast("钱包已连接：" + S.account, "ok");
+  } catch (e) {
+    toast("连接钱包失败：" + (e.shortMessage || e.message || e), "err");
+  }
+}
+
+/* 写交易的统一封装：等签名 → 等上链 → 报 hash */
+async function send(fn, okMsg) {
+  if (!S.signer) { toast("先连接钱包", "err"); return; }
+  try {
+    toast("请在钱包里确认这笔交易…");
+    const tx = await fn();
+    toast("已提交，等待上链… 交易 " + short(tx.hash));
+    const rc = await tx.wait();
+    toast(`${okMsg} · 上链成功（区块 ${rc.blockNumber}，gas ${rc.gasUsed}）`, "ok");
+    await new Promise(r => setTimeout(r, 600));   // 等节点状态追上
+    await refreshAll();
+  } catch (e) {
+    const m = e.reason || e.shortMessage || e.info?.error?.message || e.message || String(e);
+    let hint = "";
+    if (/premium mismatch/.test(m))       hint = " —— 保费金额和合约里写死的不一致";
+    else if (/hours out of range/.test(m))hint = " —— 时长必须在合约允许范围内";
+    else if (/bad region/.test(m))        hint = " —— 区域编号不合法";
+    else if (/threshold not met/.test(m)) hint = " —— 这个区域的降雨还没到阈值，还差多少看保单卡片";
+    else if (/already paid/.test(m))      hint = " —— 这张保单已经赔过了";
+    else if (/insurance pool empty/.test(m)) hint = " —— 资金池空了，先注资";
+    else if (/not operator/.test(m))      hint = " —— 这个操作只有 operator（喂价脚本）能做";
+    else if (/contract paused/.test(m))   hint = " —— 合约已暂停";
+    else if (/user rejected|denied/i.test(m)) hint = " —— 你取消了签名";
+    toast("交易失败：" + m + hint, "err");
+  }
+}
+
+/* ---------------- 刷新各区块 ---------------- */
+async function refreshAll() {
+  if (!S.readC || !S.addr) return;
+  await Promise.allSettled([loadRegions(), loadPool(), loadMyPolicies(), loadEvents()]);
+}
+
+/* 降雨看板 */
+async function loadRegions() {
+  const box = $("rainBoard");
+  const out = [];
+  for (let id = 1; id <= 5; id++) {
+    try {
+      const [name, mm] = await Promise.all([S.readC.regionName(id), S.readC.rainfall(id)]);
+      const v = Number(mm);
+      const pct = Math.min(100, Math.round(v / Number(S.meta.threshold) * 100));
+      const hit = v >= Number(S.meta.threshold);
+      out.push(`<div class="region">
+        <div class="rtop">
+          <span>${esc(name)} <span style="color:var(--faint);font-size:11px">#${id}</span></span>
+          <span><b>${v}</b> mm${hit ? ' <span class="tag gold" style="margin-left:6px">已超阈值</span>' : ""}</span>
+        </div>
+        <div class="bar"><i class="${hit ? "hit" : ""}" style="width:${pct}%"></i></div>
+        <div class="rnote">阈值 ${Number(S.meta.threshold)} mm · ${hit ? "买这个区域的保单现在就能申请赔付" : `距触发还差 ${Number(S.meta.threshold) - v} mm`}</div>
+      </div>`);
+    } catch (e) {
+      out.push(`<div class="empty">区域 #${id} 读取失败：${esc(e.message || e)}</div>`);
+    }
+  }
+  box.innerHTML = out.join("");
+}
+
+/* 资金池 */
+async function loadPool() {
+  try {
+    const bal = await S.readC.poolBalance();
+    $("poolBal").textContent = fmtEth(bal) + " SepETH";
+    const n = BigInt(S.meta.payout) === 0n ? 0n : bal / BigInt(S.meta.payout);
+    $("poolCap").textContent = `${n} 笔` + (n === 0n ? "（空了）" : "");
+  } catch (e) { $("poolBal").textContent = "读取失败"; }
+}
+
+/* 我的保单 */
+async function loadMyPolicies() {
+  const box = $("myPolicies");
+  if (!S.account) {
+    box.innerHTML = `<div class="empty">连接钱包后，这里会列出你在本合约上的全部保单。</div>`;
+    return;
+  }
+  try {
+    const ids = await S.readC.policiesOf(S.account);
+    if (!ids.length) {
+      box.innerHTML = `<div class="empty">这个地址还没有保单。填好区域和时长，点上面的「投保」试试。</div>`;
+      return;
+    }
+    const rows = [];
+    for (const idBn of ids) {
+      const id = Number(idBn);
+      const [p, status, short] = await Promise.all([
+        S.readC.policies(id), S.readC.policyStatus(id), S.readC.shortfall(id)
+      ]);
+      const name = await S.readC.regionName(p.regionId);
+      const from = new Date(Number(p.startTime) * 1000), to = new Date(Number(p.endTime) * 1000);
+      const fmt = d => `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+      const label = { active:"保障中", claimable:"可申请赔付 ✅", paid:"已赔付", expired:"已过期", not_found:"不存在" }[status] || status;
+      const claimable = status === "claimable";
+      rows.push(`<div class="pol ${status}">
+        <div class="prow">
+          <div>
+            <div style="font-size:14px;font-weight:600">#${id} · ${esc(name)}
+              <span class="tag ${claimable ? "gold" : status === "paid" ? "" : "warn"}" style="margin-left:6px">${label}</span>
+            </div>
+            <div class="pmeta">
+              保障 ${fmt(from)} → ${fmt(to)}
+              ${status === "active" ? `　·　距触发还差 <b style="color:var(--warn)">${Number(short)}</b> mm` : ""}
+              ${claimable ? `　·　已满足赔付条件` : ""}
+              ${status === "paid" ? `　·　已收到 ${fmtEth(S.meta.payout)} SepETH` : ""}
+            </div>
+          </div>
+          <button class="btn sm ${claimable ? "gold" : ""}" data-claim="${id}"
+            ${claimable ? "" : "disabled"}>${claimable ? "申请赔付 " + fmtEth(S.meta.payout) + " SepETH" : (status === "paid" ? "已赔付" : "未达条件")}</button>
+        </div>
+      </div>`);
+    }
+    box.innerHTML = rows.join("");
+    box.querySelectorAll("[data-claim]").forEach(btn => {
+      btn.onclick = () => {
+        const id = Number(btn.dataset.claim);
+        send(() => S.readC.connect(S.signer) && new ethers.Contract(S.addr, ABI, S.signer).claim(id), `保单 #${id} 赔付完成`);
+      };
+    });
+  } catch (e) {
+    box.innerHTML = `<div class="empty">读取保单失败：${esc(e.reason || e.message || e)}</div>`;
+  }
+}
+
+/* 链上动态 */
+async function loadEvents() {
+  const box = $("events");
+  try {
+    let logs = null;
+    try {
+      logs = await S.provider.getLogs({ address: S.addr, fromBlock: 0, toBlock: "latest" });
+    } catch (e) {
+      const latest = await S.provider.getBlockNumber();
+      logs = await S.provider.getLogs({
+        address: S.addr, fromBlock: Math.max(0, latest - 49000), toBlock: "latest"
+      });
+    }
+    if (!logs.length) { box.innerHTML = `<div class="empty">这个合约还没有发出过事件。投保或喂价之后就会出现。</div>`; return; }
+    const iface = S.readC.interface;
+    const rows = [];
+    const recent = logs.slice(-20).reverse();
+    const times = {};
+    for (const l of recent) {
+      let d; try { d = iface.parseLog(l); } catch (e) { continue; }
+      if (times[l.blockNumber] === undefined) {
+        try { times[l.blockNumber] = (await S.provider.getBlock(l.blockNumber)).timestamp; }
+        catch (e) { times[l.blockNumber] = 0; }
+      }
+      let desc = "";
+      if (d.name === "PolicyBought")      desc = `保单 #${d.args[0]} · ${short(d.args[1])} 投保 ${await S.readC.regionName(d.args[2])}`;
+      else if (d.name === "RainfallUpdated") desc = `${await S.readC.regionName(d.args[0])} 累计降雨更新为 ${d.args[1]} mm`;
+      else if (d.name === "ClaimPaid")    desc = `保单 #${d.args[0]} 赔付 ${fmtEth(d.args[2])} SepETH 给 ${short(d.args[1])}`;
+      else if (d.name === "PoolFunded")   desc = `${short(d.args[0])} 注资 ${fmtEth(d.args[1])} SepETH，池子 → ${fmtEth(d.args[2])}`;
+      else if (d.name === "PoolWithdrawn")desc = `提取 ${fmtEth(d.args[1])} SepETH`;
+      else if (d.name === "OperatorChanged") desc = `operator ${short(d.args[0])} → ${short(d.args[1])}`;
+      else if (d.name === "PausedSet")    desc = `合约${d.args[0] ? "已暂停" : "已恢复"}`;
+      else desc = d.name;
+      const ts = times[l.blockNumber];
+      const when = ts ? new Date(Number(ts) * 1000) : null;
+      const ago = when ? Math.floor((Date.now() - when.getTime()) / 60000) : null;
+      rows.push(`<div class="ev">
+        <span class="en ${EV_STYLE[d.name] || ""}">${esc(d.name)}</span>
+        <span class="et">${desc}</span>
+        <span class="ea">#${Number(l.blockNumber).toLocaleString("en-US")}${ago !== null ? " · " + (ago < 1 ? "刚刚" : ago + " 分钟前") : ""}</span>
+        ${l.transactionHash ? `<a class="etx" href="verifier.html?q=${l.transactionHash}${QS.get("rpc") ? "&rpc=" + encodeURIComponent(QS.get("rpc")) : ""}" target="_blank" rel="noopener" title="在本站核验台里看这笔交易">核验 ↗</a>` : ""}
+      </div>`);
+    }
+    box.innerHTML = rows.length ? rows.join("") : `<div class="empty">没有能解析的事件。</div>`;
+  } catch (e) {
+    box.innerHTML = `<div class="empty">读取事件失败：${esc(e.reason || e.message || e)}</div>`;
+  }
+}
+
+/* ---------------- 事件绑定 ---------------- */
+$("saveBtn").onclick = async () => { if (await attachContract($("addrInput").value)) toast("合约已连接", "ok"); };
+$("walletBtn").onclick = () => connectWallet(false);
+$("addrInput").addEventListener("keydown", e => { if (e.key === "Enter") $("saveBtn").click(); });
+
+$("buyBtn").onclick = () => {
+  const region = Number($("regionSel").value);
+  const hours = Number($("hoursInput").value);
+  if (!Number.isInteger(hours) || hours < Number(S.meta.minH) || hours > Number(S.meta.maxH)) {
+    return toast(`时长要在 ${S.meta.minH} ~ ${S.meta.maxH} 小时之间`, "err");
+  }
+  send(() => new ethers.Contract(S.addr, ABI, S.signer).buyPolicy(region, hours, { value: S.meta.premium }),
+       `投保成功（区域 ${region} · ${hours} 小时）`);
+};
+
+$("fundBtn").onclick = () => {
+  send(() => new ethers.Contract(S.addr, ABI, S.signer).fundPool({ value: ethers.parseEther("0.05") }),
+       "注资 0.05 SepETH 完成");
+};
+
+/* 钱包事件 */
+if (window.ethereum) {
+  window.ethereum.on && window.ethereum.on("accountsChanged", () => location.reload());
+  window.ethereum.on && window.ethereum.on("chainChanged", () => location.reload());
+}
+
+/* 下拉区域列表 */
+(async () => {
+  const sel = $("regionSel");
+  const names = ["wuhan","shanghai","beijing","guangzhou","chengdu"];
+  const labels = ["武汉","上海","北京","广州","成都"];
+  sel.innerHTML = labels.map((n, i) => `<option value="${i+1}">${n}（#${i+1}）</option>`).join("");
+  await boot();
+  setInterval(async () => {
+    if (!S.readC || !S.addr) return;
+    try { $("blk").textContent = (await S.provider.getBlockNumber()).toLocaleString("en-US"); } catch (e) {}
+  }, 12000);
+})();
+</script>
+</body>
+</html>

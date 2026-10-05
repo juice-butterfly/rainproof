@@ -1,0 +1,19 @@
+{
+  "name": "hanhesong-deploy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "deploy": "node deploy.js",
+    "push": "node push-rainfall.js",
+    "status": "node push-rainfall.js --status",
+    "demo": "node push-rainfall.js --demo",
+    "tx": "node check-chain.js tx",
+    "addr": "node check-chain.js addr",
+    "code": "node check-chain.js code"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.0"
+  }
+}

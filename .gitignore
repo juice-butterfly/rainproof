@@ -1,0 +1,14 @@
+# ===== 私钥与环境变量：绝不进版本库 =====
+.env
+
+# ===== 本地彩排链快照：含明文私钥与助记词，绝不提交 =====
+_local_chain.json
+
+# ===== 依赖与锁文件 =====
+node_modules/
+package-lock.json
+
+# ===== 系统杂物 =====
+.DS_Store
+Thumbs.db
+desktop.ini

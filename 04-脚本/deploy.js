@@ -53,6 +53,9 @@ function readBytecode() {
   return raw;
 }
 
+// 已知真链：chainId → 显示名。RPC 由 .env 的 SEPOLIA_RPC 指定（变量名沿用，指哪条链由它自己答）。
+const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
+
 async function main() {
   const rpc = process.env.SEPOLIA_RPC || "https://ethereum-sepolia-rpc.publicnode.com";
 
@@ -67,21 +70,25 @@ async function main() {
 
   const provider = new JsonRpcProvider(rpc);
   const net = await provider.getNetwork();
-  if (net.chainId.toString() !== "11155111") {
-    throw new Error(`⚠️ 当前 RPC 不是 Sepolia（chainId=${net.chainId}），已中止`);
+  const chainId = Number(net.chainId);
+  const chainName = KNOWN_CHAINS[chainId];
+  if (!chainName) {
+    throw new Error(`⚠️ 当前 RPC 不是已知的真链（chainId=${chainId}）。已知：` +
+      Object.entries(KNOWN_CHAINS).map(([k, v]) => `${v}(${k})`).join(" / "));
   }
   // chainId 能被本地假链伪装（07-测试工具/prep_local_chain.js 就设成 11155111），块高不能：
-  // Sepolia 已经 1180 万+，本地假链从 0 开始。这里只把身份说清楚，本地联调照样能跑。
+  // Sepolia 已 1180 万+、BOT Chain 主网已 257 万+，本地假链从 0 开始。这里只把身份说清楚，本地联调照样能跑。
   const blockNumber = await provider.getBlockNumber();
   const isRealChain = blockNumber >= 1000000;
+  const sym = chainId === 677 ? "BOT" : "SepETH";   // BOT Chain 的原生代币叫 BOT，不是 SepETH
   console.log("网络       : " + (isRealChain
-    ? "Sepolia (11155111)"
-    : `⚠️ 本地假链（块高 ${blockNumber}，chainId 被伪装成 11155111）—— 不是真链！`));
+    ? `${chainName} (${chainId})`
+    : `⚠️ 本地假链（块高 ${blockNumber}，chainId 被伪装成 ${chainId}）—— 不是真链！`));
 
   const wallet = new Wallet(process.env.PRIVATE_KEY, provider);
   const balance = await provider.getBalance(wallet.address);
   console.log("部署账户   :", wallet.address);
-  console.log("账户余额   :", (Number(balance) / 1e18).toFixed(6), "SepETH");
+  console.log("账户余额   :", (Number(balance) / 1e18).toFixed(6), sym);
 
   if (balance === 0n) {
     throw new Error("账户余额为 0 —— 先去水龙头领测试币");
@@ -105,7 +112,7 @@ async function main() {
   console.log("  ① 把合约地址填进 .env 的 CONTRACT_ADDRESS");
   console.log("  ② 喂价前必须先把资金池喂饱 —— 收到 1 份保费（0.001）却要赔 10 倍（0.01），");
   console.log("     池子是空的，第一笔赔付就会因 insufficient funds 失败。三种注资方式任选：");
-  console.log("       · 打开演示页面 → 「资金池」卡片 → 点「注资 0.05 SepETH」");
+  console.log(`       · 打开演示页面 → 「资金池」卡片 → 点「注资 0.05 ${sym}」`);
   console.log("       · 或 Remix 上调 fundPool() 并附带 value");
   console.log("  ③ npm run status   ← 确认合约状态、operator、池子余额都对");
   console.log("     npm run demo     ← 注入模拟暴雨，把 5 个区域的降雨推上去");

@@ -296,6 +296,8 @@ const CHAIN_ID = 11155111n;
 // ★ chainId 可以被本地假链伪装（07-测试工具/prep_local_chain.js 就把 ganache 设成 11155111），
 //   但区块高度伪装不了：Sepolia 已经 1180 万+，本地假链从 0 开始。这是唯一可靠的"真链判据"。
 const MIN_REAL_BLOCK = 1000000;
+// 已知真链：chainId → 显示名。RPC 指向哪条链（NODES / ?rpc= 参数）就在这里登记一行。
+const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
 const LS_KEY = "hanxong_contract_addr";
 
 // 事件名 → 样式
@@ -326,9 +328,11 @@ async function getReadProvider() {
     try {
       const p = new ethers.JsonRpcProvider(url);
       const n = await p.getNetwork();
-      if (n.chainId !== CHAIN_ID) continue;
+      const cid = Number(n.chainId);
+      const chainName = KNOWN_CHAINS[cid];
+      if (!chainName) continue;
       const bn = await p.getBlockNumber();
-      S.chain = { url, blockNumber: bn, isReal: bn >= MIN_REAL_BLOCK };
+      S.chain = { url, chainId: cid, chainName, blockNumber: bn, isReal: bn >= MIN_REAL_BLOCK };
       return p;
     } catch (e) { /* 试下一个 */ }
   }
@@ -365,10 +369,10 @@ async function boot() {
     $("blk").textContent = bn.toLocaleString("en-US");
     $("dot").className = "dot on";
     if (S.chain && !S.chain.isReal) {
-      $("netText").textContent = "本地假链（非 Sepolia）";
+      $("netText").textContent = "本地假链（非 " + (S.chain.chainName || "真链") + "）";
       showFakeChainWarning();
     } else {
-      $("netText").textContent = "Sepolia";
+      $("netText").textContent = (S.chain && S.chain.chainName) || "—";
     }
   } catch (e) {
     $("dot").className = "dot err";
@@ -445,15 +449,17 @@ async function connectWallet(silent) {
     S.account = accts[0];
 
     // 网络
-    const cid = BigInt(await window.ethereum.request({ method: "eth_chainId" }));
-    if (cid !== CHAIN_ID) {
+    const cid = Number(await window.ethereum.request({ method: "eth_chainId" }));
+    // 钱包网络必须跟页面读的那条链是同一条，否则签名的交易和只读数据会指向两条链。
+    const want = (S.chain && S.chain.chainId) || Number(CHAIN_ID);
+    if (cid !== want) {
       if (!silent) {
         try {
           await window.ethereum.request({
-            method: "wallet_switchEthereumChain", params: [{ chainId: "0xaa36a7" }]
+            method: "wallet_switchEthereumChain", params: [{ chainId: "0x" + want.toString(16) }]
           });
         } catch (e) {
-          toast("钱包当前不在 Sepolia。请在 MetaMask 里把网络切到 Sepolia 再试。", "err");
+          toast("钱包当前不在 " + (KNOWN_CHAINS[want] || want) + "。请在 MetaMask 里把网络切过去再试。", "err");
           return;
         }
       } else { return; }
@@ -463,7 +469,7 @@ async function connectWallet(silent) {
     S.signer = await provider.getSigner();
     S.chainOk = true;
     setMode("已连接钱包 · " + short(S.account), "");
-    $("netText").textContent = "Sepolia";
+    $("netText").textContent = (S.chain && S.chain.chainName) || KNOWN_CHAINS[want] || "—";
     $("dot").className = "dot on";
     $("walletBtn").textContent = short(S.account);
     $("buyBtn").disabled = !S.addr;
@@ -480,7 +486,7 @@ async function connectWallet(silent) {
 async function send(fn, okMsg) {
   if (!S.signer) { toast("先连接钱包", "err"); return; }
   if (S.chain && !S.chain.isReal) {
-    toast("当前连的是本地假链（块高 " + S.chain.blockNumber + "），不是 Sepolia —— 写操作已锁死。去掉网址里的 ?rpc= 参数后刷新。", "err");
+    toast("当前连的是本地假链（块高 " + S.chain.blockNumber + "），不是真链 —— 写操作已锁死。去掉网址里的 ?rpc= 参数后刷新。", "err");
     return;
   }
   try {

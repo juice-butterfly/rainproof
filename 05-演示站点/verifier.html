@@ -293,6 +293,8 @@ const DEFAULT_QUERY = "0x5f704090d2a2120806cc12a6ed538511354d82dc";
 // ★ 真链判据：chainId 可以被本地假链伪装（prep_local_chain.js 就设成 11155111），块高不能。
 //   Sepolia 已经 1180 万+，本地假链从 0 开始。
 const MIN_REAL_BLOCK = 1000000;
+// 已知真链：chainId → 显示名。NODES / ?rpc= 指向哪条链都在这里登记。
+const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
 
 const S = { rpc: NODES[0], lat: null, lastAddr: null };
 
@@ -417,14 +419,16 @@ async function chainStatus(silent) {
   try {
     const [blkHex, gasHex] = await Promise.all([rpc("eth_blockNumber", []), rpc("eth_gasPrice", [])]);
     const id = await rpc("eth_chainId", []);
-    if (parseInt(id, 16) !== 11155111) throw new Error("不是 Sepolia（chainId=" + parseInt(id, 16) + "）");
+    const cid = parseInt(id, 16);
+    const chainName = KNOWN_CHAINS[cid];
+    if (!chainName) throw new Error("不是已知的真链（chainId=" + cid + "）");
     const bn = Number(BigInt(blkHex));
     $("blkNum").textContent = fmtNum(big(blkHex));
     $("gas").textContent = fmtGwei(gasHex) + " Gwei";
     $("lat").textContent = S.lat + "ms";
     $("dot").className = "dot on";
-    if (bn < MIN_REAL_BLOCK) { $("connText").textContent = "本地假链（非 Sepolia）"; showFakeChainBar(bn); }
-    else { $("connText").textContent = "已连接 Sepolia"; }
+    if (bn < MIN_REAL_BLOCK) { $("connText").textContent = "本地假链（非 " + chainName + "）"; showFakeChainBar(bn); }
+    else { $("connText").textContent = "已连接 " + chainName; }
     return bn;
   } catch (e) {
     $("dot").className = "dot err";

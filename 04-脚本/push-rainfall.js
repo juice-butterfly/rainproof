@@ -159,6 +159,9 @@ function bar(cur, threshold, width = 30) {
 
 /* --------------------------------------------------------------- 主流程 */
 
+// 已知真链：chainId → 显示名。RPC 由 .env 的 SEPOLIA_RPC 指定（变量名沿用，指哪条链由它自己答）。
+const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
+
 async function main() {
   const rpc = process.env.SEPOLIA_RPC || "https://ethereum-sepolia-rpc.publicnode.com";
   const address = (process.env.CONTRACT_ADDRESS || "").trim();
@@ -188,12 +191,16 @@ async function main() {
 
   /* ---- 前置检查：网络 / 权限 / 池子 ---- */
   const net = await provider.getNetwork();
-  if (net.chainId.toString() !== "11155111") {
-    throw new Error(`⚠️ 当前 RPC 不是 Sepolia（chainId=${net.chainId}），已中止`);
+  const chainId = Number(net.chainId);
+  const chainName = KNOWN_CHAINS[chainId];
+  if (!chainName) {
+    throw new Error(`⚠️ 当前 RPC 不是已知的真链（chainId=${chainId}）。已知：` +
+      Object.entries(KNOWN_CHAINS).map(([k, v]) => `${v}(${k})`).join(" / "));
   }
   // chainId 能被本地假链伪装（07-测试工具/prep_local_chain.js 就设成 11155111），块高不能。
   const blockNumber = await provider.getBlockNumber();
   const isRealChain = blockNumber >= 1000000;
+  const sym = chainId === 677 ? "BOT" : "SepETH";   // BOT Chain 的原生代币叫 BOT，不是 SepETH
 
   const [onchainOperator, paused, pool, payout, threshold, regionCount, balance] = await Promise.all([
     readC.operator(), readC.paused(), readC.poolBalance(),
@@ -203,9 +210,9 @@ async function main() {
 
   console.log(C.dim("─".repeat(74)));
   console.log(`${C.b("喂价者")}  ${wallet.address}`);
-  console.log(`合约      ${address}   ${C.dim((isRealChain ? "Sepolia" : "⚠️ 本地假链") + " · chainId " + net.chainId + " · 块高 " + blockNumber)}`);
-  console.log(`账户余额  ${formatEther(balance)} SepETH`);
-  console.log(`资金池    ${formatEther(pool)} SepETH   ${C.dim(`（每笔赔付 ${formatEther(payout)} ETH，还能赔 ${Number(pool / payout)} 笔）`)}`);
+  console.log(`合约      ${address}   ${C.dim((isRealChain ? chainName : "⚠️ 本地假链") + " · chainId " + chainId + " · 块高 " + blockNumber)}`);
+  console.log(`账户余额  ${formatEther(balance)} ${sym}`);
+  console.log(`资金池    ${formatEther(pool)} ${sym}   ${C.dim(`（每笔赔付 ${formatEther(payout)} ETH，还能赔 ${Number(pool / payout)} 笔）`)}`);
   console.log(`触发阈值  ${threshold} mm   ${C.dim("（保单期间增量口径）")}`);
   console.log(C.dim("─".repeat(74)));
 

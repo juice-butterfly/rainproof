@@ -581,6 +581,10 @@ async function loadMyPolicies() {
                       denied:"AI 判定不赔", low_confidence:"AI 置信度不足",
                       paid:"已赔付", expired:"已过期", not_found:"不存在" }[status] || status;
       const claimable = status === "claimable";
+      // 按钮点不动的时候，按钮自己必须说出「为什么点不动」。
+      // 否则现场只能把它解释成「这个功能坏了」—— 而这恰恰是判定层存在的最好证明。
+      const NOBTN = { paid:"已赔付", pending_judgement:"待 AI 判定", denied:"AI 判定不赔",
+                      low_confidence:"置信度不足", expired:"已过期", not_found:"不存在" };
       rows.push(`<div class="pol ${status}">
         <div class="prow">
           <div>
@@ -591,11 +595,14 @@ async function loadMyPolicies() {
               保障 ${fmt(from)} → ${fmt(to)}
               ${status === "active" ? `　·　距触发还差 <b style="color:var(--warn)">${Number(short)}</b> mm` : ""}
               ${claimable ? `　·　已满足赔付条件` : ""}
+              ${status === "pending_judgement" ? `　·　雨量已达标，等 AI 判定登记上链` : ""}
+              ${status === "denied" ? `　·　AI 判定为不赔（结论与两个证据哈希都已上链，可查）` : ""}
+              ${status === "low_confidence" ? `　·　AI 置信度低于合约验收门槛，按规则不予赔付` : ""}
               ${status === "paid" ? `　·　已收到 ${fmtEth(S.meta.payout)} SepETH` : ""}
             </div>
           </div>
           <button class="btn sm ${claimable ? "gold" : ""}" data-claim="${id}"
-            ${claimable ? "" : "disabled"}>${claimable ? "申请赔付 " + fmtEth(S.meta.payout) + " SepETH" : (status === "paid" ? "已赔付" : "未达条件")}</button>
+            ${claimable ? "" : "disabled"}>${claimable ? "申请赔付 " + fmtEth(S.meta.payout) + " SepETH" : (NOBTN[status] || "未达条件")}</button>
         </div>
       </div>`);
     }

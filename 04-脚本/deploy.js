@@ -1,11 +1,12 @@
 /**
- * 把合约部署到 Sepolia（不依赖任何浏览器插件）
+ * 把合约部署到 Sepolia / BOT Chain（不依赖任何浏览器插件）
  *
  * 用法：
  *   1) npm install
- *   2) 把 .env.example 复制成 .env，填上 PRIVATE_KEY
- *   3) 从 Remix 的 Compile 面板点「ABI」→ 把复制到的内容整段粘进 abi.json（替换里面的 []）
- *      点「Bytecode」→ 把复制到的那一长串粘进 bytecode.txt
+ *   2) 把 .env.example 复制成 .env，填上 PRIVATE_KEY（可选 SEPOLIA_RPC / CONTRACT_ADDRESS）
+ *   3) 先编译：在 07-测试工具 里跑
+ *        node compile_sol.js ../03-合约/RainDeliveryInsurance.sol
+ *      （产物直接落在 03-合约/，这个脚本就从那里读，不需要手工复制粘贴）
  *   4) npm run deploy
  *
  * 这个脚本会把合约地址打印出来，并告诉你用「链上核验台」怎么验证。
@@ -16,14 +17,19 @@ const fs = require("fs");
 const path = require("path");
 const { JsonRpcProvider, Wallet, ContractFactory } = require("ethers");
 
-const ABI_FILE = path.join(__dirname, "abi.json");
-const BYTECODE_FILE = path.join(__dirname, "bytecode.txt");
+// ★ 唯一真相：编译产物只放在 03-合约/。
+//   以前这里读 04-脚本/abi.json + 04-脚本/bytecode.txt，而 compile_sol.js 是把产物写进
+//   03-合约/ 的 —— 两边一旦不同步，部署用的就是【旧字节码】，而且不会有任何报错。
+//   现在 ABI/bytecode 只有一处，物理上不可能再对不上。
+const SOL_DIR = path.join(__dirname, "..", "03-合约");
+const ABI_FILE = path.join(SOL_DIR, "RainDeliveryInsurance.abi.json");
+const BYTECODE_FILE = path.join(SOL_DIR, "RainDeliveryInsurance.bytecode.txt");
 
 function readAbi() {
-  if (!fs.existsSync(ABI_FILE)) throw new Error("找不到 abi.json");
+  if (!fs.existsSync(ABI_FILE)) throw new Error("找不到编译产物：" + ABI_FILE + "\n  先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol");
   const raw = fs.readFileSync(ABI_FILE, "utf8").trim();
   if (!raw || raw === "[]") {
-    throw new Error("abi.json 还是空的 —— 请把 Remix 里点「ABI」复制到的整段内容粘进去");
+    throw new Error("ABI 是空的：" + ABI_FILE + "\n  先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol");
   }
   try {
     const abi = JSON.parse(raw);
@@ -32,19 +38,17 @@ function readAbi() {
     }
     return abi;
   } catch (e) {
-    throw new Error(
-      "abi.json 不是合法的 JSON：" + e.message +
-      "\n  提示：要粘的是 Remix 复制出来的【整个方括号数组】，含 [ 和 ]"
-    );
+    throw new Error("ABI 不是合法的 JSON：" + e.message);
   }
 }
 
 function readBytecode() {
-  if (!fs.existsSync(BYTECODE_FILE)) throw new Error("找不到 bytecode.txt");
+  if (!fs.existsSync(BYTECODE_FILE)) throw new Error("找不到编译产物：" + BYTECODE_FILE + "\n  先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol");
   const raw = fs.readFileSync(BYTECODE_FILE, "utf8").trim();
   if (!raw || raw === "0x" || raw.length < 10) {
     throw new Error(
-      "bytecode.txt 还是空的 —— 请把 Remix 里点「Bytecode」复制到的那一长串 0x… 粘进去"
+      "bytecode 是空的：" + BYTECODE_FILE +
+      "\n  先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol"
     );
   }
   if (!raw.startsWith("0x")) {

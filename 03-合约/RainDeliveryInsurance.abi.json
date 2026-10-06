@@ -34,6 +34,92 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "uint8",
+        "name": "regionId",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "confidence",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "sources",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "inputHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "modelVersion",
+        "type": "string"
+      }
+    ],
+    "name": "FeedRejected",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "policyId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "decision",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "confidence",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "inputHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "outputHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "modelVersion",
+        "type": "string"
+      }
+    ],
+    "name": "JudgementSubmitted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "address",
         "name": "from",
         "type": "address"
@@ -152,6 +238,18 @@
         "type": "uint256"
       },
       {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "evidenceHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "confidence",
+        "type": "uint8"
+      },
+      {
         "indexed": true,
         "internalType": "address",
         "name": "reporter",
@@ -162,6 +260,102 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "ReserveSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint8",
+        "name": "regionId",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "level",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "premium",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "reasonHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "UnderwritingDecision",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "DECISION_DENY",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DECISION_PAY",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "KIND_FEED",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "KIND_LOSS",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "MAX_HOURS",
     "outputs": [
@@ -169,6 +363,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MIN_CONFIDENCE",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -228,7 +435,65 @@
   },
   {
     "inputs": [],
+    "name": "RISK_LOADED",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "RISK_NORMAL",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "RISK_SUSPENDED",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "THRESHOLD",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "aiPremium",
     "outputs": [
       {
         "internalType": "uint256",
@@ -277,10 +542,128 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "feedJudgements",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "decision",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "confidence",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "sources",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "judgedAt",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "exists",
+        "type": "bool"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "inputHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "outputHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "modelVersion",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "fundPool",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "judgements",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "decision",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "confidence",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "sources",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint64",
+        "name": "judgedAt",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "exists",
+        "type": "bool"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "inputHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "outputHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "modelVersion",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -426,6 +809,25 @@
     "inputs": [
       {
         "internalType": "uint8",
+        "name": "regionId",
+        "type": "uint8"
+      }
+    ],
+    "name": "premiumOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
         "name": "",
         "type": "uint8"
       }
@@ -482,12 +884,118 @@
   {
     "inputs": [
       {
+        "internalType": "uint8",
+        "name": "regionId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "confidence",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "sources",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "inputHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "modelVersion",
+        "type": "string"
+      }
+    ],
+    "name": "rejectFeed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "reserve",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "riskLevel",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bool",
         "name": "v",
         "type": "bool"
       }
     ],
     "name": "setPaused",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "setReserve",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "regionId",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "level",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "premium",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "reasonHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setUnderwriting",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -514,6 +1022,44 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "policyId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "decision",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "confidence",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "inputHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "outputHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "modelVersion",
+        "type": "string"
+      }
+    ],
+    "name": "submitJudgement",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "next",
         "type": "address"
@@ -535,6 +1081,21 @@
         "internalType": "uint256",
         "name": "cumulativeMm",
         "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "evidenceHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "confidence",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "sources",
+        "type": "uint8"
       }
     ],
     "name": "updateRainfall",

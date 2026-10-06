@@ -2,6 +2,12 @@
   "name": "hanxong-test-tools",
   "private": true,
   "description": "汉客松 07-测试工具 的依赖清单（Node 从文件所在目录向上找 node_modules，所以必须装在这一层或包根）",
+  "scripts": {
+    "compile": "node compile_sol.js ../03-合约/RainDeliveryInsurance.sol",
+    "sync-abi": "node sync_abi.js",
+    "build": "npm run compile && npm run sync-abi",
+    "e2e": "node e2e_contract.js"
+  },
   "dependencies": {
     "ethers": "^6.13.0",
     "ganache": "^7.9.2",

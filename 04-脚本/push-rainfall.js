@@ -41,15 +41,30 @@ const { JsonRpcProvider, Wallet, Contract, formatEther, parseEther } = require("
 /* ------------------------------------------------------------------ 配置 */
 
 const ABI = [
-  "function updateRainfall(uint8 regionId, uint256 cumulativeMm) external",
+  // ★ 赛期变更：updateRainfall 多了 evidenceHash / confidence / sources —— AI 喂价验收的落点
+  "function updateRainfall(uint8 regionId, uint256 cumulativeMm, bytes32 evidenceHash, uint8 confidence, uint8 sources) external",
+  "function rejectFeed(uint8 regionId, uint8 confidence, uint8 sources, bytes32 inputHash, string modelVersion) external",
   "function rainfall(uint8 regionId) external view returns (uint256)",
   "function operator() external view returns (address)",
   "function paused() external view returns (bool)",
   "function poolBalance() external view returns (uint256)",
   "function PAYOUT() external view returns (uint256)",
   "function THRESHOLD() external view returns (uint256)",
+  "function MIN_CONFIDENCE() external view returns (uint8)",
+  "function reserve() external view returns (uint256)",
+  "function aiPremium(uint8 regionId) external view returns (uint256)",
+  "function judgements(uint256 policyId) external view returns (uint8 kind, uint8 decision, uint8 confidence, uint8 sources, uint64 judgedAt, bool exists, bytes32 inputHash, bytes32 outputHash, string modelVersion)",
+  "function policiesOf(address rider) external view returns (uint256[])",
+  "function rainfallDuring(uint256 policyId) external view returns (uint256)",
+  "function premiumOf(uint8 regionId) external view returns (uint256)",
+  "function riskLevel(uint8 regionId) external view returns (uint8)",
   "function regionName(uint8 regionId) external pure returns (string)",
   "function REGION_COUNT() external view returns (uint8)",
+  "function feedJudgements(uint8 regionId) external view returns (uint8 kind, uint8 decision, uint8 confidence, uint8 sources, uint64 judgedAt, bool exists, bytes32 inputHash, bytes32 outputHash, string modelVersion)",
+  "function policies(uint256 policyId) external view returns (address rider, uint8 regionId, uint256 startTime, uint256 endTime, uint256 rainfallAtBuy, bool paid, bool exists)",
+  "function policyStatus(uint256 policyId) external view returns (string)",
+  "function nextPolicyId() external view returns (uint256)",
+  "event RainfallUpdated(uint8 indexed regionId, uint256 cumulativeMm, bytes32 evidenceHash, uint8 confidence, address indexed reporter)",
 ];
 
 // 区域表：regionId 与坐标，两边必须和合约里的 regionName 对得上（脚本会自检）
@@ -63,6 +78,10 @@ const REGIONS = [
 
 // 累计起点：累计降雨从这个日期开始算。2026-10-01 = 赛事周的第一天。
 const RAIN_EPOCH = process.env.RAIN_EPOCH || "2026-10-01";
+
+// 写进链上判定记录的模型/口径版本号。口径一改就改这个字符串 ——
+// 否则链上的历史判定没法区分「哪一版算出来的」。
+const MODEL_VERSION = process.env.MODEL_VERSION || "rain-oracle-v1";
 
 /* ------------------------------------------------------- 命令行参数解析 */
 
@@ -93,11 +112,21 @@ function ymd(d) {
 }
 
 /**
- * 从 Open-Meteo 取「自 RAIN_EPOCH 到今天的逐日降雨」，返回累加值（mm，整数）。
- * archive-api 有约 5 天的滞后；如果区间太靠近今天，它可能缺最近几天，
- * 这时用 forecast 接口的 past_days 补齐 —— 两个接口字段格式一致。
+ * 采集一个区域「自 RAIN_EPOCH 到今天的累计降雨」，并做**多源交叉核验**。
+ *
+ * 这里有两条**独立**的数据路径：
+ *   archive  —— 历史实测（再分析，滞后约 5 天）
+ *   forecast —— 预报模式回溯（past_days=14，用来覆盖 archive 的滞后区间）
+ * 两者数据同化路径不同，可以互为旁证。这就是 AI 喂价验收落点要的「多源交叉核验」：
+ *   两源在【重合日期】上一致 → 高置信度 88，sources=2
+ *   只有一个数据源可用       → 中等置信度 72，sources=1（仍 ≥ MIN_CONFIDENCE=60，可喂）
+ *   两源分歧超过容差         → **拒收**：mm=null，confidence=40，交给上层调 rejectFeed 留证
+ *
+ * ⚠️ 诚实标注：这两个接口都来自 Open-Meteo，**不是三个不同厂商的模型**。
+ *    「ECMWF / GFS / ICON 三模型交叉」是 v3 §3.5 的目标形态，由 AI 模块承担；
+ *    本脚本作为链下喂价者，只做它自己真能做到、且不撒谎的那部分核验。
  */
-async function fetchCumulativeMm(region) {
+async function collectRegion(region) {
   const today = new Date();
   const end = ymd(today);
   const start = RAIN_EPOCH;
@@ -106,12 +135,10 @@ async function fetchCumulativeMm(region) {
     `latitude=${region.lat}&longitude=${region.lon}` +
     `&daily=precipitation_sum&timezone=Asia%2FShanghai`;
 
-  // 主力：archive（历史实测值）
   const urlArchive =
     `https://archive-api.open-meteo.com/v1/archive?${base}` +
     `&start_date=${start}&end_date=${end}`;
 
-  // 兜底：forecast 往前看 past_days=14（覆盖 archive 的滞后区间）
   const urlForecast =
     `https://api.open-meteo.com/v1/forecast?${base}` +
     `&past_days=14&forecast_days=0`;
@@ -120,22 +147,82 @@ async function fetchCumulativeMm(region) {
     const r = await fetch(url, { headers: { "User-Agent": "rain-insurance-oracle/1.0" } });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const j = await r.json();
-    const days = j?.daily?.time || [];
-    const vals = j?.daily?.precipitation_sum || [];
-    const sum = vals.reduce((a, b) => a + (Number(b) || 0), 0);
-    return { sum: Math.round(sum * 10) / 10, days: days.length, first: days[0], last: days[days.length - 1] };
+    const allDates = j?.daily?.time || [];
+    const allVals = (j?.daily?.precipitation_sum || []).map((v) => Number(v) || 0);
+
+    // ★ 必须裁到 RAIN_EPOCH 之后。
+    //   archive 接口由 start_date 天然限定；但 forecast 接口用的是 past_days=14，
+    //   它会返回【从 14 天前开始】的序列 —— 其中 8 天在 RAIN_EPOCH 之前。
+    //   不裁掉就等于把「赛事周之前下的雨」也算进累计值：判定口径从
+    //   「自 epoch 起累计」悄悄变成「最近 14 天累计」，凭空多出一周的雨，
+    //   会直接造成不该赔的保单被判定为达标。ISO 日期串可以直接比大小。
+    const keep = allDates.map((d, i) => [d, allVals[i]]).filter(([d]) => d >= RAIN_EPOCH);
+    const dates = keep.map(([d]) => d);
+    const dailyMm = keep.map(([, v]) => v);
+
+    return {
+      sum: Math.round(dailyMm.reduce((x, y) => x + y, 0) * 10) / 10,
+      days: dates.length, dates, dailyMm,
+      first: dates[0], last: dates[dates.length - 1],
+    };
   };
 
   let a = null, b = null, errA = null;
   try { a = await tryFetch(urlArchive); } catch (e) { errA = e.message; }
   try { b = await tryFetch(urlForecast); } catch (e) { /* 两条都失败才报错 */ }
+  if (!a && !b) throw new Error(`两条数据路径都失败（archive: ${errA}）`);
 
-  // 取「更长区间」的那个（覆盖更完整）
-  let best = a, src = "archive";
-  if (b && (!a || b.days > a.days)) { best = b; src = "forecast(past_days=14)"; }
-  if (!best) throw new Error(`两个接口都失败（archive: ${errA}）`);
+  // 交付值取「覆盖区间更完整」的那条 —— archive 有滞后时 forecast 反而更长
+  const longer = (a && b) ? (b.days > a.days ? b : a) : (a || b);
+  const longerName = longer === a ? "archive" : "forecast(past_days=14)";
+  const snapBase = {
+    schema: "rainproof/feed-snapshot@1",
+    regionId: region.id, regionKey: region.key, epoch: RAIN_EPOCH,
+    source: "open-meteo",
+    endpoints: [a ? "archive" : null, b ? "forecast" : null].filter(Boolean),
+    dates: longer.dates,
+    dailyMm: longer.dailyMm,
+    cumulativeMm: Math.max(0, Math.round(longer.sum)),
+  };
 
-  return { mm: Math.max(0, Math.round(best.sum)), src, detail: best };
+  if (a && b) {
+    // ★ 交叉核验只在【重合日期】上做。
+    //   两条路径覆盖的区间长度不同，直接比总和对不上账 ——
+    //   拿 5 天的和去比 20 天的和，差多少都说明不了问题。
+    const aMap = new Map(a.dates.map((d, i) => [d, a.dailyMm[i]]));
+    const bMap = new Map(b.dates.map((d, i) => [d, b.dailyMm[i]]));
+    const common = a.dates.filter((d) => bMap.has(d));
+    let sa = 0, sb = 0;
+    for (const d of common) { sa += aMap.get(d); sb += bMap.get(d); }
+    sa = Math.round(sa * 10) / 10;
+    sb = Math.round(sb * 10) / 10;
+    const diff = Math.abs(sa - sb);
+    const tol = Math.max(1, Math.round(Math.max(sa, sb) * 0.2 * 10) / 10);
+    const snapshot = Object.assign({}, snapBase, {
+      overlapDays: common.length,
+      overlapArchiveMm: sa,
+      overlapForecastMm: sb,
+      toleranceMm: tol,
+    });
+
+    if (common.length && diff > tol) {
+      return {
+        mm: null, confidence: 40, sources: 2, agree: false, snapshot,
+        note: `重合 ${common.length} 天：archive ${sa}mm vs forecast ${sb}mm，` +
+              `差 ${diff.toFixed(1)}mm > 容差 ${tol.toFixed(1)}mm —— 拒收，不喂价`,
+      };
+    }
+    return {
+      mm: snapshot.cumulativeMm, confidence: 88, sources: 2, agree: true, snapshot,
+      note: `重合 ${common.length} 天：archive ${sa}mm vs forecast ${sb}mm（差 ${diff.toFixed(1)}mm ≤ 容差 ${tol.toFixed(1)}mm）；` +
+            `交付取更完整区间 ${longerName} = ${snapshot.cumulativeMm}mm`,
+    };
+  }
+
+  return {
+    mm: snapBase.cumulativeMm, confidence: 72, sources: 1, agree: true, snapshot: snapBase,
+    note: `只有一个数据源可用（${longerName}），置信度按中等计 72`,
+  };
 }
 
 /* --------------------------------------------------------------- 工具函数 */
@@ -148,6 +235,10 @@ const C = {
   r: (s) => `\x1b[31m${s}\x1b[0m`,
   c: (s) => `\x1b[36m${s}\x1b[0m`,
 };
+
+// ★ 规范化序列化与证据哈希 —— 全项目唯一口径，与 AI 判定模块共用同一个文件。
+//   单独放在 canonical.js 里，就是为了防止两边各写一份、悄悄算出不同的哈希。
+const { canonicalize, evidenceHashOf } = require("./canonical");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -176,20 +267,7 @@ async function main() {
   const provider = new JsonRpcProvider(rpc);
   const readC = new Contract(address, ABI, provider);
 
-  /* ---- 只读模式：只看不写 ---- */
-  if (STATUS_ONLY) {
-    await printStatus(readC);
-    return;
-  }
-
-  if (!process.env.PRIVATE_KEY || !process.env.PRIVATE_KEY.startsWith("0x")) {
-    throw new Error("请先在 .env 里填好 PRIVATE_KEY（0x 开头）");
-  }
-
-  const wallet = new Wallet(process.env.PRIVATE_KEY, provider);
-  const contract = new Contract(address, ABI, wallet);
-
-  /* ---- 前置检查：网络 / 权限 / 池子 ---- */
+  /* ---- 链身份：只读模式也要先认链，否则会把 BOT Chain 的代币显示成 SepETH ---- */
   const net = await provider.getNetwork();
   const chainId = Number(net.chainId);
   const chainName = KNOWN_CHAINS[chainId];
@@ -201,10 +279,26 @@ async function main() {
   const blockNumber = await provider.getBlockNumber();
   const isRealChain = blockNumber >= 1000000;
   const sym = chainId === 677 ? "BOT" : "SepETH";   // BOT Chain 的原生代币叫 BOT，不是 SepETH
+  const chainInfo = { isRealChain, chainName, chainId, blockNumber, sym };
 
-  const [onchainOperator, paused, pool, payout, threshold, regionCount, balance] = await Promise.all([
+  /* ---- 只读模式：只看不写 ---- */
+  if (STATUS_ONLY) {
+    await printStatus(readC, chainInfo);
+    return;
+  }
+
+  if (!process.env.PRIVATE_KEY || !process.env.PRIVATE_KEY.startsWith("0x")) {
+    throw new Error("请先在 .env 里填好 PRIVATE_KEY（0x 开头）");
+  }
+
+  const wallet = new Wallet(process.env.PRIVATE_KEY, provider);
+  const contract = new Contract(address, ABI, wallet);
+
+  /* ---- 前置检查：权限 / 池子 ---- */
+
+  const [onchainOperator, paused, pool, payout, threshold, regionCount, minConfidence, balance] = await Promise.all([
     readC.operator(), readC.paused(), readC.poolBalance(),
-    readC.PAYOUT(), readC.THRESHOLD(), readC.REGION_COUNT(),
+    readC.PAYOUT(), readC.THRESHOLD(), readC.REGION_COUNT(), readC.MIN_CONFIDENCE(),
     provider.getBalance(wallet.address),
   ]);
 
@@ -214,6 +308,7 @@ async function main() {
   console.log(`账户余额  ${formatEther(balance)} ${sym}`);
   console.log(`资金池    ${formatEther(pool)} ${sym}   ${C.dim(`（每笔赔付 ${formatEther(payout)} ETH，还能赔 ${Number(pool / payout)} 笔）`)}`);
   console.log(`触发阈值  ${threshold} mm   ${C.dim("（保单期间增量口径）")}`);
+  console.log(`验收门槛  置信度 ≥ ${minConfidence}   ${C.dim("（低于这个值合约会 revert：feed confidence too low）")}`);
   console.log(C.dim("─".repeat(74)));
 
   if (onchainOperator.toLowerCase() !== wallet.address.toLowerCase()) {
@@ -256,16 +351,47 @@ async function main() {
   for (const r of targets) {
     const current = Number(await readC.rainfall(r.id));
 
-    let mm, srcNote;
+    let mm, srcNote, conf, sources, snapshot;
     if (DEMO) {
       // 模拟暴雨：在链上现值基础上加 60~130mm，保证稳稳越过阈值
       const add = 60 + Math.floor(Math.random() * 71);
       mm = current + add;
+      conf = 90;
+      sources = 3;
+      snapshot = {
+        schema: "rainproof/feed-snapshot@1",
+        regionId: r.id, regionKey: r.key, epoch: RAIN_EPOCH,
+        source: "simulated",
+        simulated: true,          // ★ 写进证据哈希：模拟数据在链上留下永久、可复算的标记
+        cumulativeMm: mm,
+        deltaMm: add,
+      };
       srcNote = `模拟 +${add}mm`;
     } else {
-      const got = await fetchCumulativeMm(r);
+      const got = await collectRegion(r);
       mm = got.mm;
-      srcNote = `${got.detail.first}→${got.detail.last} 逐日累加（${got.src}）`;
+      conf = got.confidence;
+      sources = got.sources;
+      snapshot = got.snapshot;
+      srcNote = got.note;
+
+      /* ---- 多源验收不通过：不喂价，但把这次异常留在链上 ---- */
+      if (mm === null) {
+        process.stdout.write(`#${r.id} ${r.name.padEnd(4)} ${C.y("⛔ 多源分歧")} `);
+        try {
+          const tx = await contract.rejectFeed(
+            r.id, conf, sources, evidenceHashOf(snapshot), MODEL_VERSION);
+          const rc = await tx.wait();
+          console.log(C.y("已 rejectFeed 留证") + C.dim(`  区块 ${rc.blockNumber} · ${tx.hash.slice(0, 18)}…`));
+          console.log(`     ${C.dim(srcNote)}`);
+          results.push({ r, ok: false, reason: "多源分歧，已留证", rejected: true });
+        } catch (e) {
+          console.log(C.r("rejectFeed 也失败") + "  " + (e.shortMessage || e.message));
+          results.push({ r, ok: false, reason: e.shortMessage || e.message });
+        }
+        await sleep(400);
+        continue;
+      }
     }
 
     /* ★ 单调性守卫：累计值只能往上走 */
@@ -278,17 +404,19 @@ async function main() {
       continue;
     }
 
-    process.stdout.write(`#${r.id} ${r.name.padEnd(4)} ${String(current).padStart(4)}mm → ${String(mm).padStart(4)}mm  ${bar(mm, Number(threshold))} `);
+    process.stdout.write(`#${r.id} ${r.name.padEnd(4)} ${String(current).padStart(4)}mm → ${String(mm).padStart(4)}mm  ${bar(mm, Number(threshold))} ${C.dim(`置信 ${conf}/源 ${sources}`)} `);
 
     try {
-      const tx = await contract.updateRainfall(r.id, mm);
+      const tx = await contract.updateRainfall(r.id, mm, evidenceHashOf(snapshot), conf, sources);
       const rc = await tx.wait();
       const over = mm - current >= Number(threshold);
       console.log(
         (over ? C.r("⛈ 越过阈值") : C.g("✅ 已上链")) +
         C.dim(`  区块 ${rc.blockNumber} · gas ${rc.gasUsed} · ${tx.hash.slice(0, 18)}…`)
       );
-      results.push({ r, ok: true, from: current, to: mm, hash: tx.hash, block: rc.blockNumber, over });
+      results.push({ r, ok: true, from: current, to: mm, hash: tx.hash, block: rc.blockNumber, over, conf, sources, note: srcNote });
+      // 把「这次凭什么信这份数据」打在日志里 —— 答辩时能指着它说，也方便赛后复算
+      if (!DEMO && srcNote) console.log(`     ${C.dim(srcNote)}`);
     } catch (e) {
       console.log(C.r("❌ 失败") + "  " + (e.shortMessage || e.message));
       results.push({ r, ok: false, reason: e.shortMessage || e.message });
@@ -331,21 +459,42 @@ async function main() {
 
 /* ------------------------------------------------------------ 只读状态 */
 
-async function printStatus(readC) {
-  const [threshold, payout, pool, paused, operator, regionCount] = await Promise.all([
+const RISK_NAME = { 0: "正常", 1: "加价", 2: "拒保" };
+const FEED_KIND = { 0: "喂价", 1: "损失判定" };
+
+async function printStatus(readC, chainInfo) {
+  const sym = chainInfo ? chainInfo.sym : "SepETH";
+  const [threshold, payout, pool, paused, operator, regionCount, reserve, minConf] = await Promise.all([
     readC.THRESHOLD(), readC.PAYOUT(), readC.poolBalance(),
     readC.paused(), readC.operator(), readC.REGION_COUNT(),
+    readC.reserve(), readC.MIN_CONFIDENCE(),
   ]);
   console.log(C.dim("─".repeat(74)));
   console.log(`合约状态  ${paused ? C.y("已暂停") : C.g("运行中")}   operator ${operator}`);
-  console.log(`资金池    ${formatEther(pool)} SepETH   ${C.dim(`（每笔赔付 ${formatEther(payout)} ETH，还能赔 ${Number(pool / payout)} 笔）`)}`);
+  console.log(`资金池    ${formatEther(pool)} ${sym}   ${C.dim(`（每笔赔付 ${formatEther(payout)} ETH，还能赔 ${Number(pool / payout)} 笔）`)}`);
+  console.log(`准备金    ${formatEther(reserve)} ${sym}   ${C.dim("（提款后余额不得低于此线）")}`);
+  if (chainInfo) {
+    console.log(`所在链    ${chainInfo.isRealChain ? chainInfo.chainName : "⚠️ 本地假链"}` +
+      ` · chainId ${chainInfo.chainId} · 块高 ${chainInfo.blockNumber}`);
+  }
   console.log(C.dim("─".repeat(74)));
-  console.log(`区域降雨累计（阈值 ${threshold}mm，自 ${RAIN_EPOCH} 起算）\n`);
+  console.log(`区域状态（阈值 ${threshold}mm · 验收门槛置信度 ${minConf} · 累计自 ${RAIN_EPOCH} 起算）\n`);
   for (let id = 1; id <= Number(regionCount); id++) {
     const r = REGIONS.find((x) => x.id === id);
-    const mm = Number(await readC.rainfall(id));
+    const [mmRaw, prem, risk, fj] = await Promise.all([
+      readC.rainfall(id), readC.premiumOf(id), readC.riskLevel(id), readC.feedJudgements(id),
+    ]);
+    const mm = Number(mmRaw);   // ★ 链上返回 bigint，bar() 里要做除法，必须先转 Number
     const nm = r ? `${r.name}(${r.key})` : `region${id}`;
-    console.log(`  #${id} ${nm.padEnd(14)} ${String(mm).padStart(5)}mm  ${bar(mm, Number(threshold))}`);
+    const riskStr = (RISK_NAME[Number(risk)] || String(risk)) + (Number(risk) === 2 ? "⛔" : " ");
+    const fjStr = fj.exists
+      ? `${FEED_KIND[Number(fj.kind)] || fj.kind} 置信 ${fj.confidence}/源 ${fj.sources}` +
+        C.dim(`  ${new Date(Number(fj.judgedAt) * 1000).toISOString().slice(0, 16).replace("T", " ")}`)
+      : C.dim("—（还没有喂过价）");
+    console.log(
+      `  #${id} ${nm.padEnd(14)} ${String(mm).padStart(5)}mm  ${bar(mm, Number(threshold), 12)}  ` +
+      `${(formatEther(prem) + " ETH").padEnd(10)} ${riskStr.padEnd(6)} ${fjStr}`
+    );
   }
   console.log("");
 }

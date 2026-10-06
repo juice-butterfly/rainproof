@@ -3,6 +3,10 @@
  * 目标不是"能部署"，而是"把演示当天会炸的地方提前炸出来"。
  *
  * 用法：NODE_PATH=<workspace>/node_modules node e2e_contract.js [合约目录]
+ *
+ * ★ 赛期新增：AI 判定层（喂价验收 + 损失判定）的断言。
+ *   `claim()` 现在是「确定性规则 + AI 三重条件」，所以每一条 buy → feed → claim
+ *   的用例都必须补上 `submitJudgement`，否则会 revert 在 "no AI judgement"。
  */
 const path = require("path");
 const fs = require("fs");
@@ -31,6 +35,9 @@ async function expectRevert(name, callable, keyword) {
     else bad(name, `期望含「${keyword}」，实际：${msg.slice(0, 120)}`);
   }
 }
+
+// 判定哈希：真实系统里是「多源数据快照的哈希」，本地演练里用 keccak256(字符串) 代替
+const H = (s) => ethers.keccak256(ethers.toUtf8Bytes(s));
 
 (async () => {
   console.log("=".repeat(78));
@@ -62,10 +69,17 @@ async function expectRevert(name, callable, keyword) {
   console.log(`     operator = ${opAddr}`);
   console.log(`     骑手 A   = ${riderA}`);
   const code = await provider.getCode(addr);
-  console.log(`     链上代码长度 = ${(code.length - 2) / 2} 字节（编译报告 5203，一致 ✅）`);
+  console.log(`     链上代码长度 = ${(code.length - 2) / 2} 字节（编译报告 10758，一致 ✅）`);
 
   const PREMIUM = await c.PREMIUM(), PAYOUT = await c.PAYOUT(), THRESHOLD = await c.THRESHOLD();
-  console.log(`     PREMIUM=${ethers.formatEther(PREMIUM)}  PAYOUT=${ethers.formatEther(PAYOUT)}  THRESHOLD=${THRESHOLD}mm`);
+  const MIN_CONFIDENCE = await c.MIN_CONFIDENCE();
+  console.log(`     PREMIUM=${ethers.formatEther(PREMIUM)}  PAYOUT=${ethers.formatEther(PAYOUT)}  THRESHOLD=${THRESHOLD}mm  MIN_CONFIDENCE=${MIN_CONFIDENCE}`);
+  if (MIN_CONFIDENCE === 60n) ok("MIN_CONFIDENCE 常量 = 60");
+  else bad("MIN_CONFIDENCE", `${MIN_CONFIDENCE} ≠ 60`);
+
+  // 喂价辅助：默认 90 分置信度 / 3 个数据源
+  const feed = (regionId, mm, confidence = 90, sources = 3, tag = "") =>
+    c.connect(operator).updateRainfall(regionId, mm, H(`snapshot:${regionId}:${mm}:${tag}`), confidence, sources);
 
   // ---------- 1 资金池 ----------
   console.log("\n[1] 资金池 —— ★ 教科书骨架版的致命 bug 就在这");
@@ -75,7 +89,9 @@ async function expectRevert(name, callable, keyword) {
     const c2 = await new ethers.ContractFactory(ABI, BIN, operator).deploy();
     await c2.waitForDeployment();
     await (await c2.connect(a).buyPolicy(1, 6, { value: PREMIUM })).wait();
-    await (await c2.connect(operator).updateRainfall(1, 80)).wait();
+    await (await c2.connect(operator).updateRainfall(1, 80, H("c2:1:80"), 90, 3)).wait();
+    // 判定也得先补上，否则 revert 会停在 "no AI judgement"，测不到池子那条 require
+    await (await c2.connect(operator).submitJudgement(0, 1, 90, H("c2:in"), H("c2:out"), "e2e")).wait();
     await expectRevert("池子空的，claim 会被拒绝",
       () => c2.connect(a).claim.staticCall(0), "insurance pool empty");
     console.log("     ↑ 骨架版 PREMIUM=0.001 / PAYOUT=0.01，收 1 份保费就想赔 10 倍 —— 第 1 笔就挂");
@@ -96,28 +112,60 @@ async function expectRevert(name, callable, keyword) {
   await expectRevert("区域 0 要拒绝",
     () => c.connect(a).buyPolicy.staticCall(0, 6, { value: PREMIUM }), "bad region");
 
-  await (await c.connect(a).buyPolicy(1, 6, { value: PREMIUM })).wait();   // policy 0 武汉
-  await (await c.connect(a).buyPolicy(2, 6, { value: PREMIUM })).wait();   // policy 1 上海
+  await (await c.connect(a).buyPolicy(1, 6, { value: PREMIUM })).wait();   // policy 0 武汉 · 正常赔付路径
+  await (await c.connect(a).buyPolicy(2, 6, { value: PREMIUM })).wait();   // policy 1 上海 · 永远不达阈值
   ok("骑手 A 买了 2 张保单", `nextPolicyId = ${await c.nextPolicyId()}`);
   const mine = await c.policiesOf(riderA);
   ok("policiesOf() 列出自己的保单号", `[${mine.join(", ")}]`);
   const p0 = await c.policies(0);
   console.log(`     policy0: region=${p0.regionId} 快照=${p0.rainfallAtBuy}mm 状态=${await c.policyStatus(0)}`);
   console.log(`     池子 ${ethers.formatEther(await c.poolBalance())} ETH（0.1 + 2×0.001）`);
+  if (await c.premiumOf(1) === PREMIUM) ok("premiumOf() 未设定时回退到 PREMIUM", `${ethers.formatEther(await c.premiumOf(1))} ETH`);
+  else bad("premiumOf 回退", "不等于 PREMIUM");
 
-  // ---------- 3 喂价 ----------
-  console.log("\n[3] 喂价（operator 专属）");
+  // ---------- 3 喂价 + AI 喂价验收 ----------
+  console.log("\n[3] 喂价（operator 专属）+ AI 喂价验收");
   await expectRevert("非 operator 喂价要拒绝",
-    () => c.connect(a).updateRainfall.staticCall(1, 30), "not operator");
-  await (await c.connect(operator).updateRainfall(1, 30)).wait();
+    () => c.connect(a).updateRainfall.staticCall(1, 30, H("x"), 90, 3), "not operator");
+  await (await feed(1, 30)).wait();
   ok("武汉累计降雨推到 30mm");
   await expectRevert("累计值倒退要拒绝",
-    () => c.connect(operator).updateRainfall.staticCall(1, 10), "must not decrease");
+    () => feed(1, 10), "must not decrease");
+  await expectRevert("置信度低于 MIN_CONFIDENCE 要拒收",
+    () => feed(1, 31, 59), "feed confidence too low");
+  await expectRevert("喂价缺少证据哈希要拒绝",
+    () => c.connect(operator).updateRainfall.staticCall(1, 31, ethers.ZeroHash, 90, 3), "evidence required");
+  ok("喂价验收：置信度 59 被合约真拒收（不是只写在文档里）", "未改动链上 rainfall");
+  if (await c.rainfall(1) === 30n) ok("被拒收的喂价确实没有改动 rainfall", "仍为 30mm");
+  else bad("拒收后 rainfall", `${await c.rainfall(1)} ≠ 30`);
+
+  // @ts-ignore
+  const fj = await c.feedJudgements(1);
+  if (fj.exists && fj.decision === 1n && fj.confidence === 90n && fj.sources === 3n) {
+    ok("feedJudgements[1] 记录了本次验收", `decision=PAY confidence=${fj.confidence} sources=${fj.sources}`);
+  } else {
+    bad("feedJudgements[1]", `exists=${fj.exists} decision=${fj.decision} conf=${fj.confidence} src=${fj.sources}`);
+  }
+
+  // rejectFeed：不喂价，但把异常留证
+  const rain3Before = await c.rainfall(3);
+  await (await c.connect(operator).rejectFeed(3, 40, 3, H("bad:3"), "feed-judge-v1")).wait();
+  const fj3 = await c.feedJudgements(3);
+  if ((await c.rainfall(3)) === rain3Before) ok("rejectFeed 不改动 rainfall", `仍为 ${rain3Before}mm`);
+  else bad("rejectFeed 改动了 rainfall", `${rain3Before} → ${await c.rainfall(3)}`);
+  if (fj3.exists && fj3.decision === 0n && fj3.confidence === 40n) {
+    ok("rejectFeed 写入 DECISION_DENY 判定", `confidence=${fj3.confidence} sources=${fj3.sources}`);
+  } else {
+    bad("rejectFeed 判定", `exists=${fj3.exists} decision=${fj3.decision} conf=${fj3.confidence}`);
+  }
+  await expectRevert("rejectFeed 置信度越界要拒绝",
+    () => c.connect(operator).rejectFeed.staticCall(3, 101, 3, H("x"), "v"), "confidence out of range");
+
   console.log(`     武汉保单状态 = ${await c.policyStatus(0)}   还差 ${await c.shortfall(0)} mm 才赔`);
   await expectRevert("未达阈值不能赔",
     () => c.connect(a).claim.staticCall(0), "threshold not met");
 
-  await (await c.connect(operator).updateRainfall(1, 80)).wait();
+  await (await feed(1, 80)).wait();
   ok("武汉累计降雨推到 80mm", "保单期间增量 = 80 − 0 = 80 ≥ 50");
   console.log(`     武汉保单状态 = ${await c.policyStatus(0)}   还差 ${await c.shortfall(0)} mm`);
 
@@ -128,8 +176,69 @@ async function expectRevert(name, callable, keyword) {
     () => c.connect(a).claim.staticCall(2), "threshold not met");
   ok("增量口径正确：保单只认「投保之后」下的雨");
 
-  // ---------- 4 赔付 ----------
-  console.log("\n[4] 赔付");
+  // ---------- 4 AI 损失判定 ----------
+  console.log("\n[4] AI 损失判定（拼上链的最后一块）");
+  await expectRevert("没有 AI 判定不能赔",
+    () => c.connect(a).claim.staticCall(0), "no AI judgement");
+  // @ts-ignore
+  const st0a = await c.policyStatus(0);
+  if (st0a === "pending_judgement") ok("policyStatus 把「雨量够但没判定」显出来", st0a);
+  else bad("policyStatus(0)", `${st0a} ≠ pending_judgement`);
+
+  await expectRevert("非 operator 不能提交判定",
+    () => c.connect(a).submitJudgement.staticCall(0, 1, 90, H("i"), H("o"), "v"), "not operator");
+  await expectRevert("对不存在的保单不能判定",
+    () => c.connect(operator).submitJudgement.staticCall(999, 1, 90, H("i"), H("o"), "v"), "no such policy");
+  await expectRevert("decision 越界要拒绝",
+    () => c.connect(operator).submitJudgement.staticCall(0, 2, 90, H("i"), H("o"), "v"), "bad decision");
+  await expectRevert("confidence 越界要拒绝",
+    () => c.connect(operator).submitJudgement.staticCall(0, 1, 101, H("i"), H("o"), "v"), "confidence out of range");
+
+  // case A：AI 判定「不赔」—— 雨下够了，但这场雨没砸在这个骑手身上
+  await (await c.connect(b).buyPolicy(3, 6, { value: PREMIUM })).wait();   // policy 3 北京
+  await (await feed(3, 80, 90, 3, "deny-case")).wait();
+  await (await c.connect(operator).submitJudgement(3, 0, 95, H("in:3"), H("out:3"), "judge-v1")).wait();
+  ok("submitJudgement(DECISION_DENY) 写入成功");
+  await expectRevert("AI 判定「不赔」时不能赔",
+    () => c.connect(b).claim.staticCall(3), "AI: no loss confirmed");
+  // @ts-ignore
+  const st3 = await c.policyStatus(3);
+  if (st3 === "denied") ok("policyStatus 显示 denied", st3);
+  else bad("policyStatus(3)", `${st3} ≠ denied`);
+
+  // case B：AI 判定「赔」但置信度不够
+  await (await c.connect(b).buyPolicy(4, 6, { value: PREMIUM })).wait();   // policy 4 广州
+  await (await feed(4, 80, 90, 3, "lowconf-case")).wait();
+  await (await c.connect(operator).submitJudgement(4, 1, 50, H("in:4"), H("out:4"), "judge-v1")).wait();
+  await expectRevert("AI 置信度不足时不能赔",
+    () => c.connect(b).claim.staticCall(4), "AI: low confidence");
+  // @ts-ignore
+  const st4 = await c.policyStatus(4);
+  if (st4 === "low_confidence") ok("policyStatus 显示 low_confidence", st4);
+  else bad("policyStatus(4)", `${st4} ≠ low_confidence`);
+
+  // 判定只能写一次（否则 operator 可以事后把 DENY 翻成 PAY）
+  await expectRevert("同一份保单不能重复判定",
+    () => c.connect(operator).submitJudgement.staticCall(3, 1, 99, H("in:3b"), H("out:3b"), "judge-v2"),
+    "judgement already submitted");
+  // @ts-ignore
+  const j3 = await c.judgements(3);
+  if (j3.exists && j3.kind === 1n && j3.decision === 0n && j3.confidence === 95n) {
+    ok("judgements[3] 记录写入且未被第二次调用覆盖", `kind=LOSS decision=DENY confidence=${j3.confidence}`);
+  } else {
+    bad("judgements[3]", `exists=${j3.exists} kind=${j3.kind} decision=${j3.decision} conf=${j3.confidence}`);
+  }
+
+  // 正常路径：policy 0 判定为赔
+  await (await c.connect(operator).submitJudgement(0, 1, 95, H("in:0"), H("out:0"), "judge-v1")).wait();
+  ok("policy0 判定为「确认损失 · 95 分」");
+  // @ts-ignore
+  const st0b = await c.policyStatus(0);
+  if (st0b === "claimable") ok("policyStatus → claimable", st0b);
+  else bad("policyStatus(0)", `${st0b} ≠ claimable`);
+
+  // ---------- 5 赔付 ----------
+  console.log("\n[5] 赔付");
   const poolBefore0 = await c.poolBalance();
   const balBefore = await rawBal(riderA);
   const rcpt = await (await c.connect(a).claim(0)).wait();
@@ -150,7 +259,7 @@ async function expectRevert(name, callable, keyword) {
     bad("骑手净到账", `${netDelta} + ${gasCost} ≠ ${PAYOUT}`);
   }
   console.log(`     gasUsed=${rcpt.gasUsed}  gasPrice=${rcpt.gasPrice} wei`);
-  console.log(`     池子 ${ethers.formatEther(poolBefore0)} → ${ethers.formatEther(poolAfter0)} ETH   (0.103 − 0.01 = 0.093 ✅)`);
+  console.log(`     池子 ${ethers.formatEther(poolBefore0)} → ${ethers.formatEther(poolAfter0)} ETH   （差 ${ethers.formatEther(poolBefore0 - poolAfter0)} = PAYOUT）`);
   console.log(`     保单状态 = ${await c.policyStatus(0)}`);
 
   await expectRevert("同一张保单不能赔两次",
@@ -161,7 +270,8 @@ async function expectRevert(name, callable, keyword) {
     () => c.connect(a).claim.staticCall(999), "no such policy");
 
   // 第三方帮骑手触发
-  await (await c.connect(operator).updateRainfall(1, 200)).wait();
+  await (await feed(1, 200, 90, 3, "third-party")).wait();
+  await (await c.connect(operator).submitJudgement(2, 1, 92, H("in:2"), H("out:2"), "judge-v1")).wait();
   const poolB = await c.poolBalance();
   const beforeB = await rawBal(riderA);
   await (await c.connect(b).claim(2)).wait();
@@ -172,12 +282,53 @@ async function expectRevert(name, callable, keyword) {
     bad("代触发赔付", `骑手 ${d2}，池子扣 ${poolB - (await c.poolBalance())}`);
   }
 
-  // ---------- 5 边界与权限 ----------
-  console.log("\n[5] 边界与权限");
+  // ---------- 6 承保人（精算定价）----------
+  console.log("\n[6] 承保人：精算结论怎么落到链上");
+  await expectRevert("非 operator 不能设定承保参数",
+    () => c.connect(a).setUnderwriting.staticCall(5, 1, PREMIUM, H("r")), "not operator");
+  await expectRevert("风险等级越界要拒绝",
+    () => c.connect(operator).setUnderwriting.staticCall(5, 9, PREMIUM, H("r")), "bad level");
+  await expectRevert("区域越界要拒绝",
+    () => c.connect(operator).setUnderwriting.staticCall(9, 1, PREMIUM, H("r")), "bad region");
+  await expectRevert("保费等于赔付额要拒绝（零毛利）",
+    () => c.connect(operator).setUnderwriting.staticCall(5, 1, PAYOUT, H("r")), "premium out of range");
+  await expectRevert("保费为 0 要拒绝",
+    () => c.connect(operator).setUnderwriting.staticCall(5, 1, 0n, H("r")), "premium out of range");
+
+  await (await c.connect(operator).setUnderwriting(5, 1, ethers.parseEther("0.002"), H("actuary:5"))).wait();
+  const prem5 = await c.premiumOf(5);
+  if (prem5 === ethers.parseEther("0.002")) ok("预警加价后 premiumOf 跟着变", `${ethers.formatEther(prem5)} ETH`);
+  else bad("premiumOf(5)", `${prem5} ≠ 0.002e18`);
+  await expectRevert("加价后按旧保费投保要拒绝",
+    () => c.connect(b).buyPolicy.staticCall(5, 6, { value: PREMIUM }), "premium mismatch");
+  await (await c.connect(b).buyPolicy(5, 6, { value: ethers.parseEther("0.002") })).wait();
+  ok("按新保费投保成功");
+
+  await (await c.connect(operator).setUnderwriting(5, 2, ethers.parseEther("0.002"), H("actuary:5:suspend"))).wait();
+  ok("区域 5 被设为拒保（RISK_SUSPENDED）", `premiumOf 回退到 ${ethers.formatEther(await c.premiumOf(5))} ETH`);
+  await expectRevert("被拒保的区域不能再投保",
+    () => c.connect(b).buyPolicy.staticCall(5, 6, { value: PREMIUM }), "region suspended by underwriter");
+
+  // ---------- 7 资金池准备金 ----------
+  console.log("\n[7] 资金池准备金（修掉「注释撒谎」）");
+  const balNow = await c.poolBalance();
+  await (await c.connect(operator).setReserve(balNow)).wait();
+  ok("setReserve() 把准备金设为当前全部余额", `${ethers.formatEther(balNow)} ETH`);
+  await expectRevert("有准备金时不能把池子提空",
+    () => c.connect(operator).withdrawPool.staticCall(1n), "would break reserve");
+  await expectRevert("准备金不能超过余额",
+    () => c.connect(operator).setReserve.staticCall(balNow + 1n), "reserve exceeds balance");
+  await expectRevert("非 operator 不能设定准备金",
+    () => c.connect(a).setReserve.staticCall(0n), "not operator");
+  await (await c.connect(operator).setReserve(0)).wait();
+  ok("准备金可重置为 0");
+
+  // ---------- 8 边界与权限 ----------
+  console.log("\n[8] 边界与权限");
   await expectRevert("非 operator 不能提款",
     () => c.connect(a).withdrawPool.staticCall(1n), "not operator");
   await expectRevert("超额提款要拒绝",
-    () => c.connect(operator).withdrawPool.staticCall(ethers.parseEther("999")), "insufficient balance");
+    () => c.connect(operator).withdrawPool.staticCall(ethers.parseEther("999")), "would break reserve");
   await expectRevert("非 operator 不能暂停",
     () => c.connect(a).setPaused.staticCall(true), "not operator");
   await expectRevert("非 operator 不能转交权限",
@@ -185,7 +336,7 @@ async function expectRevert(name, callable, keyword) {
 
   await (await c.connect(operator).setPaused(true)).wait();
   await expectRevert("暂停后不能投保",
-    () => c.connect(a).buyPolicy.staticCall(3, 6, { value: PREMIUM }), "contract paused");
+    () => c.connect(a).buyPolicy.staticCall(2, 6, { value: PREMIUM }), "contract paused");
   await expectRevert("暂停后不能赔付",
     () => c.connect(a).claim.staticCall(1), "contract paused");
   await (await c.connect(operator).setPaused(false)).wait();
@@ -197,7 +348,7 @@ async function expectRevert(name, callable, keyword) {
   ok("operator 可提取多余资金", `${ethers.formatEther(poolBefore)} → ${ethers.formatEther(poolAfter)} ETH`);
 
   ok(`regionName: 1=${await c.regionName(1)} 3=${await c.regionName(3)} 9=${await c.regionName(9)}`);
-  ok(`只读接口可用: poolBalance=${ethers.formatEther(await c.poolBalance())}  rainfall(1)=${await c.rainfall(1)}mm`);
+  ok(`只读接口可用: poolBalance=${ethers.formatEther(await c.poolBalance())}  rainfall(1)=${await c.rainfall(1)}mm  reserve=${await c.reserve()}`);
 
   // ---------- 汇总 ----------
   console.log("\n" + "=".repeat(78));

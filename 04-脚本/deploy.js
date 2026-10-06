@@ -70,7 +70,13 @@ async function main() {
   if (net.chainId.toString() !== "11155111") {
     throw new Error(`⚠️ 当前 RPC 不是 Sepolia（chainId=${net.chainId}），已中止`);
   }
-  console.log("网络       : Sepolia (11155111)");
+  // chainId 能被本地假链伪装（07-测试工具/prep_local_chain.js 就设成 11155111），块高不能：
+  // Sepolia 已经 1180 万+，本地假链从 0 开始。这里只把身份说清楚，本地联调照样能跑。
+  const blockNumber = await provider.getBlockNumber();
+  const isRealChain = blockNumber >= 1000000;
+  console.log("网络       : " + (isRealChain
+    ? "Sepolia (11155111)"
+    : `⚠️ 本地假链（块高 ${blockNumber}，chainId 被伪装成 11155111）—— 不是真链！`));
 
   const wallet = new Wallet(process.env.PRIVATE_KEY, provider);
   const balance = await provider.getBalance(wallet.address);

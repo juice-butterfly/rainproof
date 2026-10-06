@@ -191,6 +191,9 @@ async function main() {
   if (net.chainId.toString() !== "11155111") {
     throw new Error(`⚠️ 当前 RPC 不是 Sepolia（chainId=${net.chainId}），已中止`);
   }
+  // chainId 能被本地假链伪装（07-测试工具/prep_local_chain.js 就设成 11155111），块高不能。
+  const blockNumber = await provider.getBlockNumber();
+  const isRealChain = blockNumber >= 1000000;
 
   const [onchainOperator, paused, pool, payout, threshold, regionCount, balance] = await Promise.all([
     readC.operator(), readC.paused(), readC.poolBalance(),
@@ -200,7 +203,7 @@ async function main() {
 
   console.log(C.dim("─".repeat(74)));
   console.log(`${C.b("喂价者")}  ${wallet.address}`);
-  console.log(`合约      ${address}   ${C.dim("Sepolia · chainId " + net.chainId)}`);
+  console.log(`合约      ${address}   ${C.dim((isRealChain ? "Sepolia" : "⚠️ 本地假链") + " · chainId " + net.chainId + " · 块高 " + blockNumber)}`);
   console.log(`账户余额  ${formatEther(balance)} SepETH`);
   console.log(`资金池    ${formatEther(pool)} SepETH   ${C.dim(`（每笔赔付 ${formatEther(payout)} ETH，还能赔 ${Number(pool / payout)} 笔）`)}`);
   console.log(`触发阈值  ${threshold} mm   ${C.dim("（保单期间增量口径）")}`);

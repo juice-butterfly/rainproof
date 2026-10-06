@@ -293,6 +293,9 @@ const RPC_NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
   "https://sepolia.gateway.tenderly.co"
 ];
 const CHAIN_ID = 11155111n;
+// ★ chainId 可以被本地假链伪装（07-测试工具/prep_local_chain.js 就把 ganache 设成 11155111），
+//   但区块高度伪装不了：Sepolia 已经 1180 万+，本地假链从 0 开始。这是唯一可靠的"真链判据"。
+const MIN_REAL_BLOCK = 1000000;
 const LS_KEY = "hanxong_contract_addr";
 
 // 事件名 → 样式
@@ -323,10 +326,29 @@ async function getReadProvider() {
     try {
       const p = new ethers.JsonRpcProvider(url);
       const n = await p.getNetwork();
-      if (n.chainId === CHAIN_ID) return p;
+      if (n.chainId !== CHAIN_ID) continue;
+      const bn = await p.getBlockNumber();
+      S.chain = { url, blockNumber: bn, isReal: bn >= MIN_REAL_BLOCK };
+      return p;
     } catch (e) { /* 试下一个 */ }
   }
   throw new Error("连不上 Sepolia 节点");
+}
+
+/* 假链报警：不可忽略的红色横幅 + 冻结所有写操作。
+   触发条件是「chainId 对了但块高太小」——这正是本地假链的特征。 */
+function showFakeChainWarning() {
+  if (document.getElementById("fakeChainBar")) return;
+  const bar = document.createElement("div");
+  bar.id = "fakeChainBar";
+  bar.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:#b42318;color:#fff;" +
+    "font:700 14px/1.7 system-ui,'Microsoft YaHei',sans-serif;padding:8px 14px;text-align:center;" +
+    "box-shadow:0 2px 10px rgba(0,0,0,.35)";
+  bar.textContent = "⚠ 当前连的是本地假链（块高 " + S.chain.blockNumber.toLocaleString("en-US") +
+    "，chainId 被伪装成 Sepolia）—— 不是真链！投保/注资已锁死，不要把这一页给评委看。" +
+    "去掉网址里的 ?rpc= 参数，或清掉 localStorage[\"" + LS_KEY + "\"] 后刷新。";
+  document.body.appendChild(bar);
+  document.body.style.paddingTop = "44px";
 }
 
 /* ---------------- 初始化 ---------------- */
@@ -342,7 +364,12 @@ async function boot() {
     const bn = await S.provider.getBlockNumber();
     $("blk").textContent = bn.toLocaleString("en-US");
     $("dot").className = "dot on";
-    $("netText").textContent = "Sepolia";
+    if (S.chain && !S.chain.isReal) {
+      $("netText").textContent = "本地假链（非 Sepolia）";
+      showFakeChainWarning();
+    } else {
+      $("netText").textContent = "Sepolia";
+    }
   } catch (e) {
     $("dot").className = "dot err";
     $("netText").textContent = "节点连不上";
@@ -452,6 +479,10 @@ async function connectWallet(silent) {
 /* 写交易的统一封装：等签名 → 等上链 → 报 hash */
 async function send(fn, okMsg) {
   if (!S.signer) { toast("先连接钱包", "err"); return; }
+  if (S.chain && !S.chain.isReal) {
+    toast("当前连的是本地假链（块高 " + S.chain.blockNumber + "），不是 Sepolia —— 写操作已锁死。去掉网址里的 ?rpc= 参数后刷新。", "err");
+    return;
+  }
   try {
     toast("请在钱包里确认这笔交易…");
     const tx = await fn();

@@ -285,12 +285,30 @@ const QS = new URLSearchParams(location.search);
 const RPC_OVERRIDE = QS.get("rpc");
 const NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
   "https://ethereum-sepolia-rpc.publicnode.com",
-  "https://sepolia.gateway.tenderly.co",
-  "https://rpc.ankr.com/eth_sepolia"
+  "https://sepolia.gateway.tenderly.co"
+  // 原来的 https://rpc.ankr.com/eth_sepolia 已失效：Ankr 现在要求 API key，
+  // 匿名调用直接返回 -32000 Unauthorized，并且会让 ethers 一直重试探测网络。
 ];
 const DEFAULT_QUERY = "0x5f704090d2a2120806cc12a6ed538511354d82dc";
+// ★ 真链判据：chainId 可以被本地假链伪装（prep_local_chain.js 就设成 11155111），块高不能。
+//   Sepolia 已经 1180 万+，本地假链从 0 开始。
+const MIN_REAL_BLOCK = 1000000;
 
 const S = { rpc: NODES[0], lat: null, lastAddr: null };
+
+/* 假链报警：红色横幅 + 顶部状态改为「本地假链」，避免演示时误当真链 */
+function showFakeChainBar(bn) {
+  if (document.getElementById("fakeChainBar")) return;
+  const bar = document.createElement("div");
+  bar.id = "fakeChainBar";
+  bar.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:#b42318;color:#fff;" +
+    "font:700 14px/1.7 system-ui,'Microsoft YaHei',sans-serif;padding:8px 14px;text-align:center;" +
+    "box-shadow:0 2px 10px rgba(0,0,0,.35)";
+  bar.textContent = "⚠ 当前连的是本地假链（块高 " + Number(bn).toLocaleString("en-US") +
+    "，chainId 被伪装成 Sepolia）—— 这一页查到的不是真链数据。去掉网址里的 ?rpc= 参数后刷新。";
+  document.body.appendChild(bar);
+  document.body.style.paddingTop = "44px";
+}
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -395,12 +413,14 @@ async function chainStatus(silent) {
     const [blkHex, gasHex] = await Promise.all([rpc("eth_blockNumber", []), rpc("eth_gasPrice", [])]);
     const id = await rpc("eth_chainId", []);
     if (parseInt(id, 16) !== 11155111) throw new Error("不是 Sepolia（chainId=" + parseInt(id, 16) + "）");
+    const bn = Number(BigInt(blkHex));
     $("blkNum").textContent = fmtNum(big(blkHex));
     $("gas").textContent = fmtGwei(gasHex) + " Gwei";
     $("lat").textContent = S.lat + "ms";
     $("dot").className = "dot on";
-    $("connText").textContent = "已连接 Sepolia";
-    return Number(BigInt(blkHex));
+    if (bn < MIN_REAL_BLOCK) { $("connText").textContent = "本地假链（非 Sepolia）"; showFakeChainBar(bn); }
+    else { $("connText").textContent = "已连接 Sepolia"; }
+    return bn;
   } catch (e) {
     $("dot").className = "dot err";
     $("connText").textContent = "连不上节点";

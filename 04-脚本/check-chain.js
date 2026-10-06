@@ -15,6 +15,10 @@
 const { JsonRpcProvider } = require("ethers");
 
 const RPC = "https://ethereum-sepolia-rpc.publicnode.com";
+// 备用节点：publicnode 对「较旧的交易」会返回 null 回执（2026-10-06 实测：
+// 对区块 11,833,556 的部署交易返回 null，tenderly 正常返回 status=1）。
+// 注意 ankr 已失效——现在要求 API key，匿名调用报 -32000 Unauthorized，不要加回来。
+const FALLBACK_RPCS = ["https://sepolia.gateway.tenderly.co"];
 
 async function main() {
   const [mode, value] = process.argv.slice(2);
@@ -39,10 +43,25 @@ async function main() {
       console.log("❌ 找不到这笔交易。可能是：哈希不完整 / 不在 Sepolia / 还没被确认");
       process.exit(1);
     }
-    const rc = await provider.getTransactionReceipt(value);
+    let rc = await provider.getTransactionReceipt(value);
+    if (!rc) {
+      // 主节点没返回回执 → 换备用节点拿一次，别直接判死
+      for (const u of FALLBACK_RPCS) {
+        try {
+          const r2 = await new JsonRpcProvider(u).getTransactionReceipt(value);
+          if (r2) { rc = r2; console.log("回执来源 :", u, "（主节点没返回，这里是备用节点）"); break; }
+        } catch (e) { /* 试下一个 */ }
+      }
+    }
     console.log("区块号   :", tx.blockNumber);
     console.log("from     :", tx.from);
     console.log("to       :", tx.to ?? "(空 —— 这是部署合约的交易)");
+    if (!rc) {
+      console.log("执行状态 : ⚠️ 两个节点都没返回交易回执（receipt 为 null）");
+      console.log("           交易本身已经上链（在区块里），但拿不到 status / gasUsed / 部署地址。");
+      console.log("           过几分钟再跑一次通常就好。");
+      process.exit(0);
+    }
     console.log("执行状态 :", rc.status === 1 ? "✅ 成功" : "❌ 失败");
     console.log("Gas 用了 :", rc.gasUsed.toString());
     if (rc.contractAddress) {

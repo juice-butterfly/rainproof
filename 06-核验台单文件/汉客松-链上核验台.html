@@ -279,12 +279,42 @@
 /* ================= 配置 ================= */
 const NODES = [
   "https://ethereum-sepolia-rpc.publicnode.com",
-  "https://sepolia.gateway.tenderly.co",
-  "https://rpc.ankr.com/eth_sepolia"
+  "https://sepolia.gateway.tenderly.co"
+  // 原来的 https://rpc.ankr.com/eth_sepolia 已失效：Ankr 现在要求 API key，
+  // 匿名调用返回 -32000 Unauthorized，还会让 ethers 无限重试探测网络。
 ];
 const DEFAULT_QUERY = "0x5f704090d2a2120806cc12a6ed538511354d82dc";
 
+// ★ 真链判据：chainId 可以被本地假链伪装（07-测试工具/prep_local_chain.js 就设成 11155111），
+//   但区块高度伪装不了——Sepolia 已经 1180 万+，本地假链从 0 开始。
+const MIN_REAL_BLOCK = 1000000;
+
+// 事件 topics[0] → 事件名。这几个哈希是用 ethers 的 keccak256(签名) 实算出来的，不是手抄的。
+const EVENT_SIG = {
+  "0x9b2e243ab762d88c164da1da6c224863fbb2a21d1b42530b4fb739d20c4252af": "PolicyBought",
+  "0x93238e876ecc8d59e109be54e96d969c8f1f06ee80f67649e7564933a248dd33": "RainfallUpdated",
+  "0xaf3c8fdd75d667f71d36d7840b8ef9086c516c9b047ad6a83a5a66151342123a": "ClaimPaid",
+  "0xce66f10ae4269ec7bfd83e4659aed202bd4efb93d241bae453642969c2f079d3": "PoolFunded",
+  "0x6f07e6169c1653554eb707b6f6cd8f7ccf9cc29e54a0d8a71d9d5867d2057ac2": "PoolWithdrawn",
+  "0xd58299b712891143e76310d5e664c4203c940a67db37cf856bdaa3c5c76a802c": "OperatorChanged",
+  "0x40db37ff5c0bdc2c427fbb2078c8f24afea940abac0e3c23bb4ea3bf2da2b212": "PausedSet"
+};
+
 const S = { rpc: NODES[0], lat: null, lastAddr: null };
+
+/* 假链报警：红色横幅 + 顶部状态改为「本地假链」，避免演示时误把假链当真链 */
+function showFakeChainBar(bn) {
+  if (document.getElementById("fakeChainBar")) return;
+  const bar = document.createElement("div");
+  bar.id = "fakeChainBar";
+  bar.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:#b42318;color:#fff;" +
+    "font:700 14px/1.7 system-ui,'Microsoft YaHei',sans-serif;padding:8px 14px;text-align:center;" +
+    "box-shadow:0 2px 10px rgba(0,0,0,.35)";
+  bar.textContent = "⚠ 当前连的是本地假链（块高 " + Number(bn).toLocaleString("en-US") +
+    "，chainId 被伪装成 Sepolia）—— 这里查到的不是真链数据。去掉网址里的 ?rpc= 参数后刷新。";
+  document.body.appendChild(bar);
+  document.body.style.paddingTop = "44px";
+}
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -389,12 +419,14 @@ async function chainStatus(silent) {
     const [blkHex, gasHex] = await Promise.all([rpc("eth_blockNumber", []), rpc("eth_gasPrice", [])]);
     const id = await rpc("eth_chainId", []);
     if (parseInt(id, 16) !== 11155111) throw new Error("不是 Sepolia（chainId=" + parseInt(id, 16) + "）");
+    const bn = Number(BigInt(blkHex));
     $("blkNum").textContent = fmtNum(big(blkHex));
     $("gas").textContent = fmtGwei(gasHex) + " Gwei";
     $("lat").textContent = S.lat + "ms";
     $("dot").className = "dot on";
-    $("connText").textContent = "已连接 Sepolia";
-    return Number(BigInt(blkHex));
+    if (bn < MIN_REAL_BLOCK) { $("connText").textContent = "本地假链（非 Sepolia）"; showFakeChainBar(bn); }
+    else { $("connText").textContent = "已连接 Sepolia"; }
+    return bn;
   } catch (e) {
     $("dot").className = "dot err";
     $("connText").textContent = "连不上节点";
@@ -544,23 +576,28 @@ async function loadLogs(addr) {
   }
   if (!logs.length) {
     $("logPanel").innerHTML = `<div class="empty">
-      这个合约到目前为止没有发出过任何事件（logs）。
-      当前部署的 <code>Hello</code> 合约里只有 <code>set</code> / <code>get</code>，没有 <code>event</code>，所以这里是空的 ——
-      <b>正常现象，不代表合约有问题</b>。等 10/4 换成带 <code>event RainfallUpdated</code> 的
-      <code>RainDeliveryInsurance</code>，这里就会长出记录。</div>`;
+      这个地址到目前为止没有发出过任何事件（logs）。两种可能：
+      ① <b>这个地址不是本项目的合约</b> ——
+      例如脚手架 <code>SimpleStore</code>，它里面根本没有任何 <code>event</code>，所以永远是空的；
+      ② 地址对，但合约确实还没被操作过。先确认地址再来判断。</div>`;
     return;
   }
-  const rows = logs.slice(-25).reverse().map(l => `<tr>
+  const rows = logs.slice(-25).reverse().map(l => {
+    const t0 = l.topics[0] || "";
+    const name = EVENT_SIG[t0] || "";
+    return `<tr>
       <td>${fmtNum(big(l.blockNumber))}</td>
       <td class="hl">${esc(short(l.transactionHash))}</td>
-      <td class="gd">${esc(l.topics[0] ? short(l.topics[0]) : "—")}</td>
+      <td>${name ? `<b class="hl">${esc(name)}</b>` : `<span class="gd">未知事件</span>`}</td>
+      <td class="gd">${esc(t0 ? short(t0) : "—")}</td>
       <td>${l.topics.length - 1} 个 indexed</td>
-    </tr>`).join("");
+    </tr>`;
+  }).join("");
   $("logPanel").innerHTML = `
     <div class="ptitle"><span class="tag">共 ${logs.length} 条</span>
       <span style="font-size:12px;color:var(--faint)">显示最近 25 条</span></div>
     <div class="tblwrap"><table class="tbl"><thead><tr>
-      <th>区块</th><th>交易</th><th>事件签名 topics[0]</th><th>参数</th>
+      <th>区块</th><th>交易</th><th>事件</th><th>签名 topics[0]</th><th>参数</th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 

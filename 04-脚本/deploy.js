@@ -122,14 +122,14 @@ async function main() {
   console.log("     npm run demo     ← 注入模拟暴雨，把 5 个区域的降雨推上去");
 
   console.log("\n【怎么确认链上真有了】");
-  console.log("  双击桌面上的  汉客松-链上核验台.html");
+  console.log("  双击  " + path.join(__dirname, "..", "06-核验台单文件", "汉客松-链上核验台.html"));
   console.log("  把上面那个合约地址粘进去 → 应该看到：");
   console.log("    这是不是合约 → 是合约 ✅");
   console.log("    合约代码长度 → 正整数（不是 0）");
   console.log("\n  （不要用 sepolia.otterscan.io —— 10/4 起它的后端节点挂了，页面会一直转圈）");
 
   console.log("\n【演示页面现在就打开】");
-  console.log("  双击  " + "C:\\Users\\Lenovo\\WorkBuddy\\workbuddy-use\\_hackathon\\site\\index.html");
+  console.log("  双击  " + path.join(__dirname, "..", "05-演示站点", "index.html"));
   console.log("  （或直接开线上版，手机也能看）");
 }
 

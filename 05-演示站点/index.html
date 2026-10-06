@@ -683,8 +683,21 @@ $("buyBtn").onclick = () => {
 };
 
 $("fundBtn").onclick = () => {
-  send(() => new ethers.Contract(S.addr, ABI, S.signer).fundPool({ value: ethers.parseEther("0.05") }),
-       "注资 0.05 SepETH 完成");
+  send(async () => {
+    // 注资金额写死 0.05，在余额不够时会以「insufficient funds」直接失败（真链上钱包可能只剩 0.02）。
+    // 改成按「钱包余额 - gas 预留」自动封顶，上限仍是 0.05，
+    // 这样不管钱包里剩多少，这一下都只会成功、不会白报错。
+    const cap = ethers.parseEther("0.05");
+    const reserve = ethers.parseEther("0.003");   // 留给后面的喂价 / 判定 / 赔付
+    const p = S.signer.provider || S.provider;
+    const bal = await p.getBalance(await S.signer.getAddress());
+    let value = cap;
+    if (bal < cap + reserve) value = bal > reserve ? bal - reserve : 0n;
+    if (value < ethers.parseEther("0.005")) {
+      throw new Error(`钱包只剩 ${ethers.formatEther(bal)} SepETH，扣掉 gas 预留后不够注资（至少 0.008）`);
+    }
+    return new ethers.Contract(S.addr, ABI, S.signer).fundPool({ value });
+  }, "注资完成");
 };
 
 /* 钱包事件 */

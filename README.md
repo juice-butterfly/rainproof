@@ -3,7 +3,7 @@
 > **可验证的 AI 参数化配送险** —— 把「你信不信我」换成「你自己验」。
 
 汉客松 S1 & ETH Wuhan 2026 参赛作品 · 赛程 2026-10-06 20:00 → 2026-10-08 12:00
-队名：<!-- 待填 --> · 仓库：https://github.com/juice-butterfly/rainproof
+队名：**神麻** · 仓库：https://github.com/juice-butterfly/rainproof
 
 ---
 

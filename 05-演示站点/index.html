@@ -299,6 +299,16 @@ const CHAIN_ID = 11155111n;
 const MIN_REAL_BLOCK = 1000000;
 // 已知真链：chainId → 显示名。RPC 指向哪条链（NODES / ?rpc= 参数）就在这里登记一行。
 const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
+// 钱包里没加过这条链时，用这些参数帮它加进去（wallet_addEthereumChain）。
+// 现场演示最怕的就是"请先去 MetaMask 添加网络"，所以让页面自己把这条路补上。
+const CHAIN_META = {
+  11155111: { name:"Sepolia", symbol:"SepETH",
+              rpc:"https://ethereum-sepolia-rpc.publicnode.com",
+              explorer:"https://sepolia.etherscan.io" },
+  677:      { name:"BOT Chain Mainnet", symbol:"BOT",
+              rpc:"https://rpc.botchain.ai",
+              explorer:"https://scan.botchain.ai" }
+};
 const LS_KEY = "hanxong_contract_addr";
 // ★ 本次真链部署地址（Sepolia · 2026-10-07）。没有任何 ?addr= 参数、浏览器里也没记过地址时，
 //   页面会退回这里 —— 否则现场演示会卡在"请先填合约地址"那一步。
@@ -471,13 +481,32 @@ async function connectWallet(silent) {
     const want = (S.chain && S.chain.chainId) || Number(CHAIN_ID);
     if (cid !== want) {
       if (!silent) {
+        const hex = "0x" + want.toString(16);
         try {
-          await window.ethereum.request({
-            method: "wallet_switchEthereumChain", params: [{ chainId: "0x" + want.toString(16) }]
-          });
+          await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] });
         } catch (e) {
-          toast("钱包当前不在 " + (KNOWN_CHAINS[want] || want) + "。请在 MetaMask 里把网络切过去再试。", "err");
-          return;
+          // 4902 = 钱包里没有这条链。用 CHAIN_META 帮它加进去，加完 MetaMask 会自动切过去。
+          const meta = CHAIN_META[want];
+          if (!meta) {
+            toast("钱包当前不在 " + (KNOWN_CHAINS[want] || want) + "。请在 MetaMask 里把网络切过去再试。", "err");
+            return;
+          }
+          try {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [{
+                chainId: hex,
+                chainName: meta.name,
+                nativeCurrency: { name: meta.symbol, symbol: meta.symbol, decimals: 18 },
+                rpcUrls: [meta.rpc],
+                blockExplorerUrls: [meta.explorer]
+              }]
+            });
+          } catch (e2) {
+            toast("MetaMask 里还没有「" + meta.name + "」这条网络，自动添加也没成功。请在钱包里手动添加："
+                  + "RPC " + meta.rpc + "，链 ID " + want + "。", "err");
+            return;
+          }
         }
       } else { return; }
     }

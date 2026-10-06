@@ -300,6 +300,10 @@ const MIN_REAL_BLOCK = 1000000;
 // 已知真链：chainId → 显示名。RPC 指向哪条链（NODES / ?rpc= 参数）就在这里登记一行。
 const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
 const LS_KEY = "hanxong_contract_addr";
+// ★ 本次真链部署地址（Sepolia · 2026-10-07）。没有任何 ?addr= 参数、浏览器里也没记过地址时，
+//   页面会退回这里 —— 否则现场演示会卡在"请先填合约地址"那一步。
+//   换链/换地址重新部署后改这一行，或用 ?addr=0x... 临时覆盖。
+const FALLBACK_ADDR = "0x89e7C942535930B61cB61631051E8b0bD670596a";
 
 // 事件名 → 样式
 const EV_STYLE = { ClaimPaid:"gold", PolicyBought:"blue", RainfallUpdated:"", PoolFunded:"gold",
@@ -380,7 +384,19 @@ async function boot() {
     $("netText").textContent = "节点连不上";
   }
 
-  if (saved) await attachContract(saved);
+  // 地址优先用 URL 参数 / 浏览器里记着的；但记着的那个可能指向换链前的旧部署（没代码），
+  // 这时退回本次部署地址，否则现场演示会卡在"请先填合约地址"。
+  if (saved) {
+    const ok = await attachContract(saved, true);
+    if (!ok && saved.toLowerCase() !== FALLBACK_ADDR.toLowerCase()) {
+      $("addrInput").value = FALLBACK_ADDR;
+      const ok2 = await attachContract(FALLBACK_ADDR);
+      if (ok2) toast("浏览器里记着的旧合约地址在这条链上没有代码，已改用本次部署地址", "ok");
+    }
+  } else {
+    $("addrInput").value = FALLBACK_ADDR;
+    await attachContract(FALLBACK_ADDR);
+  }
 
   // 有钱包就顺手连一下（不弹窗，只看已授权账户）
   if (window.ethereum) {
@@ -396,10 +412,10 @@ async function boot() {
 }
 
 /* ---------------- 挂上合约 ---------------- */
-async function attachContract(addr) {
+async function attachContract(addr, quiet) {
   addr = (addr || "").trim().replace(/^[<"'\s]+|[>"'\s]+$/g, "");
   if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
-    toast(`这不是一个合法地址（${addr.length} 个字符，应该是 42 个）。检查有没有把尖括号或空格一起复制进来。`, "err");
+    if (!quiet) toast(`这不是一个合法地址（${addr.length} 个字符，应该是 42 个）。检查有没有把尖括号或空格一起复制进来。`, "err");
     return false;
   }
   S.addr = addr;
@@ -410,7 +426,7 @@ async function attachContract(addr) {
   if (!S.provider) S.provider = await getReadProvider();
   const code = await S.provider.getCode(addr);
   if (!code || code === "0x") {
-    toast("这个地址在链上没有合约代码。可能是地址抄错了，或者部署失败了 —— 去链上核验台确认一下。", "err");
+    if (!quiet) toast("这个地址在链上没有合约代码。可能是地址抄错了，或者部署失败了 —— 去链上核验台确认一下。", "err");
     return false;
   }
   S.readC = new ethers.Contract(addr, ABI, S.provider);

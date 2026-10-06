@@ -146,6 +146,38 @@ async function llmRationale(snap, r) {
   return { text: txt.trim(), model, base };
 }
 
+/**
+ * 组装一条判定记录。**易变字段一律放在被哈希对象之外**：
+ *   · decidedAt    —— 每次跑都不一样的墙上时钟
+ *   · rationale 等 —— 解释文字：deterministic 模式由规则拼出，--llm 模式下由大模型写措辞，
+ *                     而大模型本来就无权改变结论（硬约束见 check-ai.js）
+ * 它们只要进了 judgement，同一份快照重跑就会得到不一样的 outputHash，
+ * 「第三方独立复算」这句话当场就不成立。judgement 里只留判定本身。
+ */
+function buildRecord({ policyId, snapshot, r, inputHash, rationale, rationaleSource, llmInfo, decidedAt }) {
+  const judgement = {
+    schema: "rainproof/judgement@1",
+    judgeVersion: JUDGE_VERSION,
+    policyId,
+    decision: r.decision,
+    decisionLabel: LABEL[r.decision],
+    confidence: r.confidence,
+    sources: snapshot.weather.models.length,   // 采信的独立数据源个数
+    simulated: !!snapshot.simulated,
+    metrics: r.metrics,
+    reasons: r.reasons,
+    inputHash,                                  // 绑定到快照：换一份数据，这个值必然变
+  };
+  return {
+    judgement,
+    decidedAt: decidedAt || new Date().toISOString(),
+    rationale,
+    rationaleSource,                            // 判定是谁下的、解释是谁写的，分得清清楚楚
+    ...(llmInfo ? { llm: llmInfo } : {}),
+    outputHash: evidenceHashOf(judgement),      // 只覆盖上面那个 judgement 对象
+  };
+}
+
 async function main() {
   const ARGV = process.argv.slice(2);
   const policyId = Number(ARGV.find((a) => /^\d+$/.test(a)));
@@ -181,27 +213,10 @@ async function main() {
     }
   }
 
-  const judgement = {
-    schema: "rainproof/judgement@1",
-    judgeVersion: JUDGE_VERSION,
-    policyId,
-    decidedAt: new Date().toISOString(),
-    decision: r.decision,
-    decisionLabel: LABEL[r.decision],
-    confidence: r.confidence,
-    sources: snapshot.weather.models.length,   // 采信的独立数据源个数
-    simulated: !!snapshot.simulated,
-    metrics: r.metrics,
-    reasons: r.reasons,
-    rationale,
-    rationaleSource,                            // 判定是谁下的、解释是谁写的，分得清清楚楚
-    ...(llmInfo ? { llm: llmInfo } : {}),
-    inputHash,                                  // 绑定到快照：换一份数据，这个值必然变
-  };
-
-  const outputHash = evidenceHashOf(judgement);
+  const record = buildRecord({ policyId, snapshot, r, inputHash, rationale, rationaleSource, llmInfo });
+  const { judgement, outputHash } = record;
   const file = path.join(OUT_DIR, `judgement-policy${policyId}.json`);
-  fs.writeFileSync(file, JSON.stringify({ judgement, outputHash }, null, 2));
+  fs.writeFileSync(file, JSON.stringify(record, null, 2));
 
   console.log("=".repeat(74));
   console.log(`AI 判定（保单 #${policyId} · ${snapshot.region.name}）`);
@@ -224,4 +239,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { decide, DECISION, JUDGE_VERSION };
+module.exports = { decide, buildRecord, DECISION, JUDGE_VERSION };

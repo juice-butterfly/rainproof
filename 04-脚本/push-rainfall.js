@@ -98,6 +98,9 @@ function flagValue(f, def) {
 const DEMO = has("--demo");
 const STATUS_ONLY = has("--status");
 const WATCH_MIN = flagValue("--watch", null);
+// --until=YYYY-MM-DD：把"今天"钉到指定日期。默认真是今天；历史回放必须用它，
+// 否则跑一场两年前的暴雨会取回"自 epoch 到真正今天"的累计值，回放就不是回放。
+const UNTIL = (ARGV.find((a) => a.startsWith("--until=")) || "").split("=")[1] || null;
 // 纯数字参数 = 指定单个区域
 const ONLY_REGION = (() => {
   const n = ARGV.find((a) => /^\d+$/.test(a));
@@ -128,7 +131,7 @@ function ymd(d) {
  */
 async function collectRegion(region) {
   const today = new Date();
-  const end = ymd(today);
+  const end = UNTIL || ymd(today);
   const start = RAIN_EPOCH;
 
   const base =
@@ -139,9 +142,14 @@ async function collectRegion(region) {
     `https://archive-api.open-meteo.com/v1/archive?${base}` +
     `&start_date=${start}&end_date=${end}`;
 
-  const urlForecast =
-    `https://api.open-meteo.com/v1/forecast?${base}` +
-    `&past_days=14&forecast_days=0`;
+  // 第二条路径。默认用 forecast 的 past_days（相对现在回看 14 天，覆盖 archive 的滞后）；
+  // 历史回放时 past_days 只会回看"现在"，跟 2024 年的窗口毫无交集，
+  // 所以改用历史预报归档接口，显式指定同一段起止日期。
+  const urlForecast = UNTIL
+    ? `https://historical-forecast-api.open-meteo.com/v1/forecast?${base}` +
+      `&start_date=${start}&end_date=${end}`
+    : `https://api.open-meteo.com/v1/forecast?${base}` +
+      `&past_days=14&forecast_days=0`;
 
   const tryFetch = async (url) => {
     const r = await fetch(url, { headers: { "User-Agent": "rain-insurance-oracle/1.0" } });
@@ -205,7 +213,18 @@ async function collectRegion(region) {
       toleranceMm: tol,
     });
 
-    if (common.length && diff > tol) {
+    if (!common.length) {
+      // ★ 两条路径的日期完全不重合时，"交叉核验"是空的 —— 不能算作两个源的旁证。
+      //   （历史回放窗口下必然发生：forecast 的 past_days 只会回看"现在"的 14 天。）
+      //   宁可降级成单一来源的 72，也不虚报 88。
+      return {
+        mm: snapBase.cumulativeMm, confidence: 72, sources: 1, agree: true,
+        snapshot: Object.assign({}, snapBase, { overlapDays: 0, overlapEmpty: true }),
+        note: "两条数据路径没有重合日期，交叉核验为空 —— 按单一来源计，置信度 72",
+      };
+    }
+
+    if (diff > tol) {
       return {
         mm: null, confidence: 40, sources: 2, agree: false, snapshot,
         note: `重合 ${common.length} 天：archive ${sa}mm vs forecast ${sb}mm，` +

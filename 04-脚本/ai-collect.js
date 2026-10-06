@@ -17,10 +17,12 @@
  *
  * 【产物】
  *   09-AI判定留痕/snapshot-policy<N>.json
- *   文件结构 = { snapshot: {...}, inputHash: "0x..." }
+ *   文件结构 = { snapshot: {...}, collectedAt: "...", inputHash: "0x..." }
  *   inputHash = keccak256(canonicalize(snapshot)) —— 任何人拿到这个文件都能自己
  *   重算一遍并核对（口径见 04-脚本/canonical.js）。上链时只写这个 32 字节哈希，
  *   完整快照留在仓库里，评委可逐字节复现。
+ *   ⚠️ collectedAt 故意放在 snapshot【外面】：采集时间每次都不一样，塞进被哈希的
+ *   对象会让「同一份数据重跑必得同一个哈希」这句话当场失效。
  *
  * 【用法】
  *   node ai-collect.js 0                 # 真实三模型，复核链上数据
@@ -60,6 +62,10 @@ const ABI = [
 const ARGV = process.argv.slice(2);
 const POLICY_ID = Number(ARGV.find((a) => /^\d+$/.test(a)));
 const DEMO = ARGV.includes("--demo");
+// --until=YYYY-MM-DD：把证据窗口的结束日钉住（默认取保单 endTime 那天）。
+// 历史回放用它，是为了让"链上官方增量覆盖的日子"与"三模型求和的日子"严格一致 ——
+// 差一天就可能把 R2（背离 > 60%）误触发。
+const UNTIL = (ARGV.find((a) => a.startsWith("--until=")) || "").split("=")[1] || null;
 
 /** unix 秒 → 亚洲/上海时区的 YYYY-MM-DD（判定窗口按自然日切，必须钉在同一个时区） */
 const shDate = (sec) => new Date((Number(sec) + 8 * 3600) * 1000).toISOString().slice(0, 10);
@@ -68,11 +74,26 @@ const shDate = (sec) => new Date((Number(sec) + 8 * 3600) * 1000).toISOString().
 const sum6 = (arr) => Math.round(arr.reduce((x, y) => x + y, 0) * 1e6) / 1e6;
 
 /** 拉一个区域的三个模型，裁剪到 epoch 之后，返回 [{id,label,org,sinceEpochMm,inWindowMm,days}] */
-async function fetchModels(region, startDate) {
-  const url = "https://api.open-meteo.com/v1/forecast"
-    + `?latitude=${region.lat}&longitude=${region.lon}`
-    + "&daily=precipitation_sum&timezone=Asia%2FShanghai&past_days=14&forecast_days=3"
-    + `&models=${MODELS.map((m) => m.id).join(",")}`;
+async function fetchModels(region, startDate, endDate) {
+  const today = shDate(Date.now() / 1000);
+  const historical = !!endDate && endDate < today;
+  let url;
+  if (historical) {
+    // ★ 历史回放：保单窗口整个在过去。
+    //   forecast 接口的 past_days 是相对「现在」的 —— 拿它去核对一场两年前的暴雨，
+    //   只会取回最近 14 天的雨，跟那场暴雨毫无关系。改用历史预报归档接口，显式指定起止日期。
+    const from = new Date(Date.parse(startDate + "T00:00:00Z") - 14 * 86400000).toISOString().slice(0, 10);
+    url = "https://historical-forecast-api.open-meteo.com/v1/forecast"
+      + `?latitude=${region.lat}&longitude=${region.lon}`
+      + "&daily=precipitation_sum&timezone=Asia%2FShanghai"
+      + `&start_date=${from}&end_date=${endDate}`
+      + `&models=${MODELS.map((m) => m.id).join(",")}`;
+  } else {
+    url = "https://api.open-meteo.com/v1/forecast"
+      + `?latitude=${region.lat}&longitude=${region.lon}`
+      + "&daily=precipitation_sum&timezone=Asia%2FShanghai&past_days=14&forecast_days=3"
+      + `&models=${MODELS.map((m) => m.id).join(",")}`;
+  }
   const r = await fetch(url, { headers: { "User-Agent": "rainproof-ai-collector/1.0" } });
   if (!r.ok) throw new Error(`Open-Meteo HTTP ${r.status}`);
   const j = await r.json();
@@ -148,6 +169,7 @@ function synthModels(region, startDate, targetMm, onchainValue) {
   if (!region) { console.error(`区域 #${p.regionId} 不在区域表里`); process.exit(2); }
 
   const startDate = shDate(p.startTime);
+  const endDate = UNTIL || shDate(p.endTime);
   const onchainCum = Number(await c.rainfall(p.regionId));
   const incrementMm = Number(await c.rainfallDuring(POLICY_ID));
   const thresholdMm = Number(await c.THRESHOLD());
@@ -157,14 +179,13 @@ function synthModels(region, startDate, targetMm, onchainValue) {
   if (DEMO) {
     models = synthModels(region, startDate, incrementMm, onchainCum);
   } else {
-    models = await fetchModels(region, startDate);
+    models = await fetchModels(region, startDate, endDate);
   }
 
   const snapshot = {
     schema: "rainproof/judge-input@1",
     collectVersion: COLLECT_VERSION,
     policyId: POLICY_ID,
-    collectedAt: new Date().toISOString(),
     simulated: DEMO,
     ...(DEMO ? { simulationNote: "模型序列由链上注入值合成，用于演示；真实模式下会向 ECMWF/GFS/ICON 实取。" } : {}),
     epoch: RAIN_EPOCH,
@@ -187,7 +208,9 @@ function synthModels(region, startDate, targetMm, onchainValue) {
     },
     weather: {
       source: DEMO ? "synthetic" : "open-meteo:ecmwf_ifs025+gfs_seamless+icon_seamless",
+      api: DEMO ? "synthetic" : (endDate < shDate(Date.now() / 1000) ? "open-meteo:historical-forecast-api" : "open-meteo:forecast-api"),
       windowFrom: startDate,
+      windowTo: endDate,
       models,
     },
     thresholds: { thresholdMm, minConfidence },
@@ -196,7 +219,9 @@ function synthModels(region, startDate, targetMm, onchainValue) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const file = path.join(OUT_DIR, `snapshot-policy${POLICY_ID}.json`);
   const inputHash = evidenceHashOf(snapshot);
-  fs.writeFileSync(file, JSON.stringify({ snapshot, inputHash }, null, 2));
+  // collectedAt 放在被哈希对象【之外】：它每次采集都不一样，一旦进了 snapshot，
+  // 同一份数据重跑就会得到不同的 inputHash，「第三方独立复算」当场不成立。
+  fs.writeFileSync(file, JSON.stringify({ snapshot, collectedAt: new Date().toISOString(), inputHash }, null, 2));
 
   const inc = models.map((m) => m.inWindowMm);
   console.log("=".repeat(74));

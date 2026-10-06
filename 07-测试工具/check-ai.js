@@ -7,7 +7,9 @@
  * 用法：node check-ai.js
  */
 
-const { decide, DECISION } = require("../04-脚本/ai-judge");
+const fs = require("fs");
+const path = require("path");
+const { decide, buildRecord, DECISION } = require("../04-脚本/ai-judge");
 const { evidenceHashOf } = require("../04-脚本/canonical");
 
 let pass = 0, fail = 0;
@@ -122,6 +124,61 @@ console.log("\n[哈希绑定] 结论一变，outputHash 必变");
   ok("decision 变 → 哈希变", h1 !== h2);
   ok("confidence 变 → 哈希变", h1 !== h3);
   ok("键序不同、内容相同 → 哈希不变", evidenceHashOf({ ...base }) === evidenceHashOf(Object.fromEntries(Object.entries(base).reverse())));
+}
+
+console.log("\n[可复算] 换个运行时间、换段解释文字，outputHash 必须一个字节都不动");
+{
+  // 这条钉的就是「第三方拿同一份快照重跑，必然得到同一个 outputHash」这句卖点。
+  // 曾经踩过：decidedAt 写在 judgement 里 → 同一份快照重跑，哈希每次都变。
+  const s = snap({ official: 80, incs: [80, 84, 78] });
+  const r = decide(s);
+  const inputHash = evidenceHashOf({ any: "thing" });
+  const mk = (extra) => buildRecord({
+    policyId: 1, snapshot: s, r, inputHash,
+    rationale: "规则文案", rationaleSource: "deterministic",
+    decidedAt: "2026-10-06T13:35:00.259Z", ...extra,
+  });
+  const a = mk({});
+  ok("decidedAt 变 → outputHash 不变", a.outputHash === mk({ decidedAt: "2027-01-01T00:00:00.000Z" }).outputHash, a.outputHash);
+  ok("解释文字/来源变 → outputHash 不变",
+    a.outputHash === mk({ rationale: "完全换一段解释", rationaleSource: "llm:deepseek-chat", llmInfo: { base: "b", model: "m" } }).outputHash);
+  ok("judgement 对象里不含 decidedAt / rationale", !("decidedAt" in a.judgement) && !("rationale" in a.judgement));
+  ok("同一份输入重跑 → 整条记录逐字节相同", JSON.stringify(mk({})) === JSON.stringify(a));
+  const d = buildRecord({ policyId: 1, snapshot: s, r: decide(snap({ official: 80, incs: [80, 20, 78] })), inputHash, rationale: "规则文案", rationaleSource: "deterministic" });
+  ok("指标（离散度）变 → outputHash 必变", d.outputHash !== a.outputHash);
+}
+
+console.log("\n[可复算·实证据] 仓库里每一条留痕，哈希都要能当场重算出来");
+{
+  const root = path.join(__dirname, "..", "09-AI判定留痕");
+  const files = [];
+  (function walk(d) {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const f = path.join(d, e.name);
+      if (e.isDirectory()) walk(f);
+      else if (/^(snapshot|judgement)-policy\d+\.json$/.test(e.name)) files.push(f);
+    }
+  })(root);
+  ok(`找到 ${files.length} 个留痕文件`, files.length > 0);
+
+  let bad = 0;
+  for (const f of files) {
+    const j = JSON.parse(fs.readFileSync(f, "utf8"));
+    const [obj, key] = j.snapshot ? [j.snapshot, "inputHash"] : [j.judgement, "outputHash"];
+    const again = evidenceHashOf(obj);
+    if (again !== j[key]) { bad++; console.log(`     　 ${path.relative(root, f)}：文件写 ${j[key]}，重算 ${again}`); }
+  }
+  ok("所有留痕的哈希都能重算出来（含真链 #0/#1 的修复前留档）", bad === 0, bad ? `${bad} 个对不上` : `${files.length} 个全对`);
+
+  // 布局契约：易变字段必须在被哈希对象【之外】。根目录下的 policy0/1 是修复前的
+  // 真链留档，动了就跟链上对不上，所以只对它们查哈希自洽、不查布局。
+  const fresh = files.filter((f) => path.dirname(f) !== root);
+  const dirty = fresh.filter((f) => {
+    const o = JSON.parse(fs.readFileSync(f, "utf8")).snapshot
+      || JSON.parse(fs.readFileSync(f, "utf8")).judgement;
+    return "collectedAt" in o || "decidedAt" in o || "rationale" in o;
+  });
+  ok(`新留痕（${fresh.length} 个）里没有易变字段`, dirty.length === 0, dirty.map((f) => path.basename(f)).join(","));
 }
 
 console.log("\n" + "=".repeat(74));

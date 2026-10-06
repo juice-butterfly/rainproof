@@ -713,18 +713,34 @@ async function loadEvents() {
 }
 
 /* ---------------- 事件绑定 ---------------- */
-$("saveBtn").onclick = async () => { if (await attachContract($("addrInput").value)) toast("合约已连接", "ok"); };
+$("saveBtn").onclick = async () => { if (await attachContract($("addrInput").value)) { toast("合约已连接", "ok"); await refreshPremium(); } };
 $("walletBtn").onclick = () => connectWallet(false);
 $("addrInput").addEventListener("keydown", e => { if (e.key === "Enter") $("saveBtn").click(); });
 
-$("buyBtn").onclick = () => {
+/* 保费必须按 premiumOf(region) 取，不能拿常量 PREMIUM。
+   运营方用 setUnderwriting() 给某个区域单独定价之后（精算结论就是这么落地的），
+   这里如果不跟着变，buyPolicy 会因为 premium mismatch 直接 revert。 */
+async function refreshPremium() {
+  const region = Number($("regionSel").value) || 1;
+  if (!S.readC || !S.meta) return null;
+  let p = S.meta.premium;
+  try { p = await S.readC.premiumOf(region); } catch (e) {}   // 老 ABI 没有 premiumOf 时退回常量
+  S.premiumNow = p;
+  $("premiumShow").textContent = fmtEth(p) + " SepETH";
+  return p;
+}
+
+$("regionSel").onchange = () => { refreshPremium(); };
+
+$("buyBtn").onclick = async () => {
   const region = Number($("regionSel").value);
   const hours = Number($("hoursInput").value);
   if (!Number.isInteger(hours) || hours < Number(S.meta.minH) || hours > Number(S.meta.maxH)) {
     return toast(`时长要在 ${S.meta.minH} ~ ${S.meta.maxH} 小时之间`, "err");
   }
-  send(() => new ethers.Contract(S.addr, ABI, S.signer).buyPolicy(region, hours, { value: S.meta.premium }),
-       `投保成功（区域 ${region} · ${hours} 小时）`);
+  const value = await refreshPremium();     // ← 以链上 premiumOf(region) 为准
+  send(() => new ethers.Contract(S.addr, ABI, S.signer).buyPolicy(region, hours, { value }),
+       `投保成功（区域 ${region} · ${hours} 小时 · 保费 ${fmtEth(value)} SepETH）`);
 };
 
 $("fundBtn").onclick = () => {
@@ -758,6 +774,7 @@ if (window.ethereum) {
   const labels = ["武汉","上海","北京","广州","成都"];
   sel.innerHTML = labels.map((n, i) => `<option value="${i+1}">${n}（#${i+1}）</option>`).join("");
   await boot();
+  await refreshPremium();
   setInterval(async () => {
     if (!S.readC || !S.addr) return;
     try { $("blk").textContent = (await S.provider.getBlockNumber()).toLocaleString("en-US"); } catch (e) {}

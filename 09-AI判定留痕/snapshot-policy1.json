@@ -3,73 +3,46 @@
     "schema": "rainproof/judge-input@1",
     "collectVersion": "ai-collect-v1",
     "policyId": 1,
-    "collectedAt": "2026-10-06T12:12:42.509Z",
-    "simulated": false,
+    "collectedAt": "2026-10-06T13:02:08.787Z",
+    "simulated": true,
+    "simulationNote": "模型序列由链上注入值合成，用于演示；真实模式下会向 ECMWF/GFS/ICON 实取。",
     "epoch": "2026-10-01",
     "region": {
-      "id": 2,
-      "key": "shanghai",
-      "name": "上海",
-      "lat": 31.2304,
-      "lon": 121.4737
+      "id": 5,
+      "key": "chengdu",
+      "name": "成都",
+      "lat": 30.5728,
+      "lon": 104.0668
     },
     "policy": {
-      "rider": "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0",
-      "regionId": 2,
-      "startTime": 1791288581,
-      "endTime": 1791331781,
+      "rider": "0xDA2E6266529Ce8b3E606B17628072c15Cfa33D28",
+      "regionId": 5,
+      "startTime": 1791291588,
+      "endTime": 1791550788,
       "startDate": "2026-10-06",
-      "rainfallAtBuy": 0,
+      "rainfallAtBuy": 6,
       "paid": false
     },
     "oracle": {
-      "cumulativeMm": 34,
-      "officialIncrementMm": 34,
-      "contract": "0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab",
+      "cumulativeMm": 120,
+      "officialIncrementMm": 114,
+      "contract": "0x89e7C942535930B61cB61631051E8b0bD670596a",
       "chainId": 11155111
     },
     "weather": {
-      "source": "open-meteo:ecmwf_ifs025+gfs_seamless+icon_seamless",
+      "source": "synthetic",
       "windowFrom": "2026-10-06",
       "models": [
         {
           "id": "ecmwf_ifs025",
           "label": "ECMWF IFS025",
           "org": "欧洲中期天气预报中心",
-          "sinceEpochMm": 35.9,
-          "inWindowMm": 0,
+          "sinceEpochMm": 120,
+          "inWindowMm": 114,
           "days": [
             {
-              "date": "2026-10-01",
-              "mm": 3
-            },
-            {
-              "date": "2026-10-02",
-              "mm": 0
-            },
-            {
-              "date": "2026-10-03",
-              "mm": 7.9
-            },
-            {
-              "date": "2026-10-04",
-              "mm": 25
-            },
-            {
-              "date": "2026-10-05",
-              "mm": 0
-            },
-            {
               "date": "2026-10-06",
-              "mm": 0
-            },
-            {
-              "date": "2026-10-07",
-              "mm": 0
-            },
-            {
-              "date": "2026-10-08",
-              "mm": 0
+              "mm": 68.4
             }
           ]
         },
@@ -77,40 +50,12 @@
           "id": "gfs_seamless",
           "label": "GFS",
           "org": "美国 NOAA/NCEP",
-          "sinceEpochMm": 47.7,
-          "inWindowMm": 0,
+          "sinceEpochMm": 120,
+          "inWindowMm": 107.16,
           "days": [
             {
-              "date": "2026-10-01",
-              "mm": 1.1
-            },
-            {
-              "date": "2026-10-02",
-              "mm": 0
-            },
-            {
-              "date": "2026-10-03",
-              "mm": 29.3
-            },
-            {
-              "date": "2026-10-04",
-              "mm": 17.3
-            },
-            {
-              "date": "2026-10-05",
-              "mm": 0
-            },
-            {
               "date": "2026-10-06",
-              "mm": 0
-            },
-            {
-              "date": "2026-10-07",
-              "mm": 0
-            },
-            {
-              "date": "2026-10-08",
-              "mm": 0
+              "mm": 64.296
             }
           ]
         },
@@ -118,40 +63,12 @@
           "id": "icon_seamless",
           "label": "ICON",
           "org": "德国气象局 DWD",
-          "sinceEpochMm": 41.7,
-          "inWindowMm": 0,
+          "sinceEpochMm": 120,
+          "inWindowMm": 118.56,
           "days": [
             {
-              "date": "2026-10-01",
-              "mm": 0.8
-            },
-            {
-              "date": "2026-10-02",
-              "mm": 0.9
-            },
-            {
-              "date": "2026-10-03",
-              "mm": 24.5
-            },
-            {
-              "date": "2026-10-04",
-              "mm": 15.5
-            },
-            {
-              "date": "2026-10-05",
-              "mm": 0
-            },
-            {
               "date": "2026-10-06",
-              "mm": 0
-            },
-            {
-              "date": "2026-10-07",
-              "mm": 0
-            },
-            {
-              "date": "2026-10-08",
-              "mm": 0
+              "mm": 71.136
             }
           ]
         }
@@ -162,5 +79,5 @@
       "minConfidence": 60
     }
   },
-  "inputHash": "0xe0d07c9fddaf80b6aec48d844f625cb26ece0fc9f148e677627c18cef2790b98"
+  "inputHash": "0xb4b00fa335e120433ca5bcc9c1eacbb71a48617724a0376ac35a9858a849de3e"
 }

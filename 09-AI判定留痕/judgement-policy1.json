@@ -3,32 +3,34 @@
     "schema": "rainproof/judgement@1",
     "judgeVersion": "ai-judge-v1",
     "policyId": 1,
-    "decidedAt": "2026-10-06T12:12:42.749Z",
-    "decision": 0,
-    "decisionLabel": "DENY",
-    "confidence": 95,
+    "decidedAt": "2026-10-06T13:02:09.309Z",
+    "decision": 1,
+    "decisionLabel": "PAY",
+    "confidence": 94,
     "sources": 3,
-    "simulated": false,
+    "simulated": true,
     "metrics": {
       "thresholdMm": 50,
       "minConfidence": 60,
-      "officialIncrementMm": 34,
+      "officialIncrementMm": 114,
       "modelIncrementsMm": [
-        0,
-        0,
-        0
+        114,
+        107.16,
+        118.56
       ],
-      "medianMm": 0,
-      "spreadMm": 0,
-      "agreeCount": 0,
-      "divergencePct": 100
+      "medianMm": 114,
+      "spreadMm": 11.4,
+      "agreeCount": 3,
+      "divergencePct": 0
     },
     "reasons": [
-      "链上官方增量 34mm < 阈值 50mm，雨量未达标。"
+      "⚠️ 本快照为演示用合成数据（simulated=true），不是真实气象观测。",
+      "链上官方增量 114mm ≥ 阈值 50mm，且 3/3 个独立模型一致支持。",
+      "模型窗口增量 114 / 107.16 / 118.56 mm（中位数 114mm，离散度 11.4mm），与链上数字相符。"
     ],
-    "rationale": "保单 #1（上海，窗口自 2026-10-06 起）：链上官方累计增量 34mm，阈值 50mm；独立复核取了 ECMWF IFS025、GFS、ICON 三家模型，窗口增量分别为 0 / 0 / 0 mm。结论：DENY，置信度 95。",
+    "rationale": "保单 #1（成都，窗口自 2026-10-06 起）：链上官方累计增量 114mm，阈值 50mm；独立复核取了 ECMWF IFS025、GFS、ICON 三家模型，窗口增量分别为 114 / 107.16 / 118.56 mm。结论：PAY，置信度 94。（演示模式：快照为合成数据。）",
     "rationaleSource": "deterministic",
-    "inputHash": "0xe0d07c9fddaf80b6aec48d844f625cb26ece0fc9f148e677627c18cef2790b98"
+    "inputHash": "0xb4b00fa335e120433ca5bcc9c1eacbb71a48617724a0376ac35a9858a849de3e"
   },
-  "outputHash": "0x6a8102b3f9b11d78aabdcdba27945dbd052e6c87ce67015835986141a2dde5db"
+  "outputHash": "0xb727695c247b9a52c8fcce940a1d256f8b3f4d162a777c176cac270c24398ac3"
 }

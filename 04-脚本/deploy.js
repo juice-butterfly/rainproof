@@ -81,7 +81,7 @@ async function main() {
       Object.entries(KNOWN_CHAINS).map(([k, v]) => `${v}(${k})`).join(" / "));
   }
   // chainId 能被本地假链伪装（07-测试工具/prep_local_chain.js 就设成 11155111），块高不能：
-  // Sepolia 已 1180 万+、BOT Chain 主网已 257 万+，本地假链从 0 开始。这里只把身份说清楚，本地联调照样能跑。
+  // 2026-10-06 实测 Sepolia 块高 1185 万+、BOT Chain 主网 2573 万+，本地假链从 0 开始。这里只把身份说清楚，本地联调照样能跑。
   const blockNumber = await provider.getBlockNumber();
   const isRealChain = blockNumber >= 1000000;
   const sym = chainId === 677 ? "BOT" : "SepETH";   // BOT Chain 的原生代币叫 BOT，不是 SepETH

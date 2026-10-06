@@ -1,0 +1,898 @@
+{
+  "thresholds": [
+    20,
+    30,
+    40,
+    50,
+    60,
+    80,
+    100
+  ],
+  "windows": [
+    24,
+    48,
+    72
+  ],
+  "regions": {
+    "wuhan": {
+      "24": [
+        {
+          "thresholdMm": 20,
+          "p": 0.050576,
+          "hits": 4876,
+          "windows": 96409,
+          "fairPurePremium": 0.000506,
+          "suggestedPremium": 0.0009
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.027228,
+          "hits": 2625,
+          "windows": 96409,
+          "fairPurePremium": 0.000272,
+          "suggestedPremium": 0.0005
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.01392,
+          "hits": 1342,
+          "windows": 96409,
+          "fairPurePremium": 0.000139,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.007541,
+          "hits": 727,
+          "windows": 96409,
+          "fairPurePremium": 0.000075,
+          "suggestedPremium": 0.0002
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.004751,
+          "hits": 458,
+          "windows": 96409,
+          "fairPurePremium": 0.000048,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.001701,
+          "hits": 164,
+          "windows": 96409,
+          "fairPurePremium": 0.000017,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.001172,
+          "hits": 113,
+          "windows": 96409,
+          "fairPurePremium": 0.000012,
+          "suggestedPremium": 0.0001
+        }
+      ],
+      "48": [
+        {
+          "thresholdMm": 20,
+          "p": 0.112455,
+          "hits": 10839,
+          "windows": 96385,
+          "fairPurePremium": 0.001125,
+          "suggestedPremium": 0.0019
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.066992,
+          "hits": 6457,
+          "windows": 96385,
+          "fairPurePremium": 0.00067,
+          "suggestedPremium": 0.0012
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.041272,
+          "hits": 3978,
+          "windows": 96385,
+          "fairPurePremium": 0.000413,
+          "suggestedPremium": 0.0007
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.027089,
+          "hits": 2611,
+          "windows": 96385,
+          "fairPurePremium": 0.000271,
+          "suggestedPremium": 0.0005
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.018001,
+          "hits": 1735,
+          "windows": 96385,
+          "fairPurePremium": 0.00018,
+          "suggestedPremium": 0.0004
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.007522,
+          "hits": 725,
+          "windows": 96385,
+          "fairPurePremium": 0.000075,
+          "suggestedPremium": 0.0002
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.003081,
+          "hits": 297,
+          "windows": 96385,
+          "fairPurePremium": 0.000031,
+          "suggestedPremium": 0.0001
+        }
+      ],
+      "72": [
+        {
+          "thresholdMm": 20,
+          "p": 0.174822,
+          "hits": 16846,
+          "windows": 96361,
+          "fairPurePremium": 0.001748,
+          "suggestedPremium": 0.003
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.111196,
+          "hits": 10715,
+          "windows": 96361,
+          "fairPurePremium": 0.001112,
+          "suggestedPremium": 0.0019
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.07256,
+          "hits": 6992,
+          "windows": 96361,
+          "fairPurePremium": 0.000726,
+          "suggestedPremium": 0.0013
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.047561,
+          "hits": 4583,
+          "windows": 96361,
+          "fairPurePremium": 0.000476,
+          "suggestedPremium": 0.0008
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.03324,
+          "hits": 3203,
+          "windows": 96361,
+          "fairPurePremium": 0.000332,
+          "suggestedPremium": 0.0006
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.016718,
+          "hits": 1611,
+          "windows": 96361,
+          "fairPurePremium": 0.000167,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.008095,
+          "hits": 780,
+          "windows": 96361,
+          "fairPurePremium": 0.000081,
+          "suggestedPremium": 0.0002
+        }
+      ]
+    },
+    "shanghai": {
+      "24": [
+        {
+          "thresholdMm": 20,
+          "p": 0.048854,
+          "hits": 4710,
+          "windows": 96409,
+          "fairPurePremium": 0.000489,
+          "suggestedPremium": 0.0009
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.024043,
+          "hits": 2318,
+          "windows": 96409,
+          "fairPurePremium": 0.00024,
+          "suggestedPremium": 0.0005
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.012893,
+          "hits": 1243,
+          "windows": 96409,
+          "fairPurePremium": 0.000129,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.007541,
+          "hits": 727,
+          "windows": 96409,
+          "fairPurePremium": 0.000075,
+          "suggestedPremium": 0.0002
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.005062,
+          "hits": 488,
+          "windows": 96409,
+          "fairPurePremium": 0.000051,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.00223,
+          "hits": 215,
+          "windows": 96409,
+          "fairPurePremium": 0.000022,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.000882,
+          "hits": 85,
+          "windows": 96409,
+          "fairPurePremium": 0.000009,
+          "suggestedPremium": 0.0001
+        }
+      ],
+      "48": [
+        {
+          "thresholdMm": 20,
+          "p": 0.112009,
+          "hits": 10796,
+          "windows": 96385,
+          "fairPurePremium": 0.00112,
+          "suggestedPremium": 0.0019
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.063641,
+          "hits": 6134,
+          "windows": 96385,
+          "fairPurePremium": 0.000636,
+          "suggestedPremium": 0.0011
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.038004,
+          "hits": 3663,
+          "windows": 96385,
+          "fairPurePremium": 0.00038,
+          "suggestedPremium": 0.0007
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.023323,
+          "hits": 2248,
+          "windows": 96385,
+          "fairPurePremium": 0.000233,
+          "suggestedPremium": 0.0004
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.015594,
+          "hits": 1503,
+          "windows": 96385,
+          "fairPurePremium": 0.000156,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.008518,
+          "hits": 821,
+          "windows": 96385,
+          "fairPurePremium": 0.000085,
+          "suggestedPremium": 0.0002
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.004472,
+          "hits": 431,
+          "windows": 96385,
+          "fairPurePremium": 0.000045,
+          "suggestedPremium": 0.0001
+        }
+      ],
+      "72": [
+        {
+          "thresholdMm": 20,
+          "p": 0.180799,
+          "hits": 17422,
+          "windows": 96361,
+          "fairPurePremium": 0.001808,
+          "suggestedPremium": 0.0031
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.108841,
+          "hits": 10488,
+          "windows": 96361,
+          "fairPurePremium": 0.001088,
+          "suggestedPremium": 0.0019
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.067517,
+          "hits": 6506,
+          "windows": 96361,
+          "fairPurePremium": 0.000675,
+          "suggestedPremium": 0.0012
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.045568,
+          "hits": 4391,
+          "windows": 96361,
+          "fairPurePremium": 0.000456,
+          "suggestedPremium": 0.0008
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.029825,
+          "hits": 2874,
+          "windows": 96361,
+          "fairPurePremium": 0.000298,
+          "suggestedPremium": 0.0005
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.016936,
+          "hits": 1632,
+          "windows": 96361,
+          "fairPurePremium": 0.000169,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.009101,
+          "hits": 877,
+          "windows": 96361,
+          "fairPurePremium": 0.000091,
+          "suggestedPremium": 0.0002
+        }
+      ]
+    },
+    "beijing": {
+      "24": [
+        {
+          "thresholdMm": 20,
+          "p": 0.023151,
+          "hits": 2232,
+          "windows": 96409,
+          "fairPurePremium": 0.000232,
+          "suggestedPremium": 0.0004
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.012426,
+          "hits": 1198,
+          "windows": 96409,
+          "fairPurePremium": 0.000124,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.007147,
+          "hits": 689,
+          "windows": 96409,
+          "fairPurePremium": 0.000071,
+          "suggestedPremium": 0.0002
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.004377,
+          "hits": 422,
+          "windows": 96409,
+          "fairPurePremium": 0.000044,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.002707,
+          "hits": 261,
+          "windows": 96409,
+          "fairPurePremium": 0.000027,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.001027,
+          "hits": 99,
+          "windows": 96409,
+          "fairPurePremium": 0.00001,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.000436,
+          "hits": 42,
+          "windows": 96409,
+          "fairPurePremium": 0.000004,
+          "suggestedPremium": 0.0001
+        }
+      ],
+      "48": [
+        {
+          "thresholdMm": 20,
+          "p": 0.048379,
+          "hits": 4663,
+          "windows": 96385,
+          "fairPurePremium": 0.000484,
+          "suggestedPremium": 0.0009
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.030357,
+          "hits": 2926,
+          "windows": 96385,
+          "fairPurePremium": 0.000304,
+          "suggestedPremium": 0.0006
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.019796,
+          "hits": 1908,
+          "windows": 96385,
+          "fairPurePremium": 0.000198,
+          "suggestedPremium": 0.0004
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.01272,
+          "hits": 1226,
+          "windows": 96385,
+          "fairPurePremium": 0.000127,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.008393,
+          "hits": 809,
+          "windows": 96385,
+          "fairPurePremium": 0.000084,
+          "suggestedPremium": 0.0002
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.003362,
+          "hits": 324,
+          "windows": 96385,
+          "fairPurePremium": 0.000034,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.001899,
+          "hits": 183,
+          "windows": 96385,
+          "fairPurePremium": 0.000019,
+          "suggestedPremium": 0.0001
+        }
+      ],
+      "72": [
+        {
+          "thresholdMm": 20,
+          "p": 0.076888,
+          "hits": 7409,
+          "windows": 96361,
+          "fairPurePremium": 0.000769,
+          "suggestedPremium": 0.0013
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.049564,
+          "hits": 4776,
+          "windows": 96361,
+          "fairPurePremium": 0.000496,
+          "suggestedPremium": 0.0009
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.033198,
+          "hits": 3199,
+          "windows": 96361,
+          "fairPurePremium": 0.000332,
+          "suggestedPremium": 0.0006
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.022654,
+          "hits": 2183,
+          "windows": 96361,
+          "fairPurePremium": 0.000227,
+          "suggestedPremium": 0.0004
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.015421,
+          "hits": 1486,
+          "windows": 96361,
+          "fairPurePremium": 0.000154,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.00633,
+          "hits": 610,
+          "windows": 96361,
+          "fairPurePremium": 0.000063,
+          "suggestedPremium": 0.0002
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.003497,
+          "hits": 337,
+          "windows": 96361,
+          "fairPurePremium": 0.000035,
+          "suggestedPremium": 0.0001
+        }
+      ]
+    },
+    "guangzhou": {
+      "24": [
+        {
+          "thresholdMm": 20,
+          "p": 0.094493,
+          "hits": 9110,
+          "windows": 96409,
+          "fairPurePremium": 0.000945,
+          "suggestedPremium": 0.0016
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.04872,
+          "hits": 4697,
+          "windows": 96409,
+          "fairPurePremium": 0.000487,
+          "suggestedPremium": 0.0009
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.026191,
+          "hits": 2525,
+          "windows": 96409,
+          "fairPurePremium": 0.000262,
+          "suggestedPremium": 0.0005
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.0142,
+          "hits": 1369,
+          "windows": 96409,
+          "fairPurePremium": 0.000142,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.00836,
+          "hits": 806,
+          "windows": 96409,
+          "fairPurePremium": 0.000084,
+          "suggestedPremium": 0.0002
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.003132,
+          "hits": 302,
+          "windows": 96409,
+          "fairPurePremium": 0.000031,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.001265,
+          "hits": 122,
+          "windows": 96409,
+          "fairPurePremium": 0.000013,
+          "suggestedPremium": 0.0001
+        }
+      ],
+      "48": [
+        {
+          "thresholdMm": 20,
+          "p": 0.216092,
+          "hits": 20828,
+          "windows": 96385,
+          "fairPurePremium": 0.002161,
+          "suggestedPremium": 0.0037
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.136266,
+          "hits": 13134,
+          "windows": 96385,
+          "fairPurePremium": 0.001363,
+          "suggestedPremium": 0.0023
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.087047,
+          "hits": 8390,
+          "windows": 96385,
+          "fairPurePremium": 0.00087,
+          "suggestedPremium": 0.0015
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.059428,
+          "hits": 5728,
+          "windows": 96385,
+          "fairPurePremium": 0.000594,
+          "suggestedPremium": 0.001
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.040452,
+          "hits": 3899,
+          "windows": 96385,
+          "fairPurePremium": 0.000405,
+          "suggestedPremium": 0.0007
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.01797,
+          "hits": 1732,
+          "windows": 96385,
+          "fairPurePremium": 0.00018,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.007719,
+          "hits": 744,
+          "windows": 96385,
+          "fairPurePremium": 0.000077,
+          "suggestedPremium": 0.0002
+        }
+      ],
+      "72": [
+        {
+          "thresholdMm": 20,
+          "p": 0.31052,
+          "hits": 29922,
+          "windows": 96361,
+          "fairPurePremium": 0.003105,
+          "suggestedPremium": 0.0052
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.22203,
+          "hits": 21395,
+          "windows": 96361,
+          "fairPurePremium": 0.00222,
+          "suggestedPremium": 0.0038
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.159172,
+          "hits": 15338,
+          "windows": 96361,
+          "fairPurePremium": 0.001592,
+          "suggestedPremium": 0.0027
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.115244,
+          "hits": 11105,
+          "windows": 96361,
+          "fairPurePremium": 0.001152,
+          "suggestedPremium": 0.002
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.082772,
+          "hits": 7976,
+          "windows": 96361,
+          "fairPurePremium": 0.000828,
+          "suggestedPremium": 0.0014
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.044468,
+          "hits": 4285,
+          "windows": 96361,
+          "fairPurePremium": 0.000445,
+          "suggestedPremium": 0.0008
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.021814,
+          "hits": 2102,
+          "windows": 96361,
+          "fairPurePremium": 0.000218,
+          "suggestedPremium": 0.0004
+        }
+      ]
+    },
+    "chengdu": {
+      "24": [
+        {
+          "thresholdMm": 20,
+          "p": 0.034188,
+          "hits": 3296,
+          "windows": 96409,
+          "fairPurePremium": 0.000342,
+          "suggestedPremium": 0.0006
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.018017,
+          "hits": 1737,
+          "windows": 96409,
+          "fairPurePremium": 0.00018,
+          "suggestedPremium": 0.0004
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.010341,
+          "hits": 997,
+          "windows": 96409,
+          "fairPurePremium": 0.000103,
+          "suggestedPremium": 0.0002
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.005923,
+          "hits": 571,
+          "windows": 96409,
+          "fairPurePremium": 0.000059,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.003568,
+          "hits": 344,
+          "windows": 96409,
+          "fairPurePremium": 0.000036,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.001691,
+          "hits": 163,
+          "windows": 96409,
+          "fairPurePremium": 0.000017,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.000851,
+          "hits": 82,
+          "windows": 96409,
+          "fairPurePremium": 0.000009,
+          "suggestedPremium": 0.0001
+        }
+      ],
+      "48": [
+        {
+          "thresholdMm": 20,
+          "p": 0.080614,
+          "hits": 7770,
+          "windows": 96385,
+          "fairPurePremium": 0.000806,
+          "suggestedPremium": 0.0014
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.046978,
+          "hits": 4528,
+          "windows": 96385,
+          "fairPurePremium": 0.00047,
+          "suggestedPremium": 0.0008
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.029911,
+          "hits": 2883,
+          "windows": 96385,
+          "fairPurePremium": 0.000299,
+          "suggestedPremium": 0.0005
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.020543,
+          "hits": 1980,
+          "windows": 96385,
+          "fairPurePremium": 0.000205,
+          "suggestedPremium": 0.0004
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.013778,
+          "hits": 1328,
+          "windows": 96385,
+          "fairPurePremium": 0.000138,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.005976,
+          "hits": 576,
+          "windows": 96385,
+          "fairPurePremium": 0.00006,
+          "suggestedPremium": 0.0001
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.00303,
+          "hits": 292,
+          "windows": 96385,
+          "fairPurePremium": 0.00003,
+          "suggestedPremium": 0.0001
+        }
+      ],
+      "72": [
+        {
+          "thresholdMm": 20,
+          "p": 0.128579,
+          "hits": 12390,
+          "windows": 96361,
+          "fairPurePremium": 0.001286,
+          "suggestedPremium": 0.0022
+        },
+        {
+          "thresholdMm": 30,
+          "p": 0.07833,
+          "hits": 7548,
+          "windows": 96361,
+          "fairPurePremium": 0.000783,
+          "suggestedPremium": 0.0014
+        },
+        {
+          "thresholdMm": 40,
+          "p": 0.05277,
+          "hits": 5085,
+          "windows": 96361,
+          "fairPurePremium": 0.000528,
+          "suggestedPremium": 0.0009
+        },
+        {
+          "thresholdMm": 50,
+          "p": 0.037193,
+          "hits": 3584,
+          "windows": 96361,
+          "fairPurePremium": 0.000372,
+          "suggestedPremium": 0.0007
+        },
+        {
+          "thresholdMm": 60,
+          "p": 0.026722,
+          "hits": 2575,
+          "windows": 96361,
+          "fairPurePremium": 0.000267,
+          "suggestedPremium": 0.0005
+        },
+        {
+          "thresholdMm": 80,
+          "p": 0.013138,
+          "hits": 1266,
+          "windows": 96361,
+          "fairPurePremium": 0.000131,
+          "suggestedPremium": 0.0003
+        },
+        {
+          "thresholdMm": 100,
+          "p": 0.005811,
+          "hits": 560,
+          "windows": 96361,
+          "fairPurePremium": 0.000058,
+          "suggestedPremium": 0.0001
+        }
+      ]
+    }
+  }
+}

@@ -229,9 +229,9 @@
 
   <div class="chips">
     <span>我这次的：</span>
-    <button class="chip" data-q="0x5f704090d2a2120806cc12a6ed538511354d82dc">合约 <b>0x5f7040…82dc</b></button>
-    <button class="chip" data-q="0xe45da6ef7ae55092d77a6c5b20e56699a7900854a9bfa3f2d8ed29f7b40a6453">部署交易 <b>0xe45da6…6453</b></button>
-    <button class="chip" data-q="0x9C7E8f1ADB7303505bF1c31ba2212FBf28B4339A">我的账户 <b>0x9C7E8f…339A</b></button>
+    <button class="chip" data-q="0x89e7C942535930B61cB61631051E8b0bD670596a">合约 <b>0x89e7C9…596a</b></button>
+    <button class="chip" data-q="0x197ef6ca029dd59df77e28951ed6eb0cd18b26fc20463fb2d0b1bdf882eaaf03">部署交易 <b>0x197ef6…af03</b></button>
+    <button class="chip" data-q="0x867ad8250bc27f5188e3605cc0b68a68aeea1aa876acd1bda8d6378754c20ba0">判定交易 <b>0x867ad8…ba0</b>（保单 #0 · 不赔）</button>
   </div>
 
   <div class="panel hidden" id="errPanel"></div>
@@ -265,14 +265,17 @@
     <b>给评委演示时的一句话：</b>「界面是记忆，链上才是事实。这一页显示的不是缓存，是节点此刻告诉我的。」
   </div>
   <div class="note" style="border-left-color:var(--jade)">
-    <b>打不开怎么办：</b>双击本文件即可，无需安装任何东西。若浏览器拦截本地文件发请求，
-    在文件所在目录执行 <code>python -m http.server 8000</code>，然后访问
-    <code>http://localhost:8000/</code> 打开本页。
+    <b>打不开怎么办：</b>双击本文件即可，无需安装任何东西（只依赖同目录的 <code>ethers.umd.min.js</code>）。
+    若浏览器拦截本地文件发请求，在演示站点目录执行 <code>python -m http.server 8090</code>，然后访问
+    <code>http://127.0.0.1:8090/verifier.html</code> 打开本页。
+    <br><b>但要说清楚：</b>这一页本身离线能开，<b>读链必须联网</b> —— 网络断时它只会显示「连不上节点」，
+    那时请按演示讲稿的兜底顺序改用截图。
   </div>
 </footer>
 
 </div>
 
+<script src="ethers.umd.min.js"></script>
 <script>
 "use strict";
 
@@ -289,7 +292,9 @@ const NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
   // 原来的 https://rpc.ankr.com/eth_sepolia 已失效：Ankr 现在要求 API key，
   // 匿名调用直接返回 -32000 Unauthorized，并且会让 ethers 一直重试探测网络。
 ];
-const DEFAULT_QUERY = "0x5f704090d2a2120806cc12a6ed538511354d82dc";
+// ★ 2026-10-06：原来这里是赛前脚手架的 SimpleStore 地址 0x5f7040…82dc（已经不在链上用了）。
+//   改成真链部署的 RainDeliveryInsurance，否则点「合约」按钮会查一个空地址。
+const DEFAULT_QUERY = "0x89e7C942535930B61cB61631051E8b0bD670596a";
 // ★ 真链判据：chainId 可以被本地假链伪装（prep_local_chain.js 就设成 11155111），块高不能。
 //   Sepolia 已经 1180 万+，本地假链从 0 开始。
 const MIN_REAL_BLOCK = 1000000;
@@ -558,45 +563,109 @@ async function lookupTx(hash) {
     ${contractRow}
   </div>`;
 
-  if (rc && rc.contractAddress) loadLogs(rc.contractAddress);
-  else if (tx.to) loadLogs(tx.to);
+  if (rc && rc.contractAddress) loadLogs(rc.contractAddress, hash, rc.logs);
+  else if (tx.to) loadLogs(tx.to, hash, rc ? rc.logs : null);
   else $("logSec").classList.add("hidden");
   $("resultSec").scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 /* ================= 事件日志 ================= */
-async function loadLogs(addr) {
+/* ★ 2026-10-06：加事件解码。以前这一栏只显示 topics[0] 的原始哈希，评委看不懂 —— 
+   现在用合约自己的 ABI 把事件名和关键字段解出来，判定那一行直接写「不赔 DENY · 置信 95」。
+   ABI 从 03-合约/RainDeliveryInsurance.abi.json 取（与所有脚本同一份，内联到这里以免 file:// 下 fetch 被拦）。 */
+const EVENT_ABI = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"address","name":"rider","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ClaimPaid","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"confidence","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"sources","type":"uint8"},{"indexed":false,"internalType":"bytes32","name":"inputHash","type":"bytes32"},{"indexed":false,"internalType":"string","name":"modelVersion","type":"string"}],"name":"FeedRejected","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"uint8","name":"kind","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"decision","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"confidence","type":"uint8"},{"indexed":false,"internalType":"bytes32","name":"inputHash","type":"bytes32"},{"indexed":false,"internalType":"bytes32","name":"outputHash","type":"bytes32"},{"indexed":false,"internalType":"string","name":"modelVersion","type":"string"}],"name":"JudgementSubmitted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"}],"name":"OperatorChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"paused","type":"bool"}],"name":"PausedSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"address","name":"rider","type":"address"},{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"endTime","type":"uint256"}],"name":"PolicyBought","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newBalance","type":"uint256"}],"name":"PoolFunded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"PoolWithdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"cumulativeMm","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"evidenceHash","type":"bytes32"},{"indexed":false,"internalType":"uint8","name":"confidence","type":"uint8"},{"indexed":true,"internalType":"address","name":"reporter","type":"address"}],"name":"RainfallUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ReserveSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"level","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"premium","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"reasonHash","type":"bytes32"}],"name":"UnderwritingDecision","type":"event"}];
+const IFACE = (typeof ethers !== "undefined" && ethers.Interface) ? new ethers.Interface(EVENT_ABI) : null;
+
+function regionName(id)   { return ({ 1: "武汉", 2: "上海", 3: "北京", 4: "广州", 5: "成都" })[Number(id)] || ("区 " + id); }
+function kindLabel(k)     { return Number(k) === 1 ? "损失判定" : "喂价验收"; }      // KIND_LOSS=1 / KIND_FEED=0
+function decisionLabel(d) { return Number(d) === 1 ? "赔付 PAY" : "不赔 DENY"; }    // DECISION_PAY=1 / DECISION_DENY=0
+function levelLabel(l)    { return ["正常承保", "加价承保", "暂停承保"][Number(l)] || ("level " + l); }
+
+function decodeLog(l) {
+  if (!IFACE) return null;
+  try { return IFACE.parseLog({ topics: l.topics, data: l.data }); } catch (e) { return null; }
+}
+
+function eventSummary(name, a) {
+  try {
+    switch (name) {
+      case "PolicyBought":         return `保单 #${a.policyId} · ${regionName(a.regionId)} · 保障到 ${new Date(Number(a.endTime) * 1000).toLocaleString("zh-CN", { hour12: false })}`;
+      case "RainfallUpdated":      return `${regionName(a.regionId)} 累计 ${a.cumulativeMm} mm · 置信 ${a.confidence}`;
+      case "JudgementSubmitted":   return `保单 #${a.policyId} · ${kindLabel(a.kind)} · ${decisionLabel(a.decision)} · 置信 ${a.confidence}`;
+      case "ClaimPaid":            return `保单 #${a.policyId} → 赔付 ${fmtEth(a.amount)} SepETH`;
+      case "PoolFunded":           return `注资 ${fmtEth(a.amount)} SepETH · 池子余额 ${fmtEth(a.newBalance)}`;
+      case "PoolWithdrawn":        return `提取 ${fmtEth(a.amount)} SepETH`;
+      case "UnderwritingDecision": return `${regionName(a.regionId)} · ${levelLabel(a.level)} · 保费 ${a.premium} wei`;
+      case "FeedRejected":         return `${regionName(a.regionId)} · 拒收（置信 ${a.confidence} / 源 ${a.sources}）`;
+      case "ReserveSet":           return `准备金下限 ${a.amount} wei`;
+      case "PausedSet":            return a.paused ? "已暂停" : "已恢复";
+      case "OperatorChanged":      return `${short(a.from)} → ${short(a.to)}`;
+      default:                     return "";
+    }
+  } catch (e) { return ""; }
+}
+
+function buildLogTable(logs, focusTx, opts) {
+  const limit = (opts && opts.limit) || 25;
+  const focus = focusTx ? String(focusTx).toLowerCase() : null;
+  let decoded = 0;
+  const body = logs.slice(-limit).reverse().map(l => {
+    const p = decodeLog(l);
+    if (p) decoded++;
+    const isFocus = focus && String(l.transactionHash).toLowerCase() === focus;
+    const name = p ? p.name : "—";
+    const summary = p ? eventSummary(p.name, p.args) : "";
+    const hi = (isFocus || (p && p.name === "JudgementSubmitted")) ? " style='background:rgba(201,162,39,.10)'" : "";
+    return `<tr${hi}>
+      <td>${fmtNum(big(l.blockNumber))}${isFocus ? " <b style='color:var(--gold-l)'>←这笔</b>" : ""}</td>
+      <td class="hl">${esc(short(l.transactionHash))}</td>
+      <td class="gd">${esc(name)}</td>
+      <td>${esc(summary)}</td>
+    </tr>`;
+  }).join("");
+  return `<div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>区块</th><th>交易</th><th>事件</th><th>关键字段</th>
+    </tr></thead><tbody>${body}</tbody></table></div>` +
+    (decoded === 0 ? `<div class="empty">ethers 没加载成功，这一栏只能显示原始哈希。检查同目录的 <code>ethers.umd.min.js</code> 在不在。</div>` : "");
+}
+
+async function loadLogs(addr, focusTx, txLogs) {
   $("logSec").classList.remove("hidden");
   $("logPanel").innerHTML = `<div class="loading">正在读事件日志</div>`;
-  let logs = null;
-  for (const [f, t] of [["0x0", "latest"], ["0x0", "latest"]]) {
-    try { logs = await rpc("eth_getLogs", [{ address: addr, fromBlock: f, toBlock: t }], 25000); break; }
+
+  // ① 这笔交易自己的事件：直接从交易回执里取，不经 eth_getLogs ——
+  //    演示时粘一个交易哈希，这一段**一定出得来**，不受节点扫块范围限制。
+  let txPart = "";
+  if (txLogs && txLogs.length) {
+    txPart = `<div class="ptitle"><span class="tag gold">这笔交易发出的 ${txLogs.length} 条事件</span>
+      <span style="font-size:12px;color:var(--faint)">来源：交易回执本身</span></div>` +
+      buildLogTable(txLogs, focusTx, { limit: txLogs.length });
+  }
+
+  // ② 合约全量事件：节点对 eth_getLogs 有扫块上限（2026-10-06 实测 publicnode 只给 1 万块，
+  //    tenderly 给全历史），所以先试全历史，失败退最近 1 万块，两个都失败就只显示 ①。
+  // ★ 修掉一个真 bug：原来两次的范围一模一样（["0x0","latest"] 写了两遍），第二次等于白试。
+  let head = 0;
+  try { head = Number(BigInt(await rpc("eth_blockNumber"))); } catch (e) { head = 0; }
+  const ranges = [["0x0", "latest", "全部历史"]];
+  if (head > 10000) ranges.push(["0x" + (head - 10000).toString(16), "latest", "最近 1 万块"]);
+  let logs = null, windowNote = "";
+  for (const [f, t, note] of ranges) {
+    try { logs = await rpc("eth_getLogs", [{ address: addr, fromBlock: f, toBlock: t }], 25000); windowNote = note; break; }
     catch (e) { logs = null; }
   }
-  if (logs === null) {
-    $("logPanel").innerHTML = `<div class="empty">这个节点不让一次扫全部区块，或该合约没有事件。不影响结论。</div>`;
+
+  if (logs === null || !logs.length) {
+    $("logPanel").innerHTML = txPart + `<div class="empty">${logs === null
+      ? "两个节点都不肯扫这个合约的日志范围（eth_getLogs 有范围上限）。上面那一段是本笔交易自己的事件，不受影响。"
+      : `这个地址到目前为止没有发出过任何事件。如果你粘的是 <b>RainDeliveryInsurance 合约地址</b>，那说明地址不对 —— 本次真链部署的合约是 <code>${DEFAULT_QUERY}</code>，点上面的「合约」按钮即可。`}</div>`;
     return;
   }
-  if (!logs.length) {
-    $("logPanel").innerHTML = `<div class="empty">
-      这个合约到目前为止没有发出过任何事件（logs）。
-      当前部署的 <code>Hello</code> 合约里只有 <code>set</code> / <code>get</code>，没有 <code>event</code>，所以这里是空的 ——
-      <b>正常现象，不代表合约有问题</b>。等 10/4 换成带 <code>event RainfallUpdated</code> 的
-      <code>RainDeliveryInsurance</code>，这里就会长出记录。</div>`;
-    return;
-  }
-  const rows = logs.slice(-25).reverse().map(l => `<tr>
-      <td>${fmtNum(big(l.blockNumber))}</td>
-      <td class="hl">${esc(short(l.transactionHash))}</td>
-      <td class="gd">${esc(l.topics[0] ? short(l.topics[0]) : "—")}</td>
-      <td>${l.topics.length - 1} 个 indexed</td>
-    </tr>`).join("");
-  $("logPanel").innerHTML = `
+
+  $("logPanel").innerHTML = txPart + `
     <div class="ptitle"><span class="tag">共 ${logs.length} 条</span>
-      <span style="font-size:12px;color:var(--faint)">显示最近 25 条</span></div>
-    <div class="tblwrap"><table class="tbl"><thead><tr>
-      <th>区块</th><th>交易</th><th>事件签名 topics[0]</th><th>参数</th>
-    </tr></thead><tbody>${rows}</tbody></table></div>`;
+      <span style="font-size:12px;color:var(--faint)">显示最近 25 条 · 扫描范围：${esc(windowNote)}</span></div>` +
+    buildLogTable(logs, focusTx, { limit: 25 });
 }
 
 /* ================= 最近区块 ================= */

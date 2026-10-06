@@ -229,9 +229,9 @@
 
   <div class="chips">
     <span>我这次的：</span>
-    <button class="chip" data-q="0x5f704090d2a2120806cc12a6ed538511354d82dc">合约 <b>0x5f7040…82dc</b></button>
-    <button class="chip" data-q="0xe45da6ef7ae55092d77a6c5b20e56699a7900854a9bfa3f2d8ed29f7b40a6453">部署交易 <b>0xe45da6…6453</b></button>
-    <button class="chip" data-q="0x9C7E8f1ADB7303505bF1c31ba2212FBf28B4339A">我的账户 <b>0x9C7E8f…339A</b></button>
+    <button class="chip" data-q="0x89e7C942535930B61cB61631051E8b0bD670596a">合约 <b>0x89e7C9…596a</b></button>
+    <button class="chip" data-q="0x197ef6ca029dd59df77e28951ed6eb0cd18b26fc20463fb2d0b1bdf882eaaf03">部署交易 <b>0x197ef6…af03</b></button>
+    <button class="chip" data-q="0x867ad8250bc27f5188e3605cc0b68a68aeea1aa876acd1bda8d6378754c20ba0">判定交易 <b>0x867ad8…ba0</b>（保单 #0 · 不赔）</button>
   </div>
 
   <div class="panel hidden" id="errPanel"></div>
@@ -265,9 +265,10 @@
     <b>给评委演示时的一句话：</b>「界面是记忆，链上才是事实。这一页显示的不是缓存，是节点此刻告诉我的。」
   </div>
   <div class="note" style="border-left-color:var(--jade)">
-    <b>打不开怎么办：</b>双击本文件即可，无需安装任何东西。若浏览器拦截本地文件发请求，
-    在文件所在目录执行 <code>python -m http.server 8000</code>，然后访问
-    <code>http://localhost:8000/</code> 打开本页。
+    <b>打不开怎么办：</b>双击本文件即可，无需安装任何东西（真正的单文件，不依赖 ethers）。
+    若浏览器拦截本地文件发请求，在文件所在目录执行 <code>python -m http.server 8090</code>，然后访问
+    <code>http://127.0.0.1:8090/汉客松-链上核验台.html</code> 打开本页。
+    <br><b>但要说清楚：</b>页面本身离线能开，<b>读链必须联网</b> —— 网络断时只会显示「连不上节点」。
   </div>
 </footer>
 
@@ -283,7 +284,7 @@ const NODES = [
   // 原来的 https://rpc.ankr.com/eth_sepolia 已失效：Ankr 现在要求 API key，
   // 匿名调用返回 -32000 Unauthorized，还会让 ethers 无限重试探测网络。
 ];
-const DEFAULT_QUERY = "0x5f704090d2a2120806cc12a6ed538511354d82dc";
+const DEFAULT_QUERY = "0x89e7C942535930B61cB61631051E8b0bD670596a";
 
 // ★ 真链判据：chainId 可以被本地假链伪装（07-测试工具/prep_local_chain.js 就设成 11155111），
 //   但区块高度伪装不了——Sepolia 已经 1180 万+，本地假链从 0 开始。

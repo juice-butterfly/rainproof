@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-07T04:53:33.895Z",
+    "generatedAt": "2026-10-07T05:03:01.631Z",
     "payoutEth": 0.01,
     "premiumDefaultEth": 0.001,
     "minPremiumEth": 0.0002,
@@ -54,6 +54,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.00529,
           "marginPerPolicyEth": 0.000544711,
+          "costPerPolicyExpectedEth": 0.0001300635,
+          "marginPerPolicyExpectedEth": 0.0006646476,
+          "rStarCeiling": 0.02072,
+          "rStarCeilingExpected": 0.03908,
           "sellableInV1": true,
           "_raw": {
             "p": 0.0005288975079593889,
@@ -62,7 +66,10 @@
             "pR60": 0.000008814958465989815,
             "lFair": 1890.7254901960787,
             "lOnchain": 12.5,
-            "rOnchain": 0.006611218849492361
+            "rOnchain": 0.006611218849492361,
+            "cExp": 0.00013006346770095512,
+            "rCeil": 0.020717600820579482,
+            "rCeilExp": 0.0390755790656033
           }
         },
         "12": {
@@ -79,6 +86,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.02199,
           "marginPerPolicyEth": 0.0005280131,
+          "costPerPolicyExpectedEth": 0.0001302638,
+          "marginPerPolicyExpectedEth": 0.0006477492,
+          "rStarCeiling": 0.08084,
+          "rStarCeilingExpected": 0.14441,
           "sellableInV1": true,
           "_raw": {
             "p": 0.002198691156490806,
@@ -87,7 +98,10 @@
             "pR60": 0.0000366448526081801,
             "lFair": 454.8160377358491,
             "lOnchain": 12.5,
-            "rOnchain": 0.02748363945613507
+            "rOnchain": 0.02748363945613507,
+            "cExp": 0.00013026384293877887,
+            "rCeil": 0.08083812356412236,
+            "rCeilExp": 0.14441249658553001
           }
         },
         "24": {
@@ -104,6 +118,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.07624,
           "marginPerPolicyEth": 0.0004737623,
+          "costPerPolicyExpectedEth": 0.0001309149,
+          "marginPerPolicyExpectedEth": 0.0005928475,
+          "rStarCeiling": 0.23369,
+          "rStarCeilingExpected": 0.36803,
           "sellableInV1": true,
           "_raw": {
             "p": 0.007623769565082098,
@@ -112,7 +130,10 @@
             "pR60": 0.00012706282608470165,
             "lFair": 131.1687074829932,
             "lOnchain": 12.5,
-            "rOnchain": 0.09529711956352623
+            "rOnchain": 0.09529711956352623,
+            "cExp": 0.00013091485234780983,
+            "rCeil": 0.23368757402093654,
+            "rCeilExp": 0.3680268304077287
           }
         },
         "48": {
@@ -129,6 +150,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.27245,
           "marginPerPolicyEth": 0.000277551,
+          "costPerPolicyExpectedEth": 0.0001332694,
+          "marginPerPolicyExpectedEth": 0.0003942816,
+          "rStarCeiling": 0.52148,
+          "rStarCeilingExpected": 0.67152,
           "sellableInV1": true,
           "_raw": {
             "p": 0.027244903252580797,
@@ -137,7 +162,10 @@
             "pR60": 0.00045408172087634663,
             "lFair": 36.704112718964204,
             "lOnchain": 12.5,
-            "rOnchain": 0.34056129065725993
+            "rOnchain": 0.34056129065725993,
+            "cExp": 0.00013326938839030967,
+            "rCeil": 0.5214844234826859,
+            "rCeilExp": 0.6715224610965763
           }
         },
         "72": {
@@ -154,6 +182,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.47696,
           "marginPerPolicyEth": 0.0000730436,
+          "costPerPolicyExpectedEth": 0.0001357235,
+          "marginPerPolicyExpectedEth": 0.0001873201,
+          "rStarCeiling": 0.6561,
+          "rStarCeilingExpected": 0.77848,
           "sellableInV1": true,
           "_raw": {
             "p": 0.047695644503481696,
@@ -162,7 +194,10 @@
             "pR60": 0.0007949274083913616,
             "lFair": 20.966275021758054,
             "lOnchain": 12.5,
-            "rOnchain": 0.5961955562935212
+            "rOnchain": 0.5961955562935212,
+            "cExp": 0.0001357234773404178,
+            "rCeil": 0.6561004421825761,
+            "rCeilExp": 0.7784757221776656
           }
         },
         "168": {
@@ -179,6 +214,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 1.56391,
           "marginPerPolicyEth": -0.0010139121,
+          "costPerPolicyExpectedEth": 0.0001487669,
+          "marginPerPolicyExpectedEth": -0.0009126791,
+          "rStarCeiling": 0.86218,
+          "rStarCeilingExpected": 0.91314,
           "sellableInV1": false,
           "_raw": {
             "p": 0.15639121175920637,
@@ -187,7 +226,10 @@
             "pR60": 0.002606520195986773,
             "lFair": 6.394221188973763,
             "lOnchain": 12.5,
-            "rOnchain": 1.9548901469900795
+            "rOnchain": 1.9548901469900795,
+            "cExp": 0.00014876694541110475,
+            "rCeil": 0.8621763438397057,
+            "rCeilExp": 0.9131378735078112
           }
         }
       }
@@ -210,6 +252,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.00301,
           "marginPerPolicyEth": 0.0005469925,
+          "costPerPolicyExpectedEth": 0.0001300361,
+          "marginPerPolicyExpectedEth": 0.0006669565,
+          "rStarCeiling": 0.01189,
+          "rStarCeilingExpected": 0.02261,
           "sellableInV1": true,
           "_raw": {
             "p": 0.000300745641780829,
@@ -218,7 +264,10 @@
             "pR60": 0.000005012427363013817,
             "lFair": 3325.068965517242,
             "lOnchain": 12.5,
-            "rOnchain": 0.003759320522260362
+            "rOnchain": 0.003759320522260362,
+            "cExp": 0.00013003608947701368,
+            "rCeil": 0.011886829188314015,
+            "rCeilExp": 0.022605053086797947
           }
         },
         "12": {
@@ -235,6 +284,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.01981,
           "marginPerPolicyEth": 0.000530191,
+          "costPerPolicyExpectedEth": 0.0001302377,
+          "marginPerPolicyExpectedEth": 0.0006499533,
+          "rStarCeiling": 0.07342,
+          "rStarCeilingExpected": 0.13202,
           "sellableInV1": true,
           "_raw": {
             "p": 0.0019808962777818112,
@@ -243,7 +296,10 @@
             "pR60": 0.00003301493796303019,
             "lFair": 504.82198952879577,
             "lOnchain": 12.5,
-            "rOnchain": 0.02476120347227264
+            "rOnchain": 0.02476120347227264,
+            "cExp": 0.0001302377075533338,
+            "rCeil": 0.07341847570175188,
+            "rCeilExp": 0.13201867614989307
           }
         },
         "24": {
@@ -260,6 +316,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.07541,
           "marginPerPolicyEth": 0.0004745921,
+          "costPerPolicyExpectedEth": 0.0001309049,
+          "marginPerPolicyExpectedEth": 0.0005936872,
+          "rStarCeiling": 0.23173,
+          "rStarCeilingExpected": 0.3655,
           "sellableInV1": true,
           "_raw": {
             "p": 0.007540789760292089,
@@ -268,7 +328,10 @@
             "pR60": 0.0001256798293382015,
             "lFair": 132.6121045392022,
             "lOnchain": 12.5,
-            "rOnchain": 0.09425987200365112
+            "rOnchain": 0.09425987200365112,
+            "cExp": 0.00013090489477123504,
+            "rCeil": 0.23173345870952833,
+            "rCeilExp": 0.3655027724415938
           }
         },
         "48": {
@@ -285,6 +348,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.23323,
           "marginPerPolicyEth": 0.0003167687,
+          "costPerPolicyExpectedEth": 0.0001327988,
+          "marginPerPolicyExpectedEth": 0.0004339699,
+          "rStarCeiling": 0.48265,
+          "rStarCeilingExpected": 0.63719,
           "sellableInV1": true,
           "_raw": {
             "p": 0.023323131192612957,
@@ -293,7 +360,10 @@
             "pR60": 0.00038871885321021594,
             "lFair": 42.87588967971531,
             "lOnchain": 12.5,
-            "rOnchain": 0.29153913990766195
+            "rOnchain": 0.29153913990766195,
+            "cExp": 0.00013279877574311354,
+            "rCeil": 0.48264941896352753,
+            "rCeilExp": 0.6371916402044115
           }
         },
         "72": {
@@ -310,6 +380,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.45568,
           "marginPerPolicyEth": 0.0000943177,
+          "costPerPolicyExpectedEth": 0.0001354682,
+          "marginPerPolicyExpectedEth": 0.0002088495,
+          "rStarCeiling": 0.64573,
+          "rStarCeilingExpected": 0.77084,
           "sellableInV1": true,
           "_raw": {
             "p": 0.04556822781000612,
@@ -318,7 +392,10 @@
             "pR60": 0.0007594704635001021,
             "lFair": 21.945115007970852,
             "lOnchain": 12.5,
-            "rOnchain": 0.5696028476250765
+            "rOnchain": 0.5696028476250765,
+            "cExp": 0.00013546818733720074,
+            "rCeil": 0.6457329200995584,
+            "rCeilExp": 0.7708397518777259
           }
         },
         "168": {
@@ -335,6 +412,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 1.54137,
           "marginPerPolicyEth": -0.0009913702,
+          "costPerPolicyExpectedEth": 0.0001484964,
+          "marginPerPolicyExpectedEth": -0.0008898666,
+          "rStarCeiling": 0.86044,
+          "rStarCeilingExpected": 0.91213,
           "sellableInV1": false,
           "_raw": {
             "p": 0.15413701760764556,
@@ -343,7 +424,10 @@
             "pR60": 0.0025689502934607596,
             "lFair": 6.487734195983286,
             "lOnchain": 12.5,
-            "rOnchain": 1.9267127200955696
+            "rOnchain": 1.9267127200955696,
+            "cExp": 0.00014849644211291745,
+            "rCeil": 0.8604420217893981,
+            "rCeilExp": 0.9121253473413035
           }
         }
       }
@@ -366,6 +450,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.00311,
           "marginPerPolicyEth": 0.0001468888,
+          "costPerPolicyExpectedEth": 0.0001300373,
+          "marginPerPolicyExpectedEth": 0.0002668515,
+          "rStarCeiling": 0.01229,
+          "rStarCeilingExpected": 0.02337,
           "sellableInV1": true,
           "_raw": {
             "p": 0.00031111618115258177,
@@ -374,7 +462,10 @@
             "pR60": 0.000005185269685876363,
             "lFair": 3214.233333333333,
             "lOnchain": 25,
-            "rOnchain": 0.007777904528814544
+            "rOnchain": 0.007777904528814544,
+            "cExp": 0.0001300373339417383,
+            "rCeil": 0.012291681604474174,
+            "rCeilExp": 0.023366105594546663
           }
         },
         "12": {
@@ -391,6 +482,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.01172,
           "marginPerPolicyEth": 0.0001382806,
+          "costPerPolicyExpectedEth": 0.0001301406,
+          "marginPerPolicyExpectedEth": 0.0002581399,
+          "rStarCeiling": 0.04478,
+          "rStarCeilingExpected": 0.08261,
           "sellableInV1": true,
           "_raw": {
             "p": 0.0011719438711484012,
@@ -399,7 +494,10 @@
             "pR60": 0.000019532397852473353,
             "lFair": 853.283185840708,
             "lOnchain": 25,
-            "rOnchain": 0.029298596778710027
+            "rOnchain": 0.029298596778710027,
+            "cExp": 0.00013014063326453778,
+            "rCeil": 0.04477863306287831,
+            "rCeilExp": 0.08261266576450713
           }
         },
         "24": {
@@ -416,6 +514,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.04377,
           "marginPerPolicyEth": 0.0001062282,
+          "costPerPolicyExpectedEth": 0.0001305253,
+          "marginPerPolicyExpectedEth": 0.0002257029,
+          "rStarCeiling": 0.149,
+          "rStarCeilingExpected": 0.25113,
           "sellableInV1": true,
           "_raw": {
             "p": 0.004377184702672987,
@@ -424,7 +526,10 @@
             "pR60": 0.00007295307837788311,
             "lFair": 228.457345971564,
             "lOnchain": 25,
-            "rOnchain": 0.10942961756682466
+            "rOnchain": 0.10942961756682466,
+            "cExp": 0.00013052526216432076,
+            "rCeil": 0.1489994615540785,
+            "rCeilExp": 0.25113352269515066
           }
         },
         "48": {
@@ -441,6 +546,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.12865,
           "marginPerPolicyEth": 0.0000213493,
+          "costPerPolicyExpectedEth": 0.0001315438,
+          "marginPerPolicyExpectedEth": 0.0001398055,
+          "rStarCeiling": 0.33976,
+          "rStarCeilingExpected": 0.49444,
           "sellableInV1": true,
           "_raw": {
             "p": 0.012865072366032059,
@@ -449,7 +558,10 @@
             "pR60": 0.000214417872767201,
             "lFair": 77.72983870967742,
             "lOnchain": 25,
-            "rOnchain": 0.32162680915080144
+            "rOnchain": 0.32162680915080144,
+            "cExp": 0.00013154380868392383,
+            "rCeil": 0.33976093434256943,
+            "rCeilExp": 0.49444053455401665
           }
         },
         "72": {
@@ -466,6 +578,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.2281,
           "marginPerPolicyEth": -0.0000781006,
+          "costPerPolicyExpectedEth": 0.0001327372,
+          "marginPerPolicyExpectedEth": 0.0000391622,
+          "rStarCeiling": 0.4771,
+          "rStarCeilingExpected": 0.63214,
           "sellableInV1": true,
           "_raw": {
             "p": 0.022810058011021057,
@@ -474,7 +590,10 @@
             "pR60": 0.0003801676335170176,
             "lFair": 43.840309372156504,
             "lOnchain": 25,
-            "rOnchain": 0.5702514502755264
+            "rOnchain": 0.5702514502755264,
+            "cExp": 0.00013273720696132252,
+            "rCeil": 0.47709747613698644,
+            "rCeilExp": 0.6321416112248563
           }
         },
         "168": {
@@ -491,6 +610,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.74451,
           "marginPerPolicyEth": -0.0005945073,
+          "costPerPolicyExpectedEth": 0.0001389341,
+          "marginPerPolicyExpectedEth": -0.0004834414,
+          "rStarCeiling": 0.74862,
+          "rStarCeilingExpected": 0.84274,
           "sellableInV1": false,
           "_raw": {
             "p": 0.07445073495039733,
@@ -499,7 +622,10 @@
             "pR60": 0.0012408455825066223,
             "lFair": 13.431700851123205,
             "lOnchain": 25,
-            "rOnchain": 1.8612683737599331
+            "rOnchain": 1.8612683737599331,
+            "cExp": 0.00013893408819404767,
+            "rCeil": 0.7486192534175925,
+            "rCeilExp": 0.842735372979484
           }
         }
       }
@@ -522,6 +648,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.00601,
           "marginPerPolicyEth": 0.0017439851,
+          "costPerPolicyExpectedEth": 0.0001300722,
+          "marginPerPolicyExpectedEth": 0.0018639129,
+          "rStarCeiling": 0.02349,
+          "rStarCeilingExpected": 0.0442,
           "sellableInV1": true,
           "_raw": {
             "p": 0.000601491283561658,
@@ -530,7 +660,10 @@
             "pR60": 0.000010024854726027633,
             "lFair": 1662.534482758621,
             "lOnchain": 5,
-            "rOnchain": 0.0030074564178082896
+            "rOnchain": 0.0030074564178082896,
+            "cExp": 0.0001300721789540274,
+            "rCeil": 0.023494384639533347,
+            "rCeilExp": 0.04419899607314782
           }
         },
         "12": {
@@ -547,6 +680,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.03267,
           "marginPerPolicyEth": 0.0017173308,
+          "costPerPolicyExpectedEth": 0.000130392,
+          "marginPerPolicyExpectedEth": 0.0018369387,
+          "rStarCeiling": 0.11557,
+          "rStarCeilingExpected": 0.20035,
           "sellableInV1": true,
           "_raw": {
             "p": 0.003266923180634924,
@@ -555,7 +692,10 @@
             "pR60": 0.00005444871967724873,
             "lFair": 306.09841269841274,
             "lOnchain": 5,
-            "rOnchain": 0.01633461590317462
+            "rOnchain": 0.01633461590317462,
+            "cExp": 0.00013039203078167618,
+            "rCeil": 0.11557406371249576,
+            "rCeilExp": 0.2003494348555862
           }
         },
         "24": {
@@ -572,6 +712,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.142,
           "marginPerPolicyEth": 0.0016080008,
+          "costPerPolicyExpectedEth": 0.000131704,
+          "marginPerPolicyExpectedEth": 0.0017262968,
+          "rStarCeiling": 0.36224,
+          "rStarCeilingExpected": 0.51881,
           "sellableInV1": true,
           "_raw": {
             "p": 0.01419991909469033,
@@ -580,7 +724,10 @@
             "pR60": 0.00023666531824483885,
             "lFair": 70.42293644996347,
             "lOnchain": 5,
-            "rOnchain": 0.07099959547345165
+            "rOnchain": 0.07099959547345165,
+            "cExp": 0.00013170399029136282,
+            "rCeil": 0.36224358168672144,
+            "rCeilExp": 0.518807236015606
           }
         },
         "48": {
@@ -597,6 +744,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.59532,
           "marginPerPolicyEth": 0.0011546792,
+          "costPerPolicyExpectedEth": 0.0001371439,
+          "marginPerPolicyExpectedEth": 0.0012675353,
+          "rStarCeiling": 0.70425,
+          "rStarCeilingExpected": 0.81276,
           "sellableInV1": true,
           "_raw": {
             "p": 0.05953208486797738,
@@ -605,7 +756,10 @@
             "pR60": 0.0009922014144662897,
             "lFair": 16.79766469153015,
             "lOnchain": 5,
-            "rOnchain": 0.2976604243398869
+            "rOnchain": 0.2976604243398869,
+            "cExp": 0.00013714385018415729,
+            "rCeil": 0.7042543072367714,
+            "rCeilExp": 0.812763877362458
           }
         },
         "72": {
@@ -622,6 +776,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 1.15742,
           "marginPerPolicyEth": 0.0005925815,
+          "costPerPolicyExpectedEth": 0.000143889,
+          "marginPerPolicyExpectedEth": 0.0006986925,
+          "rStarCeiling": 0.82237,
+          "rStarCeilingExpected": 0.88943,
           "sellableInV1": true,
           "_raw": {
             "p": 0.11574184576747855,
@@ -630,7 +788,10 @@
             "pR60": 0.0019290307627913093,
             "lFair": 8.639917510983592,
             "lOnchain": 5,
-            "rOnchain": 0.5787092288373927
+            "rOnchain": 0.5787092288373927,
+            "cExp": 0.00014388902149209743,
+            "rCeil": 0.8223698157170481,
+            "rCeilExp": 0.8894273461148341
           }
         },
         "168": {
@@ -647,6 +808,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 3.24916,
           "marginPerPolicyEth": -0.001499156,
+          "costPerPolicyExpectedEth": 0.0001689899,
+          "marginPerPolicyExpectedEth": -0.0014181458,
+          "rStarCeiling": 0.92855,
+          "rStarCeilingExpected": 0.95056,
           "sellableInV1": false,
           "_raw": {
             "p": 0.32491559756921,
@@ -655,7 +820,10 @@
             "pR60": 0.005415259959486834,
             "lFair": 3.0777223607647546,
             "lOnchain": 5,
-            "rOnchain": 1.62457798784605
+            "rOnchain": 1.62457798784605,
+            "cExp": 0.00016898987170830518,
+            "rCeil": 0.9285541994307491,
+            "rCeilExp": 0.9505609534371313
           }
         }
       }
@@ -678,6 +846,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.00394,
           "marginPerPolicyEth": 0.0004460592,
+          "costPerPolicyExpectedEth": 0.0001300473,
+          "marginPerPolicyExpectedEth": 0.0005660119,
+          "rStarCeiling": 0.01552,
+          "rStarCeilingExpected": 0.02941,
           "sellableInV1": true,
           "_raw": {
             "p": 0.00039408049612660355,
@@ -686,7 +858,10 @@
             "pR60": 0.000006568008268776726,
             "lFair": 2537.5526315789475,
             "lOnchain": 14.285714285714286,
-            "rOnchain": 0.005629721373237194
+            "rOnchain": 0.005629721373237194,
+            "cExp": 0.00013004728965953518,
+            "rCeil": 0.01551859679214269,
+            "rCeilExp": 0.029411605355079348
           }
         },
         "12": {
@@ -703,6 +878,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.01711,
           "marginPerPolicyEth": 0.0004328875,
+          "costPerPolicyExpectedEth": 0.0001302053,
+          "marginPerPolicyExpectedEth": 0.0005526822,
+          "rStarCeiling": 0.06406,
+          "rStarCeilingExpected": 0.11616,
           "sellableInV1": true,
           "_raw": {
             "p": 0.0017112454755706743,
@@ -711,7 +890,10 @@
             "pR60": 0.000028520757926177906,
             "lFair": 584.3696969696971,
             "lOnchain": 14.285714285714286,
-            "rOnchain": 0.02444636393672392
+            "rOnchain": 0.02444636393672392,
+            "cExp": 0.00013020534945706847,
+            "rCeil": 0.06406460818668037,
+            "rCeilExp": 0.11616012638221751
           }
         },
         "24": {
@@ -728,6 +910,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.05943,
           "marginPerPolicyEth": 0.0003905657,
+          "costPerPolicyExpectedEth": 0.0001307132,
+          "marginPerPolicyExpectedEth": 0.0005098525,
+          "rStarCeiling": 0.19207,
+          "rStarCeilingExpected": 0.31257,
           "sellableInV1": true,
           "_raw": {
             "p": 0.005943428518084411,
@@ -736,7 +922,10 @@
             "pR60": 0.00009905714196807352,
             "lFair": 168.25305410122166,
             "lOnchain": 14.285714285714286,
-            "rOnchain": 0.08490612168692016
+            "rOnchain": 0.08490612168692016,
+            "cExp": 0.00013071321142217013,
+            "rCeil": 0.1920740138608385,
+            "rCeilExp": 0.31256938031074744
           }
         },
         "48": {
@@ -753,6 +942,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.20574,
           "marginPerPolicyEth": 0.0002442626,
+          "costPerPolicyExpectedEth": 0.0001324688,
+          "marginPerPolicyExpectedEth": 0.0003617937,
+          "rStarCeiling": 0.45144,
+          "rStarCeilingExpected": 0.60832,
           "sellableInV1": true,
           "_raw": {
             "p": 0.02057374072729159,
@@ -761,7 +954,10 @@
             "pR60": 0.0003428956787881932,
             "lFair": 48.605648008068584,
             "lOnchain": 14.285714285714286,
-            "rOnchain": 0.2939105818184513
+            "rOnchain": 0.2939105818184513,
+            "cExp": 0.000132468848887275,
+            "rCeil": 0.451438490651945,
+            "rCeilExp": 0.6083193421929743
           }
         },
         "72": {
@@ -778,6 +974,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 0.37235,
           "marginPerPolicyEth": 0.0000776502,
+          "costPerPolicyExpectedEth": 0.0001344682,
+          "marginPerPolicyExpectedEth": 0.000193182,
+          "rStarCeiling": 0.5983,
+          "rStarCeilingExpected": 0.73468,
           "sellableInV1": true,
           "_raw": {
             "p": 0.03723498095702618,
@@ -786,7 +986,10 @@
             "pR60": 0.0006205830159504364,
             "lFair": 26.856465997770346,
             "lOnchain": 14.285714285714286,
-            "rOnchain": 0.5319282993860883
+            "rOnchain": 0.5319282993860883,
+            "cExp": 0.00013446819771484314,
+            "rCeil": 0.5982966554249814,
+            "rCeilExp": 0.7346814916163791
           }
         },
         "168": {
@@ -803,6 +1006,10 @@
           "leverageAtDefault001": 10,
           "lossRatioAtDefault001": 1.17904,
           "marginPerPolicyEth": -0.000729037,
+          "costPerPolicyExpectedEth": 0.0001441484,
+          "marginPerPolicyExpectedEth": -0.0006231855,
+          "rStarCeiling": 0.82506,
+          "rStarCeilingExpected": 0.89106,
           "sellableInV1": false,
           "_raw": {
             "p": 0.11790370331896328,
@@ -811,7 +1018,10 @@
             "pR60": 0.0019650617219827216,
             "lFair": 8.481497797356829,
             "lOnchain": 14.285714285714286,
-            "rOnchain": 1.6843386188423326
+            "rOnchain": 1.6843386188423326,
+            "cExp": 0.0001441484443982756,
+            "rCeil": 0.825057017982245,
+            "rCeilExp": 0.8910595325902081
           }
         }
       }

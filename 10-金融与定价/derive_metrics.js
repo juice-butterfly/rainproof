@@ -55,6 +55,21 @@ const lossRatio = (expectedPayout, premium) => expectedPayout / premium;
 const fairPremium = (expectedPayout) => expectedPayout;
 /** 想让赔付率等于某个目标值 R*，保费必须收这么多 */
 const premiumAt = (expectedPayout, rStar) => expectedPayout / rStar;
+/**
+ * R* 的可行上界（不假设费用率，直接减去每笔固定成本 C）：
+ *   保费 P = E/R* 必须同时覆盖期望赔付 E 与固定成本 C
+ *   ⟹ E/R* ≥ E + C  ⟹  R* ≤ E/(E+C)
+ * 也就是说 R* 不是随便拍的：C 越大 / E 越小的区域，R* 的可选范围越窄。
+ */
+const rStarCeiling = (expectedPayout, cost = COST_PER_POLICY) => expectedPayout / (expectedPayout + cost);
+/**
+ * 两种成本口径（**必须分开写**，否则"北京到底亏不亏"会给出相反答案）：
+ *   保守 C_cons = judge + payout = 0.00025  —— 把赔付那笔 gas 也摊到每一份保单上（上界）
+ *   期望 C_exp(p) = judge + p × payout ≈ 0.000135 —— 判定每份都要付，赔付只在出险时付
+ * 池子的长期真实支出是 C_exp；C_cons 是"假设每一份都出险"的悲观上界。
+ */
+const costConservative = COST_PER_POLICY;
+const costExpected = (p) => COST.judge + p * COST.payout;
 const round = (v, n) => Math.round(v * 10 ** n) / 10 ** n;
 
 function main() {
@@ -120,9 +135,17 @@ function main() {
         leverageAtDefault001: round(leverage(PREMIUM_DEFAULT), 2),
         lossRatioAtDefault001: round(lossRatio(ePay, PREMIUM_DEFAULT), 5),
         marginPerPolicyEth: round(margin, 10),
+        // 两种成本口径各算一遍 —— 符号在这两种口径之间会翻
+        costPerPolicyExpectedEth: round(costExpected(p), 10),
+        marginPerPolicyExpectedEth: round(premiumOnchain - ePay - costExpected(p), 10),
+        rStarCeiling: round(rStarCeiling(ePay), 5),                        // 保守口径下的 R* 上界
+        rStarCeilingExpected: round(rStarCeiling(ePay, costExpected(p)), 5), // 期望口径下的 R* 上界
         sellableInV1: h <= 72,                   // v1: MIN_HOURS=1 / MAX_HOURS=72
         // 全精度原值：自检的恒等式必须用它们判，用显示值会被四舍五入骗过
-        _raw: { p, ePay, fair, pR60, lFair, lOnchain, rOnchain },
+        _raw: {
+          p, ePay, fair, pR60, lFair, lOnchain, rOnchain,
+          cExp: costExpected(p), rCeil: rStarCeiling(ePay), rCeilExp: rStarCeiling(ePay, costExpected(p)),
+        },
       };
 
       console.log(
@@ -137,6 +160,25 @@ function main() {
     out.v1[region.key] = { premiumOnchain, onchainAtBlock: CHAIN.block, windows: rows };
     console.log('');
   }
+
+  // ── R* 的可行区间：把固定成本 C 显式减掉，R* 就不是随便拍的了 ────────────
+  console.log('══ R* 的可行上界（72h）：R* ≤ E[赔付] / (E[赔付] + 固定成本 C) ══');
+  console.log(`   保守口径 C = judge + payout = ${costConservative}（把赔付 gas 也摊到每份）`);
+  console.log('   期望口径 C = judge + p×payout ≈ 0.000135（赔付只在出险时付）—— 池子真实长期支出是这一列');
+  console.log('   C 越大、E 越小的区域，R* 可选范围越窄 —— 这就是「60% 不是随便定的」的量化依据。\n');
+  console.log('     城市      E[赔付]72h   上界(保守)   上界(期望)   我们取 R*   现价净毛利(保守/期望)');
+  for (const region of REGIONS) {
+    const raw = out.v1[region.key].windows['72']._raw;
+    const row = out.v1[region.key].windows['72'];
+    console.log(
+      `   ${region.name.padEnd(6)}  ${raw.ePay.toExponential(3).padStart(11)}  ` +
+      `${((raw.rCeil * 100).toFixed(1) + '%').padStart(11)}  ` +
+      `${((raw.rCeilExp * 100).toFixed(1) + '%').padStart(11)}  ` +
+      `${(TARGET_LOSS_RATIO * 100).toFixed(0).padStart(9)}%  ` +
+      `${row.marginPerPolicyEth.toExponential(2)} / ${row.marginPerPolicyExpectedEth.toExponential(2)}`
+    );
+  }
+  console.log('');
 
   // ── v2：阈值随窗口缩放 + 三档比例赔付 ────────────────────────────────────
   console.log('══ v2（待部署）：thresholdOf(h) = 50 × h / 24，三档按比例赔付 ══');
@@ -305,6 +347,37 @@ function selfCheck(out) {
     const x = out.v1[r.key].windows['72']._raw;
     const R = x.fair / x.pR60;
     check(Math.abs(R - TARGET_LOSS_RATIO) < 1e-12, `${r.name} 72h: 按 R*=60% 定价回代 → R = ${round(R, 10)}`);
+  }
+  // R* 的可行上界：在 R* = 上界处，公式价恰好 = E + 固定成本 C（毛利恰为零）
+  for (const r of REGIONS) {
+    const x = out.v1[r.key].windows['72']._raw;
+    check(
+      Math.abs(premiumAt(x.ePay, x.rCeil) - (x.ePay + costConservative)) < 1e-15,
+      `${r.name} 72h: R* 上界(保守) ${round(x.rCeil * 100, 2)}% 处公式价 = E + C_cons = ${premiumAt(x.ePay, x.rCeil).toExponential(4)}`
+    );
+    check(
+      Math.abs(premiumAt(x.ePay, x.rCeilExp) - (x.ePay + x.cExp)) < 1e-15,
+      `${r.name} 72h: R* 上界(期望) ${round(x.rCeilExp * 100, 2)}% 处公式价 = E + C_exp = ${premiumAt(x.ePay, x.rCeilExp).toExponential(4)}`
+    );
+  }
+  // 两种成本口径给出**相反**的可行结论 —— 这正是"北京到底亏不亏"的答案所在，必须写死
+  {
+    const consOut = REGIONS.filter((r) => out.v1[r.key].windows['72']._raw.rCeil < TARGET_LOSS_RATIO).map((r) => r.name);
+    const expOut = REGIONS.filter((r) => out.v1[r.key].windows['72']._raw.rCeilExp < TARGET_LOSS_RATIO).map((r) => r.name);
+    check(
+      consOut.join('、') === '北京、成都',
+      `保守口径下 R*=60% 越界的城市：${consOut.join('、') || '无'}（北京 47.7%、成都 59.8% → 按公式价卖都亏）`
+    );
+    check(
+      expOut.length === 0,
+      `期望口径下 R*=60% 越界的城市：${expOut.join('、') || '无'}（五城上界 63.2%~88.9%，60% 全部落在区间内）`
+    );
+    // 符号翻转本身要断言：北京在两种口径下净利润一负一正
+    const bj = out.v1.beijing.windows['72'];
+    check(
+      bj.marginPerPolicyEth < 0 && bj.marginPerPolicyExpectedEth > 0,
+      `北京 72h 现价净毛利符号随成本口径翻转：保守 ${bj.marginPerPolicyEth} / 期望 ${bj.marginPerPolicyExpectedEth}`
+    );
   }
   // 单调性：保费越高，赔付率与杠杆越低
   const wu = out.v1.wuhan.windows['72'];

@@ -512,14 +512,14 @@ def s18_appendix(prs, n):
     kicker(s, "附录 · 可当场复算")
     big(s, ["你现在就能验的三件事"], Inches(1.3), size=25)
     bullets(s, M, Inches(2.5), Inches(5.9), [
-        ("跑一遍断言。", "六套共 251 项，全绿。"),
+        ("跑一遍断言。", "九套共 426 项，全绿。"),
         ("重算一份哈希。", "8 份 AI 判定留痕，输入与输出哈希可逐字节重算。"),
         ("自己问节点。", "两个页面都不是区块浏览器，没有缓存，直接向 RPC 要原始记录。"),
     ], size=12.5, gap=10)
     rect(s, Inches(7.15), Inches(2.5), Inches(5.28), Inches(3.3), PANEL, HAIR)
     tf = textbox(s, Inches(7.45), Inches(2.7), Inches(4.7), Inches(3.0))
     run(para(tf, True), "当场可复算", 10.5, FAINT, True, space=1.2)
-    for t in ["cd 07-测试工具 && npm test —— 六套 251 项断言（8 + 29 + 21 + 19 + 73 + 101）",
+    for t in ["cd 07-测试工具 && npm test —— 九套 426 项断言（8 + 29 + 27 + 19 + 9 + 73 + 101 + 73 + 87）",
               "node check-feed-verify.js —— 喂价闸门 12 项 + 承保复核 7 项",
               "node push-rainfall.js 4 —— 真跑一遍喂价，走闸门、必要时拒收",
               "09-AI判定留痕/ —— 8 份 JSON，哈希可当场重算"]:

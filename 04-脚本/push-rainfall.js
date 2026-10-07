@@ -37,6 +37,8 @@
 // dotenv 是可选依赖：装了就从 .env 读，没装也能直接用环境变量跑
 try { require("dotenv").config(); } catch (_) { /* 忽略 */ }
 const { JsonRpcProvider, Wallet, Contract, formatEther, parseEther } = require("ethers");
+// AI 喂价验收的第二层：三个独立数值预报模型的交叉核验（实现见同目录 feed-verify.js）
+const { MODELS, fetchModelSeries, gradeModels } = require("./feed-verify");
 
 /* ------------------------------------------------------------------ 配置 */
 
@@ -125,9 +127,11 @@ function ymd(d) {
  *   只有一个数据源可用       → 中等置信度 72，sources=1（仍 ≥ MIN_CONFIDENCE=60，可喂）
  *   两源分歧超过容差         → **拒收**：mm=null，confidence=40，交给上层调 rejectFeed 留证
  *
- * ⚠️ 诚实标注：这两个接口都来自 Open-Meteo，**不是三个不同厂商的模型**。
- *    「ECMWF / GFS / ICON 三模型交叉」是 v3 §3.5 的目标形态，由 AI 模块承担；
- *    本脚本作为链下喂价者，只做它自己真能做到、且不撒谎的那部分核验。
+ * ⚠️ 诚实标注（2026-10-07 更新）：上面这两条接口都来自 Open-Meteo，**不是三个不同厂商的模型**。
+ *    所以脚本在同厂商两路径比完之后，还会再调 feed-verify.js 做**第二层：三模型交叉核验** ——
+ *    ECMWF IFS025 / GFS(NOAA) / ICON(DWD) 各拉一份逐日序列，只在公共日期上比累计值，
+ *    三个（或多数）落在中位数 ± 容差内才写链，否则整批拒收、走 rejectFeed 留证。
+ *    两层核验都过才喂价，链上 `sources` 写的是第二层实际采信的模型数。
  */
 async function collectRegion(region) {
   const today = new Date();
@@ -394,16 +398,27 @@ async function main() {
       snapshot = got.snapshot;
       srcNote = got.note;
 
+      /* ---- 第二层：三个独立模型的交叉核验（不认时把 mm 置空，下面走 rejectFeed 留证） ---- */
+      if (mm !== null) {
+        const mv = await verifyFeedWithModels(r, got);
+        mm = mv.mm;
+        conf = mv.confidence;
+        sources = mv.sources;
+        snapshot = mv.snapshot;
+        srcNote = `${srcNote}\n     ${mv.verdict.agree ? "✅" : "⛔"} 三模型核验 ` +
+                  `${mv.verdict.status}：${mv.verdict.note}`;
+      }
+
       /* ---- 多源验收不通过：不喂价，但把这次异常留在链上 ---- */
       if (mm === null) {
-        process.stdout.write(`#${r.id} ${r.name.padEnd(4)} ${C.y("⛔ 多源分歧")} `);
+        process.stdout.write(`#${r.id} ${r.name.padEnd(4)} ${C.y("⛔ 验收未过")} `);
         try {
           const tx = await contract.rejectFeed(
             r.id, conf, sources, evidenceHashOf(snapshot), MODEL_VERSION);
           const rc = await tx.wait();
           console.log(C.y("已 rejectFeed 留证") + C.dim(`  区块 ${rc.blockNumber} · ${tx.hash.slice(0, 18)}…`));
           console.log(`     ${C.dim(srcNote)}`);
-          results.push({ r, ok: false, reason: "多源分歧，已留证", rejected: true });
+          results.push({ r, ok: false, reason: "喂价验收未过（多源或多模型分歧），已留证", rejected: true });
         } catch (e) {
           console.log(C.r("rejectFeed 也失败") + "  " + (e.shortMessage || e.message));
           results.push({ r, ok: false, reason: e.shortMessage || e.message });
@@ -474,6 +489,62 @@ async function main() {
     await sleep(min * 60 * 1000);
     return main();
   }
+}
+
+/**
+ * 喂价闸门第二层：三个独立数值预报模型的交叉核验（实现在 feed-verify.js）
+ * ---------------------------------------------------------------------------
+ * 第一层（collectRegion）比的是「同一家厂商的两条数据路径」，它能发现取数出错，
+ * 但发现不了「这场雨本身三个模型就有分歧」。第二层补上这个：三个模型各自算一遍
+ * 自 RAIN_EPOCH 起的累计值，只在**公共日期**上比，只有一致（或多数一致）才认这份数据。
+ *
+ * 返回 { ok, mm, confidence, sources, snapshot, verdict }
+ *   · ok=false 时 mm=null —— 调用方**必须**拿这份快照去 rejectFeed 留证。
+ *     拒收也是一种上链动作：链上留下「某天某个区域数据分歧、没有喂价」的记录。
+ *   · ★ 喂进链上的累计值仍取第一层的 archive/forecast 口径值（链上口径不变），
+ *     第二层只决定「这份数据够不够可信到可以写链」，以及 `sources` / `confidence` 取值。
+ *     链上数字本身有没有被模型支撑，由判定层的 R2（背离 > 60% 即 DENY）再查一次 ——
+ *     两层分工不同，不要混着讲：喂价闸门管「天气形势有没有共识」，判定层管「数字对不对」。
+ */
+async function verifyFeedWithModels(region, got) {
+  const end = UNTIL || ymd(new Date());
+  let series;
+  try {
+    series = await fetchModelSeries(region, end, RAIN_EPOCH);
+  } catch (e) {
+    // 取数失败本身也要留痕：不能因为「拉不到模型」就默认「模型同意」
+    series = MODELS.map((m) => ({
+      id: m.id, label: m.label, org: m.org, error: `取数失败：${e.message}`,
+    }));
+  }
+
+  const v = gradeModels(series);
+  const snapshot = Object.assign({}, got.snapshot, {
+    schema: "rainproof/feed-snapshot@2",
+    models: {
+      requested: v.requestedModels,
+      usable: v.usableModels,
+      missing: v.missingModels,
+      perModelMm: v.perModelMm || null,
+      window: v.window || null,
+      overlapDays: v.overlapDays || 0,
+      medianMm: v.medianMm == null ? null : v.medianMm,
+      spreadMm: v.spreadMm == null ? null : v.spreadMm,
+      toleranceMm: v.toleranceMm == null ? null : v.toleranceMm,
+      within: v.withinModels || [],
+      outliers: v.outlierModels || [],
+      status: v.status,
+    },
+  });
+
+  return {
+    ok: v.agree,
+    mm: v.agree ? got.mm : null,
+    confidence: Math.min(got.confidence, v.confidence),
+    sources: v.sources,
+    snapshot,
+    verdict: v,
+  };
 }
 
 /* ------------------------------------------------------------ 只读状态 */

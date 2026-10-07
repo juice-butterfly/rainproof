@@ -92,7 +92,11 @@ AI 判定登记后不影响已生效的赔付条件。详见下面「已知边�
 - **AI 判定模块**（`04-脚本/`）：`canonical.js`（确定性哈希口径）、`regions.js`（唯一区域表）、
   `ai-collect.js`（三模型证据快照）、`ai-judge.js`（确定性判定，大模型只写解释）、
   `submit-judgement.js`（提交前重算核对 + 提交后读回校验）。
-- **测试**：`check-canonical.js`、`check-ai.js`（29 项 + 1369 个用例的硬约束扫描，含「每条留痕的哈希都能当场重算」）、
+- **AI 喂价闸门**：`04-脚本/feed-verify.js` —— ECMWF / GFS / ICON 三个**独立机构**的模型各拉一份
+  逐日序列，只在公共日期上比「自 RAIN_EPOCH 起的累计值」，多数落在中位数 ± 容差内才认这份数据；
+  `push-rainfall.js` 写链前调它，不认就走 `rejectFeed` 留证（**拒收也是一种上链动作**）。
+  2026-10-07 首跑即真拒收一次（广州），见 `02-作战与答辩/汉客松-交易哈希清单.md` §三。
+- **测试**：`check-canonical.js`、`check-ai.js`（29 项 + 1369 个用例的硬约束扫描，含「每条留痕的哈希都能当场重算」）、`check-feed-verify.js`（喂价闸门判定 12 项，含「极差超容差但三个都离中位数很近 → 必须判一致」这条回归用例）、
   `check-ui.js`（前端契约：降雨看板刻度与触发线对齐、保障时长三档下拉、三个页面 DOM 引用完整）、
   `e2e_contract.js`（v1 合约，73 项断言）、`e2e_v2.js`（v2 合约，101 项断言）。
 - **真链部署与端到端彩排**：Sepolia 部署、真实气象数据喂价、AI 判定上链、赔付出款，
@@ -162,6 +166,7 @@ cp .env.example .env      # 填入 PRIVATE_KEY / CONTRACT_ADDRESS / SEPOLIA_RPC
 node push-rainfall.js --status    # 看链上总览：池子、5 个区域雨量、最近喂价
 node push-rainfall.js             # 真实气象数据喂价（Open-Meteo）
 node push-rainfall.js --demo      # 演示模式：注入模拟暴雨（链上会标记 simulated）
+node feed-verify.js               # 三模型交叉核验（只读、不写链）：认不认这份数据
 node ai-collect.js <保单号>        # 采集三模型证据快照 → 09-AI判定留痕/
 node ai-judge.js <保单号>          # 确定性判定 → 判定结果 JSON
 node submit-judgement.js <保单号>  # 重算核对后把判定提交上链

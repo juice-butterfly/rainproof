@@ -77,16 +77,25 @@
   .rail-i b{display:block;font-family:var(--mono);font-size:16px;font-weight:600;color:var(--ink);margin-top:3px}
 
   /* ---------- 区块：靠 hairline 与留白分段，不靠卡片墙 ---------- */
-  .sec{padding-top:26px}
+  /* 分区标题分两级。四个标题一样大 = 页面没有视觉入口：
+     只有「降雨看板」是这一页的入口（17px / 660 / --ink），其余是它的支撑（14px / 600 / --dim）。
+     台阶只靠字号 + 字重 + 颜色深浅，不加边条、不加编号（DESIGN.md 的 Don't 清单）。 */
+  .sec{padding-top:22px}
   .sec + .sec{border-top:1px solid var(--hair)}
-  .sec > h2{font-size:var(--t-h2);font-weight:620;letter-spacing:.1px;color:var(--ink);
-    display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .sec > h2{font-size:var(--t-h2);font-weight:600;letter-spacing:.1px;color:var(--dim);
+    display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
   .sec > h2 em{font-style:normal;font-size:var(--t-lab);color:var(--faint);font-weight:400;letter-spacing:.2px}
+  .sec.lead{padding-top:28px}
+  .sec.lead > h2{font-size:17px;font-weight:660;color:var(--ink);letter-spacing:0;margin-bottom:14px}
+  .sec.lead > h2 em{font-size:12px;color:var(--dim)}
   .panel{background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);padding:18px 20px}
   .panel.plain{background:transparent;border-style:dashed}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .grid2{display:grid;grid-template-columns:1.55fr .95fr;gap:28px}
-  .stick{position:sticky;top:20px}
+  /* 右栏整列一起粘（不是只粘投保面板）：粘一半会在右下方留一块空白跟着滚，
+     而且那块空白没有任何内容可以填 —— 整列粘 + 右栏下面接「AI 层做了什么」，
+     这样滚动时右边始终是"动作 + 它背后的智能"，左边始终是链上现状。 */
+  .rcol{position:sticky;top:20px;align-self:start}
   @media (max-width:1000px){
     .grid2{grid-template-columns:1fr}
     /* 窄屏右栏会被挤到最下面：投保面板必须排在事件流前面，否则手机上要先划过整屏日志才看得到"投保" */
@@ -144,6 +153,14 @@
   .bar i.hit{background:var(--accent)}
   .bar::after{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:var(--warn);opacity:.8}
   .rnote{font-size:var(--t-lab);color:var(--faint);margin-top:5px}
+  /* 「触发线」三个字原来在 5 行里各出现一次 —— 同一条线、同一个含义，写 5 遍是噪声。
+     只留在选中那一行（它正好也是背景雨幕的来源），其余行只留线不留字。 */
+  .region:not(.is-sel) .bar::before{content:""}
+  /* 三行说同一件事也是噪声：状态词交给金色标签（"已超阈值"），条子只管"跨过线了没有"，
+     每行只报自己独有的数（越过多少 / 还差多少），共同的那句解释写一遍在这里。 */
+  .rlegend{font-size:var(--t-lab);color:var(--faint);line-height:1.85;margin-top:12px;padding-top:11px;
+    border-top:1px solid var(--hair)}
+  .rlegend b{color:var(--dim);font-weight:600}
   /* 选中的那一行 == 整页背景雨幕的来源 */
   .region.is-sel .rtop > span:first-child{color:var(--ink);font-weight:620}
   .region.is-sel .rtop > span:first-child::after{content:"背景雨幕";margin-left:7px;font-size:11px;
@@ -184,10 +201,24 @@
   .ev .et{color:var(--dim);overflow-wrap:anywhere}
   .ev .ea{color:var(--faint);font-family:var(--mono);font-size:11px;white-space:nowrap;text-align:right}
   .ev .etx{font-size:11px;color:var(--blue-l);white-space:nowrap;text-align:right}
+  .ev-more{display:none;margin-top:12px}
   @media (max-width:1000px){
     .ev{grid-template-columns:minmax(0,1fr);gap:3px}
     .ev .ea,.ev .etx{text-align:left}
+    /* 手机上 20 条事件 × 3 行会占掉 2/3 屏，把投保和保单挤没了。
+       先给 6 条，余下的点一下再展开 —— 数据一条不少，只是先折叠。 */
+    .ev-extra{display:none}
+    .events-open .ev-extra{display:grid}
+    .ev-more{display:inline-block}
   }
+
+  /* ---------- AI 层：右栏三个动作，一行一条（不是卡片阵列） ---------- */
+  .airow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:baseline;
+    padding:10px 0;border-top:1px solid var(--hair);font-size:var(--t-tbl)}
+  .airow:first-child{border-top:none;padding-top:2px}
+  .airow b{color:var(--ink);font-weight:600;white-space:nowrap}
+  .airow span{color:var(--dim);line-height:1.7}
+  .airow span code{font-family:var(--mono);font-size:11px;color:var(--faint)}
 
   .empty{color:var(--faint);font-size:var(--t-tbl)}
   .loading{color:var(--dim);font-size:var(--t-tbl)}
@@ -205,7 +236,7 @@
 
   /* ---------- 折叠区（设置 / 诚实说明）：说明该有，但不该占道 ---------- */
   details.cfgbox,details.notes{margin-top:26px;border-top:1px solid var(--hair);padding-top:16px}
-  details > summary{cursor:pointer;font-size:var(--t-h2);font-weight:620;color:var(--ink);list-style:none;
+  details > summary{cursor:pointer;font-size:var(--t-h2);font-weight:600;color:var(--dim);list-style:none;
     display:flex;align-items:center;gap:9px}
   details > summary::-webkit-details-marker{display:none}
   details > summary::before{content:"";width:6px;height:6px;border-right:1.5px solid var(--faint);
@@ -265,7 +296,7 @@
 <div class="grid2">
   <!-- ============ 左栏：现状与记录 ============ -->
   <div>
-    <section class="sec">
+    <section class="sec lead">
       <h2>降雨看板<em>链上的累计值，只增不减（喂价脚本从 2026-10-01 起累加）；触发赔的是<strong>投保后的增量</strong>，不是这个数；标了「背景雨幕」的那一行，就是整页背景雨的来源</em></h2>
       <div class="panel" id="rainBoard">
         <div class="loading">正在读取各区域降雨</div>
@@ -280,9 +311,9 @@
     </section>
   </div>
 
-  <!-- ============ 右栏：这一页唯一的动作 ============ -->
-  <div>
-    <section class="sec stick">
+  <!-- ============ 右栏：这一页唯一的动作 + 动作背后的 AI 层 ============ -->
+  <div class="rcol">
+    <section class="sec">
       <h2>投保<em>保费与阈值都从链上取，不写死在页面里</em></h2>
       <div class="panel">
         <div class="row" style="align-items:flex-end">
@@ -308,6 +339,15 @@
           保单期间该区域<strong>新增累计降雨 ≥ 阈值</strong> 就能申请赔付（基线 = 投保当刻的链上雨量），最高赔 <strong id="payoutShow">—</strong>。
           实赔按国标档位打折：<strong>暴雨 50% / 大暴雨 75% / 特大暴雨 100%</strong>。
         </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2>AI 层做了什么<em>链下算、链上留痕；每条结论都能被第三方拿同一份快照复算</em></h2>
+      <div class="panel">
+        <div class="airow"><b>喂价验收</b><span>三模型交叉比对，离群就拒收 —— 拒收本身也上链留痕</span></div>
+        <div class="airow"><b>判定复核</b><span>按 R1–R5 规则给出赔/不赔与置信度，输入快照与输出结论各一个哈希写进链</span></div>
+        <div class="airow"><b>承保定价</b><span>五个区域的差异化保费，依据串哈希写进 <code>UnderwritingDecision</code> 事件</span></div>
       </div>
     </section>
   </div>
@@ -349,9 +389,8 @@
   <p><b>这一页不依赖任何区块浏览器。</b>合约地址、账户余额、降雨值、事件日志，全部直接向节点提问取得
   （<code>rpc.bohr.life</code>）。</p>
   <p><b>只读模式：</b>没连钱包也能看全部数据。现场万一 MetaMask 出问题，照样能演示「链上有什么」。</p>
-  <p><b>诚实说明：</b>喂价脚本是<strong>中心化预言机</strong>，数据可信度取决于运营方。生产环境应改用去中心化预言机网络。
-  AI 在链下做三件事：<strong>验收喂进来的天气数据</strong>（三模型交叉比对，离群就拒收）、<strong>按 R1–R5 规则判定该不该赔</strong>、<strong>给五个区域定差异化保费</strong>。
-  它<strong>不判断「人有没有真的受损」</strong>，那需要平台的订单数据，属于路线图。
+  <p><b>诚实说明：</b>喂价脚本是<strong>中心化预言机</strong>，数据可信度取决于运营方；生产环境应改用去中心化预言机网络
+  （AI 层在链下做的三件事见右栏）。它<strong>不判断「人有没有真的受损」</strong>，那需要平台的订单数据，属于路线图。
   每次判定都把输入快照和输出结论各算一个哈希写上链，第三方拿同一份快照重跑，得到的是逐字节相同的结果。</p>
 </footer>
 </div>
@@ -718,13 +757,16 @@ async function loadRegions() {
           <span><b>${v}</b> mm${hit ? ' <span class="tag gold" style="margin-left:6px">已超阈值</span>' : ""}</span>
         </div>
         <div class="bar"><i class="${hit ? "hit" : ""}" style="width:${pct}%"></i></div>
-        <div class="rnote">阈值 ${thr} mm · ${hit ? "已越过阈值 · 赔付按<b>投保后的增量</b>算，须在触发前投保" : `距触发还差 ${thr - v} mm`}</div>
+        <div class="rnote">阈值 ${thr} mm · ${hit ? `已越过 <b>${v - thr}</b> mm` : `距触发还差 ${thr - v} mm`}</div>
       </div>`);
     } catch (e) {
       out.push(`<div class="empty">区域 #${id} 读取失败：${esc(e.message || e)}</div>`);
     }
   }
   const got = Object.keys(vals).length;
+  // 五行各写一遍同一句解释是噪声：共同的解释只写一遍，放在看板底部。
+  if (got) out.push(`<div class="rlegend">竖线 = 该时长对应的国标触发线（${thr} mm），条形刻度 0 → 2×阈值。
+    <b>触发赔的是投保后的增量</b>（基线 = 投保当刻的链上雨量）—— 已经下过的雨不算，所以要在越过阈值之前投保。</div>`);
   if (got) S.rainVals = vals;                       // 只收下真正读到的值，全失败时不动上一版
   const sig = thr + "|" + REGIONS.map(r => vals[r.id]).join(",");   // ★ 阈值也算进签名：切时长会换阈值，只比雨量会把旧刻度留在页面上
   // 一个都没读到、且看板上已经有数字时，宁可留着上一版 —— 现场 RPC 抖一下不该给评委看一屏报错
@@ -739,14 +781,19 @@ async function loadRegions() {
 /* 背景雨幕的强度 = 「配送区域」当前选中那条链上记录，刻度取 max(阈值×2, 五城最大值)：
    条子（雨量看板）负责说「这条线被跨过了没有」，雨幕负责说「这场雨有多大」——
    如果雨幕也按 阈值×2 封顶，演示链上五城（101/287/109/303/227 mm）除武汉外全顶格，
-   背景就全是同一场暴雨、看不出层次了。 */
+   背景就全是同一场暴雨、看不出层次了。
+   另外：亮度与密度对雨的响应不能是线性的 —— 线性时默认选中的武汉（101 mm，已是国标暴雨档）
+   只落到 0.33，实测就是"几道极淡斜线"。这里用 γ=0.6 把中段抬起来（感知映射，不是改数据）：
+   武汉 0.52 / 上海 0.97 / 北京 0.55 / 广州 1.00 / 成都 0.84 —— 五城仍有层次，
+   而"现在正下着暴雨"一眼看得出来。 */
 function applyRain() {
   if (!S.meta || !S.rainVals) return;
   const v = S.rainVals[Number($("regionSel").value) || 1];
   if (v == null) return;                            // 选中区域没读到 → 保持上一次的雨量，不清零
   const thr = Number(S.meta.threshold) || 50;
   const scale = Math.max(thr * 2, Math.max(...Object.values(S.rainVals), 0));
-  document.documentElement.style.setProperty("--rain", Math.min(1, v / scale));
+  const t = Math.min(1, v / scale);
+  document.documentElement.style.setProperty("--rain", Math.pow(t, 0.6).toFixed(3));
 }
 
 /* 看板上标出是哪一行在驱动背景雨幕 */
@@ -850,6 +897,11 @@ async function loadMyPolicies() {
 }
 
 /* 链上动态 */
+/* 手机上事件流会把整页淹没（20 条 × 3 行 ≈ 2/3 屏），所以窄屏先给 6 条、
+   其余折叠在按钮后面（CSS 里 .ev-extra 只在窄屏被隐藏，桌面端一条不少）。
+   展开状态记在这里：轮询每 12 秒重建一次列表，不能让用户刚点开就被收回去。 */
+let eventsOpen = false;
+
 async function loadEvents() {
   const box = $("events");
   try {
@@ -912,14 +964,26 @@ async function loadEvents() {
       const ts = times[l.blockNumber];
       const when = ts ? new Date(Number(ts) * 1000) : null;
       const ago = when ? Math.floor((Date.now() - when.getTime()) / 60000) : null;
-      rows.push(`<div class="ev">
+      rows.push(`<div class="ev${rows.length >= 6 ? " ev-extra" : ""}">
         <span class="en ${EV_STYLE[d.name] || ""}">${esc(d.name)}</span>
         <span class="et">${desc}</span>
         <span class="ea">#${Number(l.blockNumber).toLocaleString("en-US")}${ago !== null ? " · " + (ago < 1 ? "刚刚" : ago + " 分钟前") : ""}</span>
         ${l.transactionHash ? `<a class="etx" href="verifier.html?q=${l.transactionHash}${QS.get("rpc") ? "&rpc=" + encodeURIComponent(QS.get("rpc")) : ""}" target="_blank" rel="noopener" title="在本站核验台里看这笔交易">核验 ↗</a>` : ""}
       </div>`);
     }
-    box.innerHTML = rows.length ? rows.join("") : `<div class="empty">没有能解析的事件。</div>`;
+    if (eventsOpen) box.classList.add("events-open");
+    box.innerHTML = rows.length
+      ? rows.join("") + (rows.length > 6
+          ? `<button class="btn sm ev-more">展开其余 ${rows.length - 6} 条（共 ${rows.length} 条）</button>` : "")
+      : `<div class="empty">没有能解析的事件。</div>`;
+    // 事件委托：列表每轮都会被重建，把监听挂在容器上比挂在按钮上稳
+    box.onclick = (e) => {
+      const b = e.target.closest && e.target.closest(".ev-more");
+      if (!b) return;
+      eventsOpen = true;
+      box.classList.add("events-open");
+      b.remove();
+    };
   } catch (e) {
     box.innerHTML = `<div class="empty">读取事件失败：${esc(e.reason || e.message || e)}</div>`;
   }
@@ -1063,7 +1127,7 @@ if (window.ethereum) {
       x:  Math.random() * (W * 1.25) - W * 0.10,
       y:  spread ? Math.random() * H : -Math.random() * H * 0.5,
       vy: 380 + z * 1000,                                 /* px/s */
-      a:  0.10 + z * 0.30
+      a:  0.16 + z * 0.42
     };
   }
 
@@ -1085,8 +1149,11 @@ if (window.ethereum) {
     ctx.clearRect(0, 0, W, H);
 
     if (!document.hidden){                                 /* 切走标签页就不画 */
+      /* 三根轴（速度 / 密度 / 亮度）都从 --rain 读，且都有下限：
+         rain=0.5 时就该看得出"在下雨"，而不是只在满格时才出现（原来的下限太暗，
+         实测只有几道极淡斜线，雨幕这个主角动效等于没兑现）。 */
       var speed = 0.55 + rain * 1.45;                      /* ---- 轴1：速度 ---- */
-      var shown = Math.round(drops.length * (0.06 + rain * 0.94));  /* -- 轴2：密度 -- */
+      var shown = Math.round(drops.length * (0.14 + rain * 0.86));  /* -- 轴2：密度 -- */
       for (var i = 0; i < shown; i++){
         var d = drops[i];
         d.y += d.vy * speed * dt;
@@ -1097,7 +1164,7 @@ if (window.ethereum) {
         }
         var zi = d.z < 0.42 ? 0 : (d.z < 0.72 ? 1 : 2);
         var sp = sprites[zi];
-        ctx.globalAlpha = Math.min(1, d.a * (0.20 + rain * 0.80));   /* -- 轴3：亮度 -- */
+        ctx.globalAlpha = Math.min(1, d.a * (0.30 + rain * 0.70));   /* -- 轴3：亮度 -- */
         ctx.drawImage(sp, d.x, d.y - sp.height);
       }
       ctx.globalAlpha = 1;

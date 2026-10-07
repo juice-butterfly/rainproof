@@ -4,14 +4,14 @@
     "out": "D:\\workbuddy-use\\汉客松-参赛包\\08-截图存证\\演示页-完整.png",
     "url": "http://127.0.0.1:8090/index.html",
     "ok": true,
-    "bytes": 448890,
+    "bytes": 447485,
     "dimensions": "1440x2951",
     "evidence": {
       "url": "http://127.0.0.1:8090/index.html",
       "title": "雨证 · RainProof — 可验证的 AI 参数化配送险",
       "chainbarNetText": "BOT Chain Testnet",
-      "chainbarBlock": "26,016,135",
-      "blockNum": 26016135,
+      "chainbarBlock": "26,017,134",
+      "blockNum": 26017134,
       "verifierConnText": "",
       "verifierLatestBlock": 0,
       "contractShown": "0x89e7…596a",
@@ -20,7 +20,7 @@
       "textHasBOTChainTestnet": true,
       "textHasRpcBohrLife": true,
       "textErrorWords": [],
-      "eventsHead": "#26,001,203 | 186 分钟前 | ClaimPaid | 保单 #5 赔付 0.0075 BOT 给 0x8F6B…19D8 · 大暴雨档 75% | 核验 | #26,001,195",
+      "eventsHead": "#26,001,203 | 199 分钟前 | ClaimPaid | 保单 #5 赔付 0.0075 BOT 给 0x8F6B…19D8 · 大暴雨档 75% | 核验 | #26,001,195",
       "blockPanelHead": "",
       "resultBodyHead": "",
       "liveError": false,
@@ -38,21 +38,21 @@
     "clip": null,
     "attempt": 1,
     "browserExited": null,
-    "ms": 10269
+    "ms": 10666
   },
   {
     "file": "演示页-长图.png",
     "out": "D:\\workbuddy-use\\汉客松-参赛包\\08-截图存证\\演示页-长图.png",
     "url": "http://127.0.0.1:8090/index.html",
     "ok": true,
-    "bytes": 447136,
+    "bytes": 449370,
     "dimensions": "1440x2951",
     "evidence": {
       "url": "http://127.0.0.1:8090/index.html",
       "title": "雨证 · RainProof — 可验证的 AI 参数化配送险",
       "chainbarNetText": "BOT Chain Testnet",
-      "chainbarBlock": "26,016,152",
-      "blockNum": 26016152,
+      "chainbarBlock": "26,017,153",
+      "blockNum": 26017153,
       "verifierConnText": "",
       "verifierLatestBlock": 0,
       "contractShown": "0x89e7…596a",
@@ -61,7 +61,7 @@
       "textHasBOTChainTestnet": true,
       "textHasRpcBohrLife": true,
       "textErrorWords": [],
-      "eventsHead": "#26,001,203 | 186 分钟前 | ClaimPaid | 保单 #5 赔付 0.0075 BOT 给 0x8F6B…19D8 · 大暴雨档 75% | 核验 | #26,001,195",
+      "eventsHead": "#26,001,203 | 199 分钟前 | ClaimPaid | 保单 #5 赔付 0.0075 BOT 给 0x8F6B…19D8 · 大暴雨档 75% | 核验 | #26,001,195",
       "blockPanelHead": "",
       "resultBodyHead": "",
       "liveError": false,
@@ -79,21 +79,21 @@
     "clip": null,
     "attempt": 1,
     "browserExited": null,
-    "ms": 12177
+    "ms": 10199
   },
   {
     "file": "演示页-链上动态与核验链接.png",
     "out": "D:\\workbuddy-use\\汉客松-参赛包\\08-截图存证\\演示页-链上动态与核验链接.png",
     "url": "http://127.0.0.1:8090/index.html",
     "ok": true,
-    "bytes": 162608,
+    "bytes": 163699,
     "dimensions": "694x1581",
     "evidence": {
       "url": "http://127.0.0.1:8090/index.html",
       "title": "雨证 · RainProof — 可验证的 AI 参数化配送险",
       "chainbarNetText": "BOT Chain Testnet",
-      "chainbarBlock": "26,016,173",
-      "blockNum": 26016173,
+      "chainbarBlock": "26,017,170",
+      "blockNum": 26017170,
       "verifierConnText": "",
       "verifierLatestBlock": 0,
       "contractShown": "0x89e7…596a",
@@ -102,7 +102,7 @@
       "textHasBOTChainTestnet": true,
       "textHasRpcBohrLife": true,
       "textErrorWords": [],
-      "eventsHead": "#26,001,203 | 187 分钟前 | ClaimPaid | 保单 #5 赔付 0.0075 BOT 给 0x8F6B…19D8 · 大暴雨档 75% | 核验 | #26,001,195",
+      "eventsHead": "#26,001,203 | 199 分钟前 | ClaimPaid | 保单 #5 赔付 0.0075 BOT 给 0x8F6B…19D8 · 大暴雨档 75% | 核验 | #26,001,195",
       "blockPanelHead": "",
       "resultBodyHead": "",
       "liveError": false,
@@ -126,14 +126,14 @@
     },
     "attempt": 1,
     "browserExited": null,
-    "ms": 9865
+    "ms": 10360
   },
   {
     "file": "核验台-默认视图.png",
     "out": "D:\\workbuddy-use\\汉客松-参赛包\\08-截图存证\\核验台-默认视图.png",
     "url": "http://127.0.0.1:8090/verifier.html",
     "ok": true,
-    "bytes": 317949,
+    "bytes": 319131,
     "dimensions": "1180x2956",
     "evidence": {
       "url": "http://127.0.0.1:8090/verifier.html",
@@ -142,7 +142,7 @@
       "chainbarBlock": "",
       "blockNum": 0,
       "verifierConnText": "已连接 BOT Chain Testnet",
-      "verifierLatestBlock": 26016189,
+      "verifierLatestBlock": 26017188,
       "contractShown": "",
       "resultKind": "地址 / 合约",
       "textHasBOT": true,
@@ -150,7 +150,7 @@
       "textHasRpcBohrLife": true,
       "textErrorWords": [],
       "eventsHead": "",
-      "blockPanelHead": "实时 | BOT Chain 出块很快，这一栏的数字每次刷新都在涨 | 区块号\t出块时间\t交易数\t基础费率\t出块节点 | 26,016,189\t1 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,016,188\t2 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,016,187\t2 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,016,186\t3 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,016,185\t4 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,016,184\t5 秒前\t0\t0 Gwei\t0x9c19…ddec",
+      "blockPanelHead": "实时 | BOT Chain 出块很快，这一栏的数字每次刷新都在涨 | 区块号\t出块时间\t交易数\t基础费率\t出块节点 | 26,017,188\t1 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,017,187\t1 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,017,186\t2 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,017,185\t3 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,017,184\t4 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,017,183\t4 秒前\t0\t0 Gwei\t0x8c55…6c06",
       "resultBodyHead": "智能合约 | 这条记录此刻就在链上，不是缓存 | 地址 | 0x89e7C942535930B61cB61631051E8b0bD670596a | 复制 | 余额 | 0.0643 BOT | 发过多少笔交易（nonce） | 1 | 这是不是合约 | 是合约 ✅ | 合约代码长度 | 12378 字节 | 查询节点 | rpc.bohr.life | 响应延迟",
       "liveError": false,
       "errShown": false,
@@ -163,19 +163,19 @@
       "resultLen": 190,
       "resultVisible": true,
       "queryEchoes": null,
-      "logPanelWaited": 521
+      "logPanelWaited": 1021
     },
     "clip": null,
     "attempt": 1,
     "browserExited": null,
-    "ms": 4766
+    "ms": 5103
   },
   {
     "file": "核验台-查合约.png",
     "out": "D:\\workbuddy-use\\汉客松-参赛包\\08-截图存证\\核验台-查合约.png",
     "url": "http://127.0.0.1:8090/verifier.html",
     "ok": true,
-    "bytes": 319561,
+    "bytes": 320533,
     "dimensions": "1180x2956",
     "evidence": {
       "url": "http://127.0.0.1:8090/verifier.html",
@@ -184,7 +184,7 @@
       "chainbarBlock": "",
       "blockNum": 0,
       "verifierConnText": "已连接 BOT Chain Testnet",
-      "verifierLatestBlock": 26016200,
+      "verifierLatestBlock": 26017199,
       "contractShown": "",
       "resultKind": "地址 / 合约",
       "textHasBOT": true,
@@ -192,7 +192,7 @@
       "textHasRpcBohrLife": true,
       "textErrorWords": [],
       "eventsHead": "",
-      "blockPanelHead": "实时 | BOT Chain 出块很快，这一栏的数字每次刷新都在涨 | 区块号\t出块时间\t交易数\t基础费率\t出块节点 | 26,016,200\t0 秒前\t1\t0 Gwei\t0xbfbd…db30 | 26,016,199\t0 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,016,198\t1 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,016,197\t2 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,016,196\t3 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,016,195\t3 秒前\t0\t0 Gwei\t0xbfbd…db30",
+      "blockPanelHead": "实时 | BOT Chain 出块很快，这一栏的数字每次刷新都在涨 | 区块号\t出块时间\t交易数\t基础费率\t出块节点 | 26,017,199\t0 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,017,198\t1 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,017,197\t2 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,017,196\t3 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,017,195\t3 秒前\t0\t0 Gwei\t0x9c19…ddec | 26,017,194\t4 秒前\t0\t0 Gwei\t0x9c19…ddec",
       "resultBodyHead": "智能合约 | 这条记录此刻就在链上，不是缓存 | 地址 | 0x89e7C942535930B61cB61631051E8b0bD670596a | 复制 | 余额 | 0.0643 BOT | 发过多少笔交易（nonce） | 1 | 这是不是合约 | 是合约 ✅ | 合约代码长度 | 12378 字节 | 查询节点 | rpc.bohr.life | 响应延迟",
       "liveError": false,
       "errShown": false,
@@ -204,20 +204,19 @@
       "logPanelBusy": false,
       "resultLen": 190,
       "resultVisible": true,
-      "queryEchoes": true,
-      "logPanelWaited": 1023
+      "queryEchoes": true
     },
     "clip": null,
     "attempt": 1,
     "browserExited": null,
-    "ms": 4934
+    "ms": 4562
   },
   {
     "file": "核验台-查交易.png",
     "out": "D:\\workbuddy-use\\汉客松-参赛包\\08-截图存证\\核验台-查交易.png",
     "url": "http://127.0.0.1:8090/verifier.html",
     "ok": true,
-    "bytes": 322834,
+    "bytes": 324000,
     "dimensions": "1180x3122",
     "evidence": {
       "url": "http://127.0.0.1:8090/verifier.html",
@@ -226,7 +225,7 @@
       "chainbarBlock": "",
       "blockNum": 0,
       "verifierConnText": "已连接 BOT Chain Testnet",
-      "verifierLatestBlock": 26016210,
+      "verifierLatestBlock": 26017209,
       "contractShown": "",
       "resultKind": "交易",
       "textHasBOT": true,
@@ -234,7 +233,7 @@
       "textHasRpcBohrLife": true,
       "textErrorWords": [],
       "eventsHead": "",
-      "blockPanelHead": "实时 | BOT Chain 出块很快，这一栏的数字每次刷新都在涨 | 区块号\t出块时间\t交易数\t基础费率\t出块节点 | 26,016,210\t0 秒前\t0\t0 Gwei\t0xc37b…d691 | 26,016,209\t1 秒前\t0\t0 Gwei\t0xc37b…d691 | 26,016,208\t2 秒前\t0\t0 Gwei\t0xc37b…d691 | 26,016,207\t2 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,016,206\t3 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,016,205\t4 秒前\t0\t0 Gwei\t0xbfbd…db30",
+      "blockPanelHead": "实时 | BOT Chain 出块很快，这一栏的数字每次刷新都在涨 | 区块号\t出块时间\t交易数\t基础费率\t出块节点 | 26,017,209\t0 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,017,208\t1 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,017,207\t1 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,017,206\t2 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,017,205\t3 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,017,204\t4 秒前\t0\t0 Gwei\t0xbfbd…db30",
       "resultBodyHead": "普通交易 | 数据来源：节点直读 | 交易哈希 | 0x25148f13742d89dce755cee28f72366ed89a6ef577ab7d13ebb36d893fcc2211 | 复制 | 发送方 from | 0xb466b1d1fa19026e08c3311c555d220ae2e1ba3a | 复制 | 接收方 to | 0x89e7c942535930b61cb61631051e8b0bd670596a | 复制 | 状态 | 成功 ✅ | 区块号 | 25,980,217 | 区块时间",
       "liveError": false,
       "errShown": false,
@@ -246,20 +245,19 @@
       "logPanelBusy": false,
       "resultLen": 293,
       "resultVisible": true,
-      "queryEchoes": true,
-      "logPanelWaited": 1020
+      "queryEchoes": true
     },
     "clip": null,
     "attempt": 1,
     "browserExited": null,
-    "ms": 5563
+    "ms": 4608
   },
   {
     "file": "核验台-查账户.png",
     "out": "D:\\workbuddy-use\\汉客松-参赛包\\08-截图存证\\核验台-查账户.png",
     "url": "http://127.0.0.1:8090/verifier.html",
     "ok": true,
-    "bytes": 186699,
+    "bytes": 188758,
     "dimensions": "1180x1526",
     "evidence": {
       "url": "http://127.0.0.1:8090/verifier.html",
@@ -268,7 +266,7 @@
       "chainbarBlock": "",
       "blockNum": 0,
       "verifierConnText": "已连接 BOT Chain Testnet",
-      "verifierLatestBlock": 26016228,
+      "verifierLatestBlock": 26017219,
       "contractShown": "",
       "resultKind": "地址 / 合约",
       "textHasBOT": true,
@@ -276,7 +274,7 @@
       "textHasRpcBohrLife": true,
       "textErrorWords": [],
       "eventsHead": "",
-      "blockPanelHead": "实时 | BOT Chain 出块很快，这一栏的数字每次刷新都在涨 | 区块号\t出块时间\t交易数\t基础费率\t出块节点 | 26,016,228\t1 秒前\t0\t0 Gwei\t0xd9b7…8f9c | 26,016,227\t1 秒前\t0\t0 Gwei\t0xd9b7…8f9c | 26,016,226\t2 秒前\t0\t0 Gwei\t0xd9b7…8f9c | 26,016,225\t3 秒前\t0\t0 Gwei\t0xd9b7…8f9c | 26,016,224\t4 秒前\t0\t0 Gwei\t0xd9b7…8f9c | 26,016,223\t4 秒前\t0\t0 Gwei\t0xc37b…d691",
+      "blockPanelHead": "实时 | BOT Chain 出块很快，这一栏的数字每次刷新都在涨 | 区块号\t出块时间\t交易数\t基础费率\t出块节点 | 26,017,219\t0 秒前\t0\t0 Gwei\t0xc37b…d691 | 26,017,218\t1 秒前\t0\t0 Gwei\t0xc37b…d691 | 26,017,217\t2 秒前\t0\t0 Gwei\t0xc37b…d691 | 26,017,216\t3 秒前\t0\t0 Gwei\t0xc37b…d691 | 26,017,215\t3 秒前\t0\t0 Gwei\t0xbfbd…db30 | 26,017,214\t4 秒前\t0\t0 Gwei\t0xbfbd…db30",
       "resultBodyHead": "普通账户 | 这条记录此刻就在链上，不是缓存 | 地址 | 0xb466B1D1fA19026e08C3311C555d220AE2E1Ba3a | 复制 | 余额 | 9.35028342 BOT | 发过多少笔交易（nonce） | 130 | 这是不是合约 | 普通账户（没有代码） | 合约代码长度 | 0（空） | 查询节点 | rpc.bohr.life | 响应延迟",
       "liveError": false,
       "errShown": false,
@@ -289,26 +287,26 @@
       "resultLen": 149,
       "resultVisible": true,
       "queryEchoes": true,
-      "logPanelWaited": 6130
+      "logPanelWaited": 1015
     },
     "clip": null,
     "attempt": 1,
     "browserExited": null,
-    "ms": 15423
+    "ms": 5271
   },
   {
     "file": "手机窄屏验证-390px.png",
     "out": "D:\\workbuddy-use\\汉客松-参赛包\\08-截图存证\\手机窄屏验证-390px.png",
     "url": "http://127.0.0.1:8090/index.html",
     "ok": true,
-    "bytes": 272874,
+    "bytes": 276940,
     "dimensions": "390x4246",
     "evidence": {
       "url": "http://127.0.0.1:8090/index.html",
       "title": "雨证 · RainProof — 可验证的 AI 参数化配送险",
       "chainbarNetText": "BOT Chain Testnet",
-      "chainbarBlock": "26,016,247",
-      "blockNum": 26016247,
+      "chainbarBlock": "26,017,230",
+      "blockNum": 26017230,
       "verifierConnText": "",
       "verifierLatestBlock": 0,
       "contractShown": "0x89e7…596a",
@@ -317,7 +315,7 @@
       "textHasBOTChainTestnet": true,
       "textHasRpcBohrLife": true,
       "textErrorWords": [],
-      "eventsHead": "#26,001,203 | 188 分钟前 | ClaimPaid | 保单 #5 赔付 0.0075 BOT 给 0x8F6B…19D8 · 大暴雨档 75% | 核验 | #26,001,195",
+      "eventsHead": "#26,001,203 | 200 分钟前 | ClaimPaid | 保单 #5 赔付 0.0075 BOT 给 0x8F6B…19D8 · 大暴雨档 75% | 核验 | #26,001,195",
       "blockPanelHead": "",
       "resultBodyHead": "",
       "liveError": false,
@@ -335,6 +333,6 @@
     "clip": null,
     "attempt": 1,
     "browserExited": null,
-    "ms": 15226
+    "ms": 10297
   }
 ]

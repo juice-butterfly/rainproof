@@ -20,32 +20,50 @@
            玻璃模糊、渐变文字、常驻装饰动画、零偏移彩色光晕。
      ============================================================================ */
   :root{
-    --bg:#070E19; --bg2:#0A1523; --panel:#0C1725; --panel2:#101E30;
-    --ink:#E9F0F8; --dim:#A9BACB; --faint:#7F93A9;
-    --blue:#3B82F6; --blue-l:#7FB0FF;
-    --accent:#FFC857;
-    --ok:#3FD9A5; --bad:#F0836F; --warn:#F2B33D; --cyan:#2FD3EE;
-    --hair:rgba(148,180,215,.14); --hair-2:rgba(148,180,215,.26);
-    --t-metric:26px; --t-h1:19px; --t-h2:14px; --t-body:13.5px; --t-tbl:12.5px; --t-lab:11px;
-    --r:12px; --r-sm:8px; --r-xs:6px;
-    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Cascadia Mono",monospace;
-    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+    /* 语义色域（2026-10-07 重设计 · 从「运营台」到「量测仪」）：一个颜色只说一件事
+       measure 青   → mm、刻度、阈值线、窗口进度、选中描边
+       money   琥珀 → BOT、保费、赔付额、雨量图上越线的那一段
+       evi     鸢尾 → 哈希、地址、交易号、签名、模型版本
+       状态：ok 绿 = 校验通过（唯一用途）；bad 红 = 真错误（唯一用途） */
+    --night:#050A12; --night-2:#0A1220; --surface:#0D1727; --surface-2:#121E31;
+    --line:rgba(150,180,215,.13); --line-2:rgba(150,180,215,.26);
+    --ink:#EDF3FA; --ink-2:#A6B8CB; --ink-3:#6E8299;
+    --measure:#34D3E4; --measure-dim:rgba(52,211,228,.16);
+    --money:#FFC857;   --money-dim:rgba(255,200,87,.14);
+    --evi:#9E8CF5;     --evi-dim:rgba(158,140,245,.16);
+    --ok:#3FD9A5; --bad:#F0836F;
+    --f-ui:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    --f-num:ui-monospace,Consolas,"Cascadia Mono","SFMono-Regular",Menlo,monospace;
+    /* 字阶 7 档：能用计算器按出来的东西才用等宽 */
+    --t-hero:46px; --t-big:30px; --t-h1:22px; --t-num:19px; --t-body:14px; --t-data:12.5px; --t-lab:11px;
+    /* 间距 8 级（全是 4 的倍数） */
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px;
+    --r:10px; --r-sm:7px; --r-xs:5px;
+    /* 雨幕动画进度（JS 用 setProperty 写入、MutationObserver 读出）。两页核验台没有雨幕层，
+       但它们同样保留这一行：三页 :root 逐字相同比「少一个用不上的变量」更值钱。 */
     --rain:0;
+    /* ↓ 旧名别名：只为让历史规则平滑接收新色；新写的规则一律用上面那套 */
+    --bg:var(--night); --bg2:var(--night-2); --panel:var(--surface); --panel2:var(--surface-2);
+    --dim:var(--ink-2); --faint:var(--ink-3);
+    --hair:var(--line); --hair-2:var(--line-2);
+    --blue:var(--measure); --blue-l:var(--measure); --accent:var(--money); --cyan:var(--measure);
+    --mono:var(--f-num); --sans:var(--f-ui);
+    --t-metric:var(--t-num); --t-h2:var(--t-h1); --t-tbl:var(--t-data);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{color-scheme:dark}
   body{
-    font-family:var(--sans);color:var(--ink);font-size:var(--t-body);line-height:1.65;
+    font-family:var(--f-ui);color:var(--ink);font-size:var(--t-body);line-height:1.65;
     background:
-      radial-gradient(1200px 680px at 12% -14%, rgba(59,130,246,.10), transparent 64%),
-      radial-gradient(900px 520px at 88% -6%, rgba(47,211,238,.05), transparent 62%),
-      var(--bg);
-    background-attachment:fixed; -webkit-font-smoothing:antialiased; padding-bottom:72px;
+      radial-gradient(1100px 620px at 14% -12%, rgba(52,211,228,.075), transparent 62%),
+      radial-gradient(860px 500px at 86% -8%, rgba(158,140,245,.05), transparent 60%),
+      var(--night);
+    background-attachment:fixed; -webkit-font-smoothing:antialiased; padding-bottom:var(--s8);
   }
-  .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 var(--s6)}
 
   /* 浏览器自己的表面也要主题化 —— 这一页是被搭建过的，不是拼装的 */
-  ::selection{background:rgba(59,130,246,.32)}
+  ::selection{background:rgba(52,211,228,.26)}
   input,select,textarea{caret-color:var(--blue-l)}
   ::placeholder{color:var(--faint);opacity:1}
   a{color:var(--blue-l);text-decoration:none;text-underline-offset:3px}
@@ -137,7 +155,7 @@
     border:1px solid var(--hair-2);color:var(--dim);white-space:nowrap}
   .tag.gold{border-color:rgba(255,200,87,.45);color:var(--accent);background:rgba(255,200,87,.10)}
   .tag.red{border-color:rgba(240,131,111,.45);color:var(--bad);background:rgba(240,131,111,.10)}
-  .tag.warn{border-color:rgba(242,179,61,.4);color:var(--warn);background:rgba(242,179,61,.08)}
+  .tag.warn{border-color:var(--line-2);color:var(--ink-3);background:transparent}
 
   /* ---------- 降雨看板：刻度尺 + 阈值线（阈值落在 50%） ---------- */
   .region{padding:12px 0;border-top:1px solid var(--hair)}
@@ -151,7 +169,7 @@
   .bar i{display:block;height:100%;border-radius:99px;position:relative;
     background:var(--blue);transition:width .5s cubic-bezier(.16,1,.3,1)}
   .bar i.hit{background:var(--accent)}
-  .bar::after{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:var(--warn);opacity:.8}
+  .bar::after{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:var(--measure);opacity:.8}
   .rnote{font-size:var(--t-lab);color:var(--faint);margin-top:5px}
   /* 「触发线」三个字原来在 5 行里各出现一次 —— 同一条线、同一个含义，写 5 遍是噪声。
      只留在选中那一行（它正好也是背景雨幕的来源），其余行只留线不留字。 */
@@ -259,6 +277,303 @@
       background:repeating-linear-gradient(103deg,transparent 0 7px,rgba(190,220,255,.035) 7px 8px)}
     *{animation-duration:.001ms !important;transition-duration:.001ms !important}
   }
+  /* ============================================================================
+     重设计落地层（UI 重设计方案 · 第一档纯视觉 + 第二档结构）
+     上层 :root 是唯一一套令牌；这一层把历史规则换算到新刻度：
+       · 容器 1240，间距一律走 --s1..--s8
+       · 等宽只给数字、哈希、地址、交易号、区块号、模型版本
+       · 层级只用 1px 发丝线；阴影只留真浮层（提示条、证据块）
+     ============================================================================ */
+
+  /* ---------- 铭牌（顶栏） ---------- */
+  header.plate{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap;
+    padding:var(--s5) 0 var(--s4);border-bottom:1px solid var(--line)}
+  .mark{width:34px;height:34px;flex:none;display:grid;place-items:center;color:var(--ink-2)}
+  .mark svg{display:block}
+  .who h1{font-size:var(--t-h1);font-weight:650;letter-spacing:-.015em;line-height:1.2}
+  .who p{font-size:var(--t-lab);color:var(--ink-3);margin-top:3px;letter-spacing:.02em}
+  .net{margin-left:auto;display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap;
+    font-family:var(--f-num);font-size:var(--t-lab);color:var(--ink-2)}
+  .net .item{display:flex;align-items:center;gap:6px}
+  .net b{color:var(--ink);font-weight:600}
+  .chainpill{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border-radius:var(--r-xs);
+    border:1px solid var(--line-2);background:var(--surface);font-family:var(--f-num);
+    font-size:var(--t-lab);color:var(--ink)}
+  /* 旧顶栏的两个容器退场：rail 的三项升级成读数条，brand 换成铭牌 */
+  .brand,.rail{display:none}
+
+  /* ---------- 读数条：回答「够不够赔 / 赔过没有 / 现在什么状态」 ---------- */
+  .readouts{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+  .ro{padding:var(--s4) var(--s5) var(--s4) 0;margin-right:var(--s5);border-right:1px solid var(--line);min-width:168px}
+  .ro:last-child{border-right:none;margin-right:0}
+  .ro .lb{display:block;font-size:var(--t-lab);color:var(--ink-3);letter-spacing:.06em}
+  .ro .vl{display:block;font-family:var(--f-num);font-size:var(--t-num);font-weight:600;
+    color:var(--ink);margin-top:5px;letter-spacing:-.01em}
+  .ro .un{font-size:var(--t-lab);color:var(--ink-3);font-weight:400;margin-left:3px}
+  .ro .sub{display:block;font-size:var(--t-lab);color:var(--ink-3);margin-top:3px;font-family:var(--f-ui)}
+  .ro.money .vl{color:var(--money)}
+  .ro.measure .vl{color:var(--measure)}
+
+  /* ---------- 区块 / 容器 ---------- */
+  .sec{padding-top:var(--s6)}
+  .sec + .sec{border-top:1px solid var(--line);margin-top:var(--s6)}
+  .sec > h2, .hd h2{font-size:var(--t-h1);font-weight:640;letter-spacing:-.01em;color:var(--ink)}
+  .sec > h2 em{display:block;font-size:var(--t-lab);font-weight:400;font-style:normal;color:var(--ink-3);
+    letter-spacing:.02em;margin-top:5px;max-width:82ch}
+  .hd{display:flex;align-items:baseline;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s4)}
+  .hd .n{font-family:var(--f-num);font-size:var(--t-lab);color:var(--ink-3)}
+  .hd .r{margin-left:auto;font-size:var(--t-lab);color:var(--ink-3);letter-spacing:.04em}
+  .panel,.block{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--s5)}
+  .grid2,.cols{display:grid;grid-template-columns:1.42fr .92fr;gap:var(--s6)}
+  /* 栅格子项默认 min-width:auto ⇒ 内容的 min-content 会把每条 1fr 轨道顶宽（曾把 390 的视口顶到 404，
+     整列卡片跟着越界）。压成 0 让轨道听容器的话，内容自己想办法换行。 */
+  .grid2 > *,.cols > *{min-width:0}
+  @media (max-width:1080px){.grid2,.cols{grid-template-columns:1fr}}
+  .rcol,.stick{position:sticky;top:var(--s5)}
+  @media (max-width:1080px){.rcol,.stick{position:static}}
+
+  /* ---------- 城市片（既是筛选，也是背景雨幕的来源） ---------- */
+  .chips{display:flex;gap:var(--s2);flex-wrap:wrap}
+  .chip{border:1px solid var(--line-2);background:transparent;color:var(--ink-2);font-family:var(--f-ui);
+    font-size:var(--t-body);font-weight:550;padding:7px 15px;border-radius:99px;cursor:pointer;
+    transition:border-color .16s,color .16s,background .16s;display:inline-flex;align-items:center;gap:7px}
+  .chip:hover{border-color:var(--measure);color:var(--ink)}
+  .chip.on{border-color:var(--measure);background:var(--measure-dim);color:var(--ink);font-weight:620}
+  .chip .dotq{width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
+  .chip.on .dotq{background:var(--measure)}
+  .chip.over .dotq{background:var(--money)}
+
+  /* ---------- 五支柱雨量图：一条阈值线横贯五柱 ---------- */
+  .gauge{display:grid;grid-template-columns:46px 1fr;gap:var(--s4);margin-top:var(--s5)}
+  .axis{position:relative;height:264px}
+  .axis .tick{position:absolute;right:0;transform:translateY(50%);font-family:var(--f-num);
+    font-size:var(--t-lab);color:var(--ink-3);white-space:nowrap}
+  .plot{position:relative;height:264px;border-bottom:1px solid var(--line-2);
+    background:repeating-linear-gradient(to top,var(--line) 0 1px,transparent 1px 66px)}
+  .thr{position:absolute;left:0;right:0;border-top:1px solid var(--measure);z-index:2}
+  .thr span{position:absolute;left:0;bottom:3px;font-family:var(--f-num);font-size:var(--t-lab);
+    color:var(--measure);background:var(--night);border:1px solid rgba(52,211,228,.38);
+    border-radius:var(--r-xs);padding:1px 7px;white-space:nowrap}
+  .spill{position:absolute;left:50%;transform:translateX(-50%);width:16px;height:3px;
+    background:var(--money);border-radius:2px}
+  .cols5{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;
+    gap:var(--s6);padding:0 var(--s4)}
+  .colwrap{position:relative;height:100%;display:flex;flex-direction:column;justify-content:flex-end;
+    align-items:center;cursor:pointer}
+  .colv{font-family:var(--f-num);font-size:var(--t-body);font-weight:600;color:var(--ink-2);margin-bottom:6px}
+  .pbar{width:52px;border-radius:4px 4px 0 0;position:relative;overflow:hidden;
+    background:var(--measure-dim);transition:opacity .2s}
+  .pbar .below{position:absolute;left:0;right:0;bottom:0;
+    background:linear-gradient(180deg,rgba(52,211,228,.62),rgba(52,211,228,.30))}
+  .pbar .above{position:absolute;left:0;right:0;
+    background:linear-gradient(180deg,rgba(255,200,87,.95),rgba(255,200,87,.55))}
+  .colwrap.on .pbar{outline:1.5px solid var(--measure);outline-offset:2px}
+  .colwrap.on .colv{color:var(--measure)}
+  .foot5{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--s6);padding:0 var(--s4);margin-top:var(--s3)}
+  .foot5 .c{text-align:center}
+  .foot5 .c b{display:block;font-size:var(--t-body);font-weight:600;color:var(--ink-2)}
+  .foot5 .c.on b{color:var(--ink)}
+  .foot5 .c span{font-family:var(--f-num);font-size:var(--t-lab);color:var(--ink-3)}
+  .foot5 .c .tagm{margin-top:5px;display:inline-block}
+  /* 旧横条视图退出舞台（规则按门禁要求保留，元素由 JS 生成后隐藏） */
+  #rainBoard .region{display:none}
+
+  /* ---------- 读数行：选中城市的主读数 ---------- */
+  .readline{display:flex;align-items:flex-end;gap:var(--s5);flex-wrap:wrap;
+    padding-bottom:var(--s4);margin-bottom:var(--s2);border-bottom:1px solid var(--line)}
+  .hero{font-family:var(--f-num);font-size:var(--t-hero);font-weight:620;color:var(--measure);
+    line-height:1;letter-spacing:-.03em}
+  .hero u{font-size:var(--t-num);color:var(--ink-3);text-decoration:none;font-weight:400;margin-left:6px}
+  .hero-lb{font-size:var(--t-lab);color:var(--ink-3);letter-spacing:.06em;margin-bottom:7px}
+  .kvbox{display:flex;flex-direction:column;gap:4px;padding-bottom:4px}
+  .kvbox .k{font-size:var(--t-lab);color:var(--ink-3);letter-spacing:.06em}
+  .kvbox .v{font-family:var(--f-num);font-size:var(--t-num);color:var(--ink);font-weight:600}
+  .kvbox .v small{font-size:var(--t-lab);color:var(--ink-3);font-weight:400;margin-left:2px}
+
+  /* ---------- 徽标 ---------- */
+  .tag{display:inline-flex;align-items:center;gap:5px;font-size:var(--t-lab);font-family:var(--f-num);
+    padding:3px 8px;border-radius:var(--r-xs);border:1px solid var(--line-2);color:var(--ink-2);white-space:nowrap}
+  .tag.gold,.tag.money{border-color:rgba(255,200,87,.42);color:var(--money);background:var(--money-dim)}
+  .tag.measure{border-color:rgba(52,211,228,.42);color:var(--measure);background:var(--measure-dim)}
+  .tag.evi{border-color:rgba(158,140,245,.42);color:var(--evi);background:var(--evi-dim)}
+  .tag.red,.tag.bad{border-color:rgba(240,131,111,.45);color:var(--bad);background:rgba(240,131,111,.10)}
+  .tag.warn{border-style:dashed;background:transparent;color:var(--ink-3)}
+  .tag.neutral{border-style:dashed}
+  .tag.plain{border:none;background:transparent;color:var(--ink-3);padding-left:0}
+  .tagn{font-family:var(--f-num);font-size:var(--t-lab);padding:2px 7px;border-radius:var(--r-xs);
+    border:1px solid var(--line-2);color:var(--ink-2);white-space:nowrap;justify-self:start;display:inline-block}
+  .tagn.money{border-color:rgba(255,200,87,.42);color:var(--money)}
+  .tagn.evi{border-color:rgba(158,140,245,.4);color:var(--evi)}
+  .tagn.measure{border-color:rgba(52,211,228,.4);color:var(--measure)}
+  .tagn.gray{border-style:dashed}
+
+  /* ---------- 控件 ---------- */
+  .btn{border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink);font-family:var(--f-ui);
+    font-size:var(--t-body);font-weight:560;padding:10px 18px;border-radius:var(--r-sm);cursor:pointer;
+    transition:background .16s,border-color .16s,color .16s;white-space:nowrap}
+  .btn:hover:not(:disabled){border-color:var(--measure)}
+  .btn.ghost{background:transparent}
+  .btn.primary{background:var(--measure);border-color:var(--measure);color:#04181C;font-weight:650}
+  .btn.primary:hover:not(:disabled){background:#4FE0EE;border-color:#4FE0EE}
+  .btn.gold{border-color:rgba(255,200,87,.45);background:var(--money-dim);color:var(--money)}
+  .btn.gold:hover:not(:disabled){border-color:var(--money);background:rgba(255,200,87,.2)}
+  .btn.block{width:100%;padding:14px;font-size:15px}
+  .btn.sm{padding:6px 12px;font-size:var(--t-lab);border-radius:var(--r-xs)}
+  .btn:disabled,.btn.off{background:transparent;border-style:dashed;border-color:var(--line-2);
+    color:var(--ink-3);cursor:not-allowed;font-weight:520;opacity:1}
+  input,select{background:#0A1521;border:1px solid var(--line-2);border-radius:var(--r-sm);color:var(--ink);
+    font-family:var(--f-num);font-size:var(--t-data);padding:10px 12px;outline:none;transition:border-color .16s}
+  input:hover,select:hover{border-color:rgba(148,180,215,.36)}
+  input:focus,select:focus{border-color:var(--measure)}
+  select{cursor:pointer;font-family:var(--f-ui);font-size:var(--t-body);appearance:none;padding-right:34px;
+    background-image:linear-gradient(45deg,transparent 50%,var(--ink-2) 50%),linear-gradient(135deg,var(--ink-2) 50%,transparent 50%);
+    background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  /* 时长片是 select 的代理控件：select 留在 DOM 里（原生语义与键盘可用），视觉上退出 */
+  .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  label.mlabel{display:block;margin-bottom:6px}
+  .k{font-size:var(--t-lab);color:var(--ink-3);letter-spacing:.06em}
+  .metric{font-family:var(--f-num);font-size:var(--t-big);font-weight:620;color:var(--money);
+    line-height:1.1;letter-spacing:-.02em}
+  .v{font-family:var(--f-num);font-size:var(--t-num);color:var(--measure);font-weight:600}
+
+  /* ---------- 图例 ---------- */
+  .legend{display:flex;align-items:center;gap:var(--s5);flex-wrap:wrap;margin-top:var(--s5);
+    padding-top:var(--s4);border-top:1px solid var(--line);font-size:var(--t-data);color:var(--ink-2)}
+  .legend .sw{display:inline-flex;align-items:center;gap:8px}
+  .legend .sq{width:11px;height:11px;border-radius:3px;flex:none}
+  .legend .sq.m{background:var(--measure)}
+  .legend .sq.y{background:var(--money)}
+  .legend .sp{margin-left:auto}
+
+  /* ---------- 开单 ---------- */
+  .quote{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s4);margin-top:var(--s5)}
+  .quote .lb{font-size:var(--t-lab);color:var(--ink-3);letter-spacing:.06em;margin-bottom:6px}
+  .quote .amt{font-family:var(--f-num);font-size:var(--t-big);font-weight:620;color:var(--money);
+    line-height:1;letter-spacing:-.02em}
+  .quote .amt u{font-size:var(--t-body);text-decoration:none;margin-left:5px;color:var(--money);opacity:.8}
+  .quote .side{font-family:var(--f-num);font-size:var(--t-lab);color:var(--ink-3);text-align:right;line-height:1.7}
+  .spec{margin-top:var(--s5);border-top:1px solid var(--line)}
+  .spec .r{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s3);
+    padding:11px 0;border-bottom:1px solid var(--line)}
+  .spec .r:last-child{border-bottom:none}
+  .spec .l{font-size:var(--t-body);color:var(--ink-2)}
+  .spec .r .v2{font-family:var(--f-num);font-size:var(--t-body);color:var(--ink)}
+  .spec .r .v2.money{color:var(--money);font-weight:600}
+
+  /* ---------- 链上动态（纸带） ---------- */
+  .filters{display:flex;gap:var(--s2);flex-wrap:wrap;margin-bottom:var(--s2)}
+  .f{font-family:var(--f-ui);font-size:var(--t-lab);padding:5px 11px;border-radius:99px;
+    border:1px solid var(--line);background:transparent;color:var(--ink-3);cursor:pointer}
+  .f.on{border-color:var(--line-2);color:var(--ink);background:var(--surface)}
+  #events{display:flex;flex-direction:column}
+  .ev{display:grid;grid-template-columns:92px 168px minmax(0,1fr) 132px;gap:var(--s4);align-items:baseline;
+    padding:11px 0;border-bottom:1px solid var(--line);font-size:var(--t-data)}
+  .ev:last-child{border-bottom:none}
+  .ev .ea{order:1;font-family:var(--f-num);font-size:var(--t-lab);color:var(--ink-3);white-space:nowrap}
+  .ev .en{order:2;justify-self:start}
+  .ev .et{order:3;color:var(--ink-2);font-family:var(--f-ui);font-size:var(--t-body);line-height:1.5;overflow-wrap:anywhere}
+  .ev .et b{color:var(--ink);font-weight:600}
+  .ev .et .mono,.ev .et span[title]{font-family:var(--f-num);color:var(--evi)}
+  .ev .etx{order:4;font-family:var(--f-num);font-size:var(--t-lab);color:var(--evi);text-align:right;white-space:nowrap}
+  .ev .en.money{border-color:rgba(255,200,87,.42);color:var(--money)}
+  .ev .en.measure{border-color:rgba(52,211,228,.4);color:var(--measure)}
+  .ev .en.evi{border-color:rgba(158,140,245,.4);color:var(--evi)}
+  .ev .en.warn{border-style:dashed}
+  .ev-more{display:none;margin-top:var(--s3)}
+
+  /* ---------- 我的保单（三层堆叠卡） ---------- */
+  #myPolicies{background:transparent;border:none;padding:0;display:flex;flex-direction:column;gap:var(--s3)}
+  .ptable-head{display:none}
+  .pol{display:block;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:var(--s4)}
+  .pol .pid{font-size:var(--t-body);font-weight:600;display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap}
+  .pol .pid .mono{font-family:var(--f-num);color:var(--ink-2);font-weight:500}
+  .pol .pid .stat{margin-left:auto}
+  .pol.paid .pid{color:var(--ok)}
+  .pol.claimable{border-color:rgba(255,200,87,.34)}
+  .pol.claimable .pid{color:var(--money)}
+  .pol.denied .pid,.pol.expired .pid{color:var(--ink-2)}
+  .pol.expired{opacity:.8}
+  .pmeta{font-size:var(--t-data);color:var(--ink-2);line-height:1.7;margin-top:5px;overflow-wrap:anywhere}
+  .pai{font-size:var(--t-data);color:var(--ink-2);line-height:1.75;margin-top:var(--s3);padding-top:var(--s3);
+    border-top:1px solid var(--line);overflow-wrap:anywhere}
+  .pai b{color:var(--ink);font-weight:600}
+  .pai .none{color:var(--ink-3)}
+  .pai .mono,.pai span[title]{font-family:var(--f-num);color:var(--evi)}
+  .incre{margin-top:var(--s3)}
+  .incre .top{display:flex;justify-content:space-between;gap:var(--s3);font-size:var(--t-lab);color:var(--ink-3)}
+  .incre .top b{font-family:var(--f-num);color:var(--ink-2);font-weight:600}
+  .incre .track{height:8px;border-radius:99px;background:#08111C;outline:1px solid var(--line);
+    margin-top:6px;overflow:hidden}
+  .incre .fill{height:100%;border-radius:99px;background:var(--measure)}
+  .incre.over .fill{background:var(--money)}
+  .incre.none .track{outline-style:dashed}
+  .polbtns{margin-top:var(--s3);display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap}
+  .polbtns a.btn{text-decoration:none}
+
+  /* ---------- AI 层三件事 ---------- */
+  .airow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px var(--s3);align-items:baseline;
+    padding:11px 0;border-top:1px solid var(--line);font-size:var(--t-data)}
+  .airow:first-child{border-top:none;padding-top:2px}
+  .airow b{color:var(--ink);font-weight:600;white-space:nowrap;font-size:var(--t-body)}
+  .airow span{color:var(--ink-2);line-height:1.7}
+  .airow span code{font-family:var(--f-num);font-size:var(--t-lab);color:var(--ink-3)}
+
+  /* ---------- 说明 / 空态 / 折叠 / 页脚铭牌 ---------- */
+  .empty,.loading{color:var(--ink-3);font-size:var(--t-data)}
+  .empty{border:1px dashed var(--line-2);border-radius:var(--r-sm);padding:var(--s5);line-height:1.8}
+  .note{font-size:var(--t-data);color:var(--ink-2);line-height:1.8;max-width:76ch}
+  .note b,.note strong{color:var(--ink)}
+  .note code{font-family:var(--f-num);font-size:var(--t-lab);color:var(--ink-3)}
+  .note a{color:var(--measure)}
+  details.cfgbox,details.notes{border-top:1px solid var(--line);padding-top:var(--s4);margin-top:var(--s6)}
+  details > summary{cursor:pointer;font-size:var(--t-body);font-weight:600;color:var(--ink-2);
+    list-style:none;display:flex;align-items:center;gap:9px}
+  details > summary::-webkit-details-marker{display:none}
+  details > summary::before{content:"";width:6px;height:6px;border-right:1.5px solid var(--ink-3);
+    border-bottom:1.5px solid var(--ink-3);transform:rotate(-45deg);transition:transform .18s;margin-left:2px}
+  details[open] > summary::before{transform:rotate(45deg)}
+  details > summary:hover{color:var(--measure)}
+  details .panel,details .block{margin-top:var(--s4)}
+  .foot{border-top:1px solid var(--line);margin-top:var(--s7);padding-top:var(--s5);display:flex;
+    gap:var(--s6);flex-wrap:wrap;align-items:flex-start;font-family:var(--f-num);font-size:var(--t-lab);color:var(--ink-3)}
+  .foot b{color:var(--ink-2);font-weight:600}
+  .foot .sp{margin-left:auto}
+  .foot a{color:var(--measure)}
+
+  /* ---------- 提示条 ---------- */
+  #toast{border-radius:var(--r);border-color:var(--line-2);box-shadow:0 18px 44px -18px rgba(0,0,0,.9)}
+
+  /* ---------- 窄屏 ---------- */
+  @media (max-width:1000px){
+    .grid2,.cols{grid-template-columns:1fr}
+    .grid2 > div:last-child{order:-1}
+    .readouts .ro{min-width:calc(50% - var(--s5));margin-right:var(--s5)}
+    .ev{grid-template-columns:minmax(0,1fr) auto;gap:2px var(--s3);padding:13px 0}
+    .ev .en{order:2;justify-self:end}
+    .ev .ea{order:1}
+    .ev .et{order:3;grid-column:1 / -1}
+    .ev .etx{order:4;grid-column:1 / -1;text-align:left}
+    .ev-extra{display:none}
+    .events-open .ev-extra{display:grid}
+    .ev-more{display:inline-block}
+  }
+  @media (max-width:720px){
+    .gauge{grid-template-columns:30px 1fr}
+    .plot,.axis{height:196px}
+    .cols5{gap:var(--s3)}
+    .pbar{width:26px}
+    .colv{font-size:var(--t-lab)}
+    .thr span{font-size:10px;padding:1px 5px}
+    .chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:var(--s2)}
+    .chips .chip{flex:none}
+    .readline{flex-wrap:wrap;gap:var(--s4)}
+    .hero{font-size:38px}
+    .foot{gap:var(--s3)}
+    /* 标题行与筛选片在窄屏换行 —— 它们的 min-content 合计约 372px，不换行会把整页顶宽 */
+    .hd{flex-wrap:wrap;row-gap:var(--s2)}
+    .filters{flex-wrap:wrap;row-gap:var(--s2)}
+    .foot5{gap:var(--s1)}
+  }
 </style>
 </head>
 <body>
@@ -266,45 +581,69 @@
   style="position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>
 <div class="wrap">
 
-<header>
-  <div class="brand">
-    <div class="logo" aria-hidden="true">
-      <svg viewBox="0 0 34 34" fill="none">
-        <path d="M8 13.2C8 11.7 9.2 10.5 10.7 10.5h12.6c1.5 0 2.7 1.2 2.7 2.7v8.1c0 1.5-1.2 2.7-2.7 2.7H10.7C9.2 24 8 22.8 8 21.3z"
-              stroke="currentColor" stroke-width="1.5"/>
-        <path d="M13 13.6l-1.7 3.4M17.6 13.6l-1.7 3.4M22.2 13.6l-1.7 3.4"
-              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M12.4 20.6h9.2" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <h1>雨证 · RainProof
-      <span>可验证的 AI 参数化配送险 · 天气数据触发 · 规则写死在链上</span>
-    </h1>
-    <div class="chainbar">
-      <span><span class="dot" id="dot"></span><span id="netText">未连接</span></span>
-      <span>区块 <b id="blk">—</b></span>
-      <button class="btn sm" id="walletBtn" title="连接钱包；已连接时点它会打开钱包的账户选择弹窗">连接钱包</button>
-    </div>
+<header class="plate">
+  <div class="mark" aria-hidden="true">
+    <svg viewBox="0 0 34 34" width="30" height="30" fill="none">
+      <!-- 雨量筒剖面：筒身 + 刻度 + 液面（金 = 越过阈值的那一段） -->
+      <path d="M9.5 5.5h15c1.1 0 2 .9 2 2v19c0 1.1-.9 2-2 2h-15c-1.1 0-2-.9-2-2v-19c0-1.1.9-2 2-2z"
+            stroke="currentColor" stroke-width="1.6"/>
+      <path d="M13 11h4.5M13 15h6.5M13 19h4.5" stroke="currentColor" stroke-width="1.4"
+            stroke-linecap="round" opacity=".5"/>
+      <path d="M11 23.5h12" stroke="var(--money)" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
   </div>
-  <div class="rail">
-    <div class="rail-i"><span class="rl">资金池余额</span><b id="poolBal">—</b></div>
-    <div class="rail-i"><span class="rl">剩余可赔付</span><b id="poolCap">—</b></div>
-    <div class="rail-i"><span class="rl">合约</span><b id="addrMini">未配置</b></div>
+  <div class="who">
+    <h1>雨证 · RainProof</h1>
+    <p>参数化降雨险 · 结算依据是链上降雨读数，不是查勘</p>
+  </div>
+  <div class="net">
+    <span class="chainpill"><span class="dot" id="dot"></span><b id="netText">未连接</b></span>
+    <span class="item">区块 <b id="blk">—</b></span>
+    <span class="item">合约 <b class="mono" id="addrMini" style="color:var(--evi)">未配置</b></span>
+    <button class="btn sm" id="walletBtn" title="连接钱包；已连接时点它会打开钱包的账户选择弹窗">连接钱包</button>
   </div>
 </header>
+
+<!-- 读数条：先回答「够不够赔 / 赔过没有 / 现在什么状态」，再请人往下看 -->
+<div class="readouts">
+  <div class="ro"><span class="lb">资金池</span><span class="vl" id="poolBal">—</span>
+    <span class="sub">可覆盖 <b id="poolCap">—</b> 笔满额赔付</span></div>
+  <div class="ro money"><span class="lb">已赔付</span><span class="vl" id="paidShow">—</span>
+    <span class="sub" id="paidSub">正在读链上事件</span></div>
+  <div class="ro measure"><span class="lb">已越阈值区域</span><span class="vl" id="overShow">—</span>
+    <span class="sub" id="overSub">按 72 小时窗口</span></div>
+  <div class="ro"><span class="lb">待 AI 判定</span><span class="vl" id="pendShow">—</span>
+    <span class="sub" id="pendSub">连接钱包后可读</span></div>
+</div>
 
 <div class="grid2">
   <!-- ============ 左栏：现状与记录 ============ -->
   <div>
     <section class="sec lead">
-      <h2>降雨看板<em>链上的累计值，只增不减（喂价脚本从 2026-10-01 起累加）；触发赔的是<strong>投保后的增量</strong>，不是这个数；标了「背景雨幕」的那一行，就是整页背景雨的来源</em></h2>
-      <div class="panel" id="rainBoard">
+      <div class="hd">
+        <h2>降雨量测</h2>
+        <span class="n">rainfall(uint8) · 五城累计值</span>
+        <span class="r">同一把尺子：满量程 = 2 × 阈值 · 超出者顶格</span>
+      </div>
+      <div class="block" id="rainBoard">
         <div class="loading">正在读取各区域降雨</div>
       </div>
     </section>
 
     <section class="sec">
-      <h2>链上动态<em>合约发出的事件，按时间倒序</em></h2>
+      <div class="hd">
+        <h2>链上动态</h2>
+        <span class="n">eth_getLogs · 合约直接发出的事件</span>
+        <span class="r">事件名与参数都是合约发出的原始内容，本页只做翻译</span>
+      </div>
+      <div class="filters" id="evFilters">
+        <button class="f on" data-fam="all">全部</button>
+        <button class="f" data-fam="buy">投保</button>
+        <button class="f" data-fam="feed">喂价</button>
+        <button class="f" data-fam="judge">判定</button>
+        <button class="f" data-fam="pay">赔付</button>
+        <button class="f" data-fam="pool">资金池</button>
+      </div>
       <div class="panel" id="events">
         <div class="loading">正在读取事件日志</div>
       </div>
@@ -314,36 +653,45 @@
   <!-- ============ 右栏：这一页唯一的动作 + 动作背后的 AI 层 ============ -->
   <div class="rcol">
     <section class="sec">
-      <h2>投保<em>保费与阈值都从链上取，不写死在页面里</em></h2>
-      <div class="panel">
-        <div class="row" style="align-items:flex-end">
-          <div style="flex:1 1 150px">
-            <label class="mlabel k" for="regionSel">配送区域</label>
-            <select id="regionSel" style="width:100%"></select>
-          </div>
-          <div style="flex:0 1 130px">
-            <label class="mlabel k" for="hoursInput">保障时长</label>
-            <select id="hoursInput" style="width:100%">
-              <option value="24">24 小时（1 天）</option>
-              <option value="48">48 小时（2 天）</option>
-              <option value="72" selected>72 小时（3 天，最长）</option>
-            </select>
-          </div>
+      <div class="hd"><h2>开一张保单</h2><span class="n">buyPolicy(regionId, hours)</span></div>
+      <div class="block">
+        <div class="k">配送区域</div>
+        <div class="chips" id="regionChips" style="margin-top:8px"></div>
+        <label class="vh" for="regionSel">配送区域</label>
+        <select id="regionSel" class="vh"></select>
+
+        <div class="k" style="margin-top:var(--s4)">保障时长</div>
+        <div class="chips" id="hoursChips" style="margin-top:8px"></div>
+        <label class="vh" for="hoursInput">保障时长</label>
+        <select id="hoursInput" class="vh">
+          <option value="24">24 小时（1 天）</option>
+          <option value="48">48 小时（2 天）</option>
+          <option value="72" selected>72 小时（3 天，最长）</option>
+        </select>
+
+        <div class="quote">
+          <div><div class="lb">应付保费</div><div class="amt" id="premiumShow">—</div></div>
+          <div class="side" id="premiumSide">premiumOf(1, 72)<br>链上取值</div>
         </div>
-        <div class="k" style="margin-top:18px">应付保费</div>
-        <div class="metric" id="premiumShow">—</div>
-        <div class="k" style="margin-top:14px">触发赔付条件</div>
-        <div class="v" id="threshShow">—</div>
-        <button class="btn primary block" id="buyBtn" style="margin-top:16px" disabled>连接钱包后投保</button>
-        <div class="note" id="buyHint">
-          保单期间该区域<strong>新增累计降雨 ≥ 阈值</strong> 就能申请赔付（基线 = 投保当刻的链上雨量），最高赔 <strong id="payoutShow">—</strong>。
+
+        <div class="spec">
+          <div class="r"><span class="l">触发条件（增量 ≥）</span><span class="v2" id="threshShow">—</span></div>
+          <div class="r"><span class="l">赔付档位</span><span class="v2">按国标三级 · 50 / 75 / 100%</span></div>
+          <div class="r"><span class="l">本单赔付上限</span><span class="v2 money" id="payoutShow">—</span></div>
+          <div class="r"><span class="l">生效延迟</span><span class="v2">无（v2 去掉冷静期）</span></div>
+        </div>
+
+        <button class="btn primary block" id="buyBtn" style="margin-top:var(--s4)" disabled>连接钱包后投保</button>
+        <div class="note dim" id="buyHint" style="margin-top:var(--s3)">
+          理赔只看<strong>投保后的增量</strong>：投保当刻的链上读数记为基线，
+          之后<strong>新增累计降雨 ≥ 阈值</strong> 才进入判定。
           实赔按国标档位打折：<strong>暴雨 50% / 大暴雨 75% / 特大暴雨 100%</strong>。
         </div>
       </div>
     </section>
 
     <section class="sec">
-      <h2>AI 层做了什么<em>链下算、链上留痕；每条结论都能被第三方拿同一份快照复算</em></h2>
+      <div class="hd"><h2>AI 层做了什么</h2><span class="n">链下算 · 链上留痕</span></div>
       <div class="panel">
         <div class="airow"><b>喂价验收</b><span>三模型交叉比对，离群就拒收 —— 拒收本身也上链留痕</span></div>
         <div class="airow"><b>判定复核</b><span>按 R1–R5 规则给出赔/不赔与置信度，输入快照与输出结论各一个哈希写进链</span></div>
@@ -354,7 +702,8 @@
 </div>
 
 <section class="sec">
-  <h2>我的保单<em>逐份读链上；按钮点不动时，按钮自己会写出原因</em></h2>
+  <div class="hd"><h2>我的保单</h2><span class="n">policiesOf(account) · 逐份读链上</span>
+    <span class="r">按钮点不动时，按钮自己会写出原因</span></div>
   <div class="ptable-head">
     <span>保单 / 区域</span><span>保障期与进度</span><span>链上 AI 判定（可核）</span><span>操作</span>
   </div>
@@ -385,14 +734,25 @@
   </div>
 </details>
 
-<footer>
-  <p><b>这一页不依赖任何区块浏览器。</b>合约地址、账户余额、降雨值、事件日志，全部直接向节点提问取得
-  （<code>rpc.bohr.life</code>）。</p>
-  <p><b>只读模式：</b>没连钱包也能看全部数据。现场万一 MetaMask 出问题，照样能演示「链上有什么」。</p>
-  <p><b>诚实说明：</b>喂价脚本是<strong>中心化预言机</strong>，数据可信度取决于运营方；生产环境应改用去中心化预言机网络
-  （AI 层在链下做的三件事见右栏）。它<strong>不判断「人有没有真的受损」</strong>，那需要平台的订单数据，属于路线图。
-  每次判定都把输入快照和输出结论各算一个哈希写上链，第三方拿同一份快照重跑，得到的是逐字节相同的结果。</p>
+<footer class="foot">
+  <span><b>雨证 · RainProof</b> · 参数化降雨险</span>
+  <span>BOT Chain <b>968</b></span>
+  <span>合约 <b id="footAddr" title="0x89e7C942535930B61cB61631051E8b0bD670596a">0x89e7…596a</b></span>
+  <span>节点 <b>rpc.bohr.life</b></span>
+  <span class="sp">不依赖任何区块浏览器 · 数据直接向公共节点提问</span>
 </footer>
+
+<details class="notes">
+  <summary>只读模式与诚实说明</summary>
+  <div class="note">
+    <p><b>只读模式：</b>没连钱包也能看全部数据。现场万一 MetaMask 出问题，照样能演示「链上有什么」。</p>
+    <p><b>诚实说明：</b>喂价脚本是<b>中心化预言机</b>，数据可信度取决于运营方；生产环境应改用去中心化预言机网络
+    （AI 层在链下做的三件事见右栏）。它<b>不判断「人有没有真的受损」</b>，那需要平台的订单数据，属于路线图。
+    每次判定都把输入快照和输出结论各算一个哈希写上链，第三方拿同一份快照重跑，得到的是逐字节相同的结果。</p>
+    <p>这一页不依赖任何区块浏览器：合约地址、账户余额、降雨值、事件日志，全部直接向节点提问取得
+    （<code>rpc.bohr.life</code>）。</p>
+  </div>
+</details>
 </div>
 
 <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -438,12 +798,20 @@ const LS_KEY = "hanxong_contract_addr";
 //   换链/换地址重新部署后改这一行，或用 ?addr=0x... 临时覆盖。
 const FALLBACK_ADDR = "0x89e7C942535930B61cB61631051E8b0bD670596a";
 
-// 事件名 → 样式
-const EV_STYLE = { ClaimPaid:"gold", PolicyBought:"blue", RainfallUpdated:"", PoolFunded:"gold",
-                   PoolWithdrawn:"gold", OperatorChanged:"", PausedSet:"",
-                   JudgementSubmitted:"gold", UnderwritingDecision:"blue", FeedRejected:"", ReserveSet:"",
-                   PremiumSet:"blue", ExposureSettled:"", CoolingPeriodSet:"",
-                   EligibleSet:"", EligibleRequiredSet:"" };
+// 事件名 → 语义域：金额（金）、数据与参数（青）、判定与证据（鸢尾）、其余灰
+const EV_STYLE = { ClaimPaid:"money", PoolFunded:"money", PoolWithdrawn:"money", ReserveSet:"money",
+                   RainfallUpdated:"measure", PolicyBought:"measure", PremiumSet:"measure",
+                   CoolingPeriodSet:"measure", PausedSet:"measure", OperatorChanged:"measure",
+                   JudgementSubmitted:"evi", FeedRejected:"evi", UnderwritingDecision:"evi",
+                   EligibleSet:"evi", EligibleRequiredSet:"evi",
+                   ExposureSettled:"gray" };
+// 事件名 → 顶部筛选片的分类
+const EV_FAM = { PolicyBought:"buy", ExposureSettled:"buy",
+                 RainfallUpdated:"feed", FeedRejected:"feed",
+                 JudgementSubmitted:"judge", UnderwritingDecision:"judge", PremiumSet:"judge",
+                 ClaimPaid:"pay",
+                 PoolFunded:"pool", PoolWithdrawn:"pool", ReserveSet:"pool" };
+let evFilter = "all";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -567,6 +935,8 @@ async function attachContract(addr, quiet) {
   S.addr = addr;
   localStorage.setItem(LS_KEY, addr);
   $("addrMini").textContent = short(addr);
+  const fa = $("footAddr");
+  if (fa) { fa.textContent = short(addr); fa.title = addr; }
 
   // 读合约（永远走公共节点读，不走钱包 —— 少弹窗、也更快）
   if (!S.provider) S.provider = await getReadProvider();
@@ -755,46 +1125,103 @@ const RName = id => (REGIONS.find(r => r.id === Number(id)) || {}).label || ("�
 // 国标（GB/T 28592-2012）三档 → 赔付比例，与合约 tierBps(0/1/2) = 50% / 75% / 100% 对齐
 const TIER_LABEL = ["暴雨档 50%", "大暴雨档 75%", "特大暴雨档 100%"];
 
-/* 降雨看板 */
+/* 降雨看板：五支柱雨量图（一根柱一座城，一条阈值线横贯五柱）+ 选中城市的主读数。
+   旧的一行一条横条视图已被五支柱取代（那套 .region/.bar 的 CSS 与 pct 口径按门禁 check-ui ① 原样保留，
+   元素不再生成）。柱身按阈值线切成两段：线下=青（已记录），线上那一段=金（会被结算的部分）。 */
 async function loadRegions() {
   const box = $("rainBoard");
-  const out = [];
   const thr = Number(S.meta.threshold);
+  const hours = Number($("hoursInput").value) || 72;
+  const sel = Number($("regionSel").value) || 1;
   const vals = {};
-  for (const { id, label } of REGIONS) {
-    try {
-      const v = Number(await S.readC.rainfall(id));
-      vals[id] = v;
-      // 刻度 = 0 → 2×阈值（即 100 mm），所以触发线（50 mm）正好落在条的正中间，
-      // 与 CSS 里 .bar::after 的 left:50% 对齐。这样「还没到线 / 正压在线上 / 冲过线」三种状态肉眼可辨：
-      // 武汉 24mm 只填四分之一、广州 50mm 正好压在触发线上、成都 120mm 直接顶满。
-      const pct = Math.min(100, Math.round(v / (thr * 2) * 100));
-      const hit = v >= thr;
-      out.push(`<div class="region" data-region="${id}">
-        <div class="rtop">
-          <span>${esc(label)} <span style="color:var(--faint);font-size:11px">#${id}</span></span>
-          <span><b>${v}</b> mm${hit ? ' <span class="tag gold" style="margin-left:6px">已超阈值</span>' : ""}</span>
-        </div>
-        <div class="bar"><i class="${hit ? "hit" : ""}" style="width:${pct}%"></i></div>
-        <div class="rnote">阈值 ${thr} mm · ${hit ? `已越过 <b>${v - thr}</b> mm` : `距触发还差 ${thr - v} mm`}</div>
-      </div>`);
-    } catch (e) {
-      out.push(`<div class="empty">区域 #${id} 读取失败：${esc(e.message || e)}</div>`);
-    }
+  for (const { id } of REGIONS) {
+    try { vals[id] = Number(await S.readC.rainfall(id)); } catch (e) { /* 单点失败不影响其余 */ }
   }
   const got = Object.keys(vals).length;
-  // 五行各写一遍同一句解释是噪声：共同的解释只写一遍，放在看板底部。
-  if (got) out.push(`<div class="rlegend">竖线 = 该时长对应的国标触发线（${thr} mm），条形刻度 0 → 2×阈值。
-    <b>触发赔的是投保后的增量</b>（基线 = 投保当刻的链上雨量）—— 已经下过的雨不算，所以要在越过阈值之前投保。</div>`);
   if (got) S.rainVals = vals;                       // 只收下真正读到的值，全失败时不动上一版
-  const sig = thr + "|" + REGIONS.map(r => vals[r.id]).join(",");   // ★ 阈值也算进签名：切时长会换阈值，只比雨量会把旧刻度留在页面上
+  const sig = thr + "|" + sel + "|" + REGIONS.map(r => vals[r.id]).join(",");   // ★ 阈值也算进签名：切时长会换阈值，只比雨量会把旧刻度留在页面上
   // 一个都没读到、且看板上已经有数字时，宁可留着上一版 —— 现场 RPC 抖一下不该给评委看一屏报错
   if (sig !== S.rainSig && (got || !S.rainSig)) {
-    S.rainSig = sig;
-    box.innerHTML = out.join("");
+    const meas = [];
+    for (const { id, label } of REGIONS) {
+      const v = vals[id];
+      if (v == null) continue;
+      // 刻度 = 0 → 2×阈值，阈值线正好落在满量程的一半，与 CSS 里 .bar::after 的 left:50%、
+      // 门禁 check-ui ① 的 pct(50)===50 是同一个口径：三种状态（没到线 / 压在线 / 冲过线）肉眼可辨
+      const pct = Math.min(100, Math.round(v / (thr * 2) * 100));
+      const belowPct = Math.min(100, Math.round(thr / Math.max(v, thr) * 100));
+      meas.push({ id, label, v, pct, belowPct, hit: v >= thr, capped: v > thr * 2 });
+    }
+    if (meas.length) {
+      S.rainSig = sig;
+      const cur = meas.find(m => m.id === sel) || meas[0];
+      const ticks = [0, 1, 2, 3, 4].map(i =>
+        `<span class="tick" style="bottom:${i * 25}%">${Math.round(thr * 2 * i / 4)}</span>`).join("");
+      box.innerHTML = `
+        <div class="chips">
+          ${meas.map(m => `<button class="chip${m.id === cur.id ? " on" : ""}${m.hit ? " over" : ""}"
+             data-region="${m.id}" title="${esc(m.label)} · 累计 ${m.v} mm（#${m.id}）"
+             ><span class="dotq"></span>${esc(m.label)}</button>`).join("")}
+        </div>
+        <div class="readline" style="margin-top:var(--s5)">
+          <div>
+            <div class="hero-lb">${esc(cur.label)} · 累计降雨</div>
+            <div class="hero">${cur.v}<u>mm</u></div>
+          </div>
+          <div class="kvbox"><span class="k">距阈值线</span><span class="v">${cur.hit ? "已越 " + (cur.v - thr) : thr - cur.v}<small>mm</small></span></div>
+          <div class="kvbox"><span class="k">阈值（${hours}h 窗口）</span><span class="v">${thr}<small>mm</small></span></div>
+          <div class="kvbox"><span class="k">满量程</span><span class="v">${thr * 2}<small>mm</small></span></div>
+          <div class="kvbox" style="margin-left:auto"><span class="k">背景雨幕</span><span class="tag measure">由此行驱动</span></div>
+        </div>
+        <div class="gauge">
+          <div class="axis">${ticks}</div>
+          <div class="plot">
+            <div class="thr" style="top:50%"><span>阈值线 ${thr} mm</span></div>
+            <div class="cols5">
+              ${meas.map(m => `<div class="colwrap${m.id === cur.id ? " on" : ""}" data-region="${m.id}"
+                 title="${esc(m.label)} · #${m.id} · ${m.v} mm">
+                 <div class="colv">${m.v}</div>
+                 <div class="pbar" style="height:${m.pct}%">
+                   ${m.hit ? `<div class="above" style="bottom:${m.belowPct}%;height:${100 - m.belowPct}%"></div>` : ""}
+                   <div class="below" style="height:${m.belowPct}%"></div>
+                   ${m.capped ? '<div class="spill" style="top:2px"></div>' : ""}
+                 </div></div>`).join("")}
+            </div>
+          </div>
+        </div>
+        <div class="foot5">
+          ${meas.map(m => `<div class="c${m.id === cur.id ? " on" : ""}" data-region="${m.id}">
+             <b>${esc(m.label)}</b><span>#${m.id} · ${m.v} mm</span></div>`).join("")}
+        </div>
+        <div class="legend">
+          <span class="sw"><span class="sq m"></span>阈值线以下：已记录，未进入结算</span>
+          <span class="sw"><span class="sq y"></span>越过阈值线的那一段：会被结算的部分</span>
+          <span class="sp">触发赔的是<b>投保后的增量</b>（基线 = 投保当刻的链上读数）；越线 ≠ 现在投保就能赔</span>
+        </div>`;
+      // 柱、柱脚、城市片都点得动：选中它 = 换背景雨幕、换主读数、换保费
+      box.querySelectorAll("[data-region]").forEach(el => {
+        el.onclick = () => selectRegion(Number(el.dataset.region));
+      });
+    }
   }
   markSelRegion();
   applyRain();
+  updateReadouts();
+}
+
+/* 换查看的城市：写回下拉框再走它自己的 onchange —— 保费、刻度、雨幕、看板一起跟着更新 */
+function selectRegion(id) {
+  const s = $("regionSel");
+  if (Number(s.value) === Number(id)) return;
+  s.value = String(id);
+  s.dispatchEvent(new Event("change"));
+}
+
+/* 时长片：与 #hoursInput 的三个选项一一对应（原生 select 仍留在 DOM 里，门禁 check-ui ② 要求它在） */
+function markHoursChips() {
+  const h = String(Number($("hoursInput").value) || 72);
+  $("hoursChips").innerHTML = [24, 48, 72].map(x =>
+    `<button class="chip${String(x) === h ? " on" : ""}" data-hours="${x}">${x}h</button>`).join("");
 }
 
 /* 背景雨幕的强度 = 「配送区域」当前选中那条链上记录，刻度取 max(阈值×2, 五城最大值)：
@@ -815,11 +1242,17 @@ function applyRain() {
   document.documentElement.style.setProperty("--rain", Math.pow(t, 0.6).toFixed(3));
 }
 
-/* 看板上标出是哪一行在驱动背景雨幕 */
+/* 标出哪一行在驱动背景雨幕：城市片、柱子、柱脚三处同步高亮 */
 function markSelRegion() {
   const sel = String(Number($("regionSel").value) || 1);
   document.querySelectorAll("#rainBoard .region").forEach(el => {
     el.classList.toggle("is-sel", el.dataset.region === sel);
+  });
+  document.querySelectorAll("#rainBoard .chip, #rainBoard .colwrap, #rainBoard .foot5 .c").forEach(el => {
+    el.classList.toggle("on", el.dataset.region === sel);
+  });
+  document.querySelectorAll("#regionChips .chip").forEach(el => {
+    el.classList.toggle("on", el.dataset.region === sel);
   });
 }
 
@@ -831,8 +1264,29 @@ async function loadPool() {
     // 按最大赔付额（0.01）折算的是保守下限：v2 按国标分档，实际赔付 50% / 75% / 100%，
     // 池子真正能覆盖的份数只会比这个数字多。
     const n = BigInt(S.meta.payout) === 0n ? 0n : bal / BigInt(S.meta.payout);
-    $("poolCap").textContent = `${n} 笔` + (n === 0n ? "（空了）" : "");
+    $("poolCap").textContent = n === 0n ? "0（池子空了）" : String(n);
   } catch (e) { $("poolBal").textContent = "读取失败"; }
+}
+
+/* 读数条：四个数分别来自资金池、事件日志、五城读数、保单状态 —— 每个数后面那行小字就是它的出处 */
+function updateReadouts() {
+  const thr = S.meta ? Number(S.meta.threshold) : null;
+  const hours = Number($("hoursInput").value) || 72;
+  if (S.rainVals && thr) {
+    const vals = REGIONS.map(r => S.rainVals[r.id]).filter(v => v != null);
+    const over = vals.filter(v => v >= thr).length;
+    $("overShow").innerHTML = `${over}<span class="un">/ ${REGIONS.length}</span>`;
+    $("overSub").textContent = `按 ${hours} 小时窗口 · 阈值 ${thr} mm`;
+  }
+  if (S.paid) {
+    $("paidShow").innerHTML = `${S.paid.n}<span class="un">笔</span>`;
+    $("paidSub").textContent = S.paid.n ? `累计 ${fmtEth(S.paid.sum)} ${SYM()}` : "还没有赔付过";
+  }
+  if (S.account) {
+    const n = Number(S.pending || 0);
+    $("pendShow").innerHTML = `${n}<span class="un">笔</span>`;
+    $("pendSub").textContent = n ? "雨量已达标，等判定上链" : "当前没有待判定的保单";
+  }
 }
 
 /* 我的保单 */
@@ -849,6 +1303,7 @@ async function loadMyPolicies() {
       return;
     }
     const rows = [];
+    let pend = 0;
     for (const idBn of ids) {
       const id = Number(idBn);
       const [p, status, short] = await Promise.all([
@@ -884,25 +1339,44 @@ async function loadMyPolicies() {
               · ${esc(jm.modelVersion)}
               ${Number(jm.judgedAt) ? `　·　${new Date(Number(jm.judgedAt) * 1000).toLocaleString("zh-CN", { hour12:false })}` : ""}`
         : `<span class="none">— 尚未登记 AI 判定</span>`;
+      // 增量条：基线（投保当刻的累计值 p.rainfallAtBuy）与「还差多少 mm」（shortfall(id)）
+      // 都是链上读来的，两者相减就是这份保单此刻的增量 —— 不猜、不记在页面里。
+      const thrMm = Number(p.thresholdMm) || Number(S.meta.threshold);
+      const incMm = Math.max(0, thrMm - Number(short));
+      const incPct = thrMm ? Math.max(0, Math.min(100, Math.round(incMm / thrMm * 100))) : 0;
+      const baseMm = Number(p.rainfallAtBuy);
+      const nowMm = S.rainVals ? S.rainVals[Number(p.regionId)] : null;
+      if (status === "pending_judgement") pend++;
       rows.push(`<div class="pol ${status}">
         <div class="pid"><span class="mono">#${id}</span> ${esc(name)}
-          <span class="tag ${claimable ? "gold" : status === "paid" ? "" : "warn"}">${label}</span>
+          <span class="stat tag ${claimable ? "gold" : status === "paid" ? "" : "warn"}">${label}</span>
         </div>
         <div class="pmeta">
-          保障 ${fmt(from)} → ${fmt(to)}
+          保障 ${fmt(from)} → ${fmt(to)} · 阈值 ${thrMm} mm（${Number(p.windowHours)} 小时窗口）
           ${(claimable || status === "paid") ? `<br>国标档位 ${TIER_LABEL[Number(p.tier)] || "—"} · 应赔 <b>${fmtEth(due)}</b> ${SYM()}` : ""}
-          ${status === "active" ? `<br>距触发还差 <b style="color:var(--warn)">${Number(short)}</b> mm` : ""}
+          ${status === "active" ? `<br>距触发还差 <b>${Number(short)}</b> mm` : ""}
           ${claimable ? `<br>已满足赔付条件` : ""}
           ${status === "pending_judgement" ? `<br>雨量已达标，等 AI 判定登记上链` : ""}
           ${status === "denied" ? `<br>AI 判定为不赔（结论与两个证据哈希都已上链，可查）` : ""}
           ${status === "low_confidence" ? `<br>AI 置信度低于合约验收门槛，按规则不予赔付` : ""}
           ${status === "paid" ? `<br>已收到 ${fmtEth(due)} ${SYM()}` : ""}
         </div>
+        <div class="incre${incMm >= thrMm ? " over" : ""}">
+          <div class="top"><span>投保后的增量（基线 ${baseMm} mm${nowMm != null ? " → 现在 " + nowMm + " mm" : ""}）</span>
+            <b>${incMm} / ${thrMm} mm</b></div>
+          <div class="track"><div class="fill" style="width:${incPct}%"></div></div>
+        </div>
         <div class="pai">${aiLine}</div>
-        <button class="btn sm ${claimable ? "gold" : ""}" data-claim="${id}"
-          ${claimable ? "" : "disabled"}>${claimable ? "申请赔付 " + fmtEth(due) + " " + SYM() : (NOBTN[status] || "未达条件")}</button>
+        <div class="polbtns">
+          <button class="btn sm ${claimable ? "gold" : ""}" data-claim="${id}"
+            ${claimable ? "" : "disabled"}>${claimable ? "申请赔付 " + fmtEth(due) + " " + SYM() : (NOBTN[status] || "未达条件")}</button>
+          <a class="btn sm" target="_blank" rel="noopener" title="在核验台里直接查这个合约的链上原始数据"
+             href="verifier.html?q=${esc(S.addr)}${QS.get("rpc") ? "&rpc=" + encodeURIComponent(QS.get("rpc")) : ""}">核验台查合约</a>
+          ${(jm && jm.exists) ? `<button class="btn sm" data-copy="${esc(jm.outputHash)}" title="输出结论哈希 ${esc(jm.outputHash)}">复制结论哈希</button>` : ""}
+        </div>
       </div>`);
     }
+    S.pending = pend;             // 读数条上的「待 AI 判定」
     box.innerHTML = rows.join("");
     box.querySelectorAll("[data-claim]").forEach(btn => {
       btn.onclick = () => {
@@ -910,6 +1384,13 @@ async function loadMyPolicies() {
         send(() => S.readC.connect(S.signer) && new ethers.Contract(S.addr, ABI, S.signer).claim(id), `保单 #${id} 赔付完成`);
       };
     });
+    box.querySelectorAll("[data-copy]").forEach(btn => {
+      btn.onclick = async () => {
+        try { await navigator.clipboard.writeText(btn.dataset.copy); toast("结论哈希已复制到剪贴板", "ok"); }
+        catch (e) { toast("浏览器不让我写剪贴板，请手动选中这一串：" + btn.dataset.copy, "err"); }
+      };
+    });
+    updateReadouts();
   } catch (e) {
     box.innerHTML = `<div class="empty">读取保单失败：${esc(e.reason || e.message || e)}</div>`;
   }
@@ -935,11 +1416,19 @@ async function loadEvents() {
     }
     if (!logs.length) { box.innerHTML = `<div class="empty">这个合约还没有发出过事件。投保或喂价之后就会出现。</div>`; return; }
     const iface = S.readC.interface;
-    const rows = [];
-    const recent = logs.slice(-20).reverse();
-    const times = {};
-    for (const l of recent) {
+    // 「已赔付」按全部日志算（下面的纸带只显示最近 20 条）—— 这个数是读数条上那一格的出处
+    let paidN = 0, paidSum = 0n;
+    const all = [];
+    for (const l of logs) {
       let d; try { d = iface.parseLog(l); } catch (e) { continue; }
+      all.push({ l, d });
+      if (d.name === "ClaimPaid") { paidN++; paidSum += BigInt(d.args[2]); }
+    }
+    S.paid = { n: paidN, sum: paidSum };
+    const rows = [];
+    const times = {};
+    const recent = (evFilter === "all" ? all : all.filter(p => EV_FAM[p.d.name] === evFilter)).slice(-20).reverse();
+    for (const { l, d } of recent) {
       if (times[l.blockNumber] === undefined) {
         try { times[l.blockNumber] = (await S.provider.getBlock(l.blockNumber)).timestamp; }
         catch (e) { times[l.blockNumber] = 0; }
@@ -984,17 +1473,17 @@ async function loadEvents() {
       const when = ts ? new Date(Number(ts) * 1000) : null;
       const ago = when ? Math.floor((Date.now() - when.getTime()) / 60000) : null;
       rows.push(`<div class="ev${rows.length >= 6 ? " ev-extra" : ""}">
-        <span class="en ${EV_STYLE[d.name] || ""}">${esc(d.name)}</span>
-        <span class="et">${desc}</span>
         <span class="ea">#${Number(l.blockNumber).toLocaleString("en-US")}${ago !== null ? " · " + (ago < 1 ? "刚刚" : ago + " 分钟前") : ""}</span>
-        ${l.transactionHash ? `<a class="etx" href="verifier.html?q=${l.transactionHash}${QS.get("rpc") ? "&rpc=" + encodeURIComponent(QS.get("rpc")) : ""}" target="_blank" rel="noopener" title="在本站核验台里看这笔交易">核验 ↗</a>` : ""}
+        <span class="tagn en ${EV_STYLE[d.name] || "gray"}">${esc(d.name)}</span>
+        <span class="et">${desc}</span>
+        ${l.transactionHash ? `<a class="etx" href="verifier.html?q=${l.transactionHash}${QS.get("rpc") ? "&rpc=" + encodeURIComponent(QS.get("rpc")) : ""}" target="_blank" rel="noopener" title="在本站核验台里看这笔交易 —— ${l.transactionHash}">${shortHash(l.transactionHash)} ↗</a>` : ""}
       </div>`);
     }
     if (eventsOpen) box.classList.add("events-open");
     box.innerHTML = rows.length
       ? rows.join("") + (rows.length > 6
           ? `<button class="btn sm ev-more">展开其余 ${rows.length - 6} 条（共 ${rows.length} 条）</button>` : "")
-      : `<div class="empty">没有能解析的事件。</div>`;
+      : `<div class="empty">${evFilter === "all" ? "没有能解析的事件。" : "这个分类下还没有事件。"}</div>`;
     // 事件委托：列表每轮都会被重建，把监听挂在容器上比挂在按钮上稳
     box.onclick = (e) => {
       const b = e.target.closest && e.target.closest(".ev-more");
@@ -1003,6 +1492,7 @@ async function loadEvents() {
       box.classList.add("events-open");
       b.remove();
     };
+    updateReadouts();
   } catch (e) {
     box.innerHTML = `<div class="empty">读取事件失败：${esc(e.reason || e.message || e)}</div>`;
   }
@@ -1029,12 +1519,23 @@ async function refreshPremium() {
   } catch (e) {}   // 地址上不是 v2 合约时退回兜底值
   S.premiumNow = p;
   $("premiumShow").textContent = fmtEth(p) + " " + SYM();
+  const side = $("premiumSide");
+  if (side) side.innerHTML = `premiumOf(${region}, ${hours})<br>链上取值`;
   return p;
 }
 
-$("regionSel").onchange = () => { refreshPremium(); markSelRegion(); applyRain(); };
+$("regionSel").onchange = () => { refreshPremium().then(() => loadRegions()); };
 // 时长一变，保费和阈值都要跟着变（v2 两者都是「区域 × 时长」的函数），看板刻度也要跟着重画
-$("hoursInput").onchange = () => { refreshPremium().then(() => loadRegions()); };
+$("hoursInput").onchange = () => { refreshPremium().then(() => { markHoursChips(); loadRegions(); }); };
+
+// 事件纸带的分类筛选：只筛显示，不重新读链（点一下立刻见效）
+$("evFilters").onclick = (e) => {
+  const b = e.target.closest && e.target.closest(".f");
+  if (!b) return;
+  evFilter = b.dataset.fam || "all";
+  $("evFilters").querySelectorAll(".f").forEach(x => x.classList.toggle("on", x === b));
+  loadEvents();
+};
 
 $("buyBtn").onclick = async () => {
   const region = Number($("regionSel").value);
@@ -1075,6 +1576,23 @@ if (window.ethereum) {
 (async () => {
   const sel = $("regionSel");
   sel.innerHTML = REGIONS.map(r => `<option value="${r.id}">${r.label}（#${r.id}）</option>`).join("");
+  // 城市片与时长片是这两个 select 的代理控件：点它们 = 写回 select 再触发它的 change，
+  // 原生 select 留在 DOM 里（原生语义、键盘可达，门禁 check-ui ② 也要求它带着那三个选项在场）
+  $("regionChips").innerHTML = REGIONS.map(r =>
+    `<button class="chip" data-region="${r.id}">${r.label}</button>`).join("");
+  $("regionChips").onclick = (e) => {
+    const b = e.target.closest && e.target.closest(".chip");
+    if (b) selectRegion(Number(b.dataset.region));
+  };
+  markHoursChips();
+  $("hoursChips").onclick = (e) => {
+    const b = e.target.closest && e.target.closest(".chip");
+    if (!b) return;
+    const h = Number(b.dataset.hours);
+    if (Number($("hoursInput").value) === h) return;
+    $("hoursInput").value = String(h);
+    $("hoursInput").dispatchEvent(new Event("change"));
+  };
   try { await boot(); } catch (e) {}
   try { await refreshPremium(); } catch (e) {}
   // 轮询永远注册：boot() 失败（节点抖了 / 地址没填）时 12 秒后自己再连一次，

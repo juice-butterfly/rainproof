@@ -8,10 +8,20 @@
  * 而不是比两份文件。ABI 现编译自 `ref/PricingV3.sol`，不手抄（手抄的 ABI 是"看起来在验、
  * 其实在验自己"）。
  *
+ * ⚠️ 比的是**冻结在链上那份规格**，不是 `10-金融与定价/pricing-engine.json`：
+ * 那份 JSON 现在是 **v3 设计层**（2026-10-07 晚 B 按 GB/T 28592 重建为 12h/24h、40 格 / 120 行，
+ * 见 `10-金融与定价/GB28592-12h24h重建-B给A-2026-10-07.md`），**没有部署** —— 968 上那份模块
+ * 的 12h 行读回全是 0（2026-10-07 20:1x 只读实测），24h 行也比新表低 3~8%。所以本脚本的对照表
+ * 固定在 `07-测试工具/fixtures/pricing-engine-deployed-968.json`（= 部署当时那份 JSON，
+ * 取自提交 `7e05c6c^`，60 行 / 180 带 / 时长 24·48·72）。要给新表做自证，跑
+ * `cd 10-金融与定价 && node ref/verify_pricing_v3.js`（真编译 + 内存链，687 项）。
+ *
  * 用法：
  *   node check-v3-prices.js                  # 真读 968 上的定价模块：480 项比对
- *   node check-v3-prices.js --offline        # 不联网：只校验 payload 自身的 60 行不变量
+ *   node check-v3-prices.js --offline        # 不联网：只校验 fixture 自身的 60 行不变量
  *   node check-v3-prices.js --addr=0x...     # 换合约（默认就是 968 上部署的那一个）
+ *   node check-v3-prices.js --spec=<路径>    # 换对照表；指向 v3 设计层那份 JSON 时**对不上是预期的**
+ *                                            # （链上冻结的是旧规格），这种方式只用于看差异
  *
  * 968 需要代理（FlClash）：$env:NODE_USE_ENV_PROXY='1'; $env:HTTPS_PROXY='http://127.0.0.1:7890'
  *
@@ -26,7 +36,7 @@ const solc = require(path.join(TOOLS, 'solc'));
 const { ethers } = require(path.join(TOOLS, 'ethers'));
 
 const ROOT = path.join(__dirname, '..');
-const JSON_PATH = path.join(ROOT, '10-金融与定价', 'pricing-engine.json');
+// 对照表在 main() 里解析：默认 = 冻结在链上那份规格的 fixture（见文件头），--spec / V3_SPEC_JSON 可覆盖。
 const SOL_PATH = path.join(ROOT, '10-金融与定价', 'ref', 'PricingV3.sol');
 const MIN_PREMIUM = 20000000000000n; // 0.00002 ether
 
@@ -93,7 +103,9 @@ function offlineCheck(rows) {
 }
 
 async function main() {
-  const rows = buildRows(JSON.parse(fs.readFileSync(JSON_PATH, 'utf8')));
+  const specPath = arg('spec', process.env.V3_SPEC_JSON || path.join(__dirname, 'fixtures', 'pricing-engine-deployed-968.json'));
+  const rows = buildRows(JSON.parse(fs.readFileSync(specPath, 'utf8')));
+  console.log(`对照表：${path.relative(ROOT, specPath).replace(/\\/g, '/')}`);
   console.log(`payload：${rows.length} 行（${rows.filter((r) => r.sellable).length} 可售 / ${rows.filter((r) => !r.sellable).length} 不卖）`);
   const offlineBad = offlineCheck(rows);
   console.log(`payload 自身不变量：${offlineBad ? `❌ ${offlineBad} 处不成立` : '✅ 通过'}`);

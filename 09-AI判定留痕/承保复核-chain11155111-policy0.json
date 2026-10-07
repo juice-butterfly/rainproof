@@ -25,7 +25,7 @@
     "incrementMm": 34,
     "feed": {
       "source": null,
-      "note": "投保区块之前、最近 4950 个区块内没有该区域的喂价事件（v1 没有 lastFeedAt 字段）"
+      "note": "投保区块之前、最近 10000 个区块内没有该区域的喂价事件（v1 没有 lastFeedAt 字段）"
     },
     "models": {
       "status": "agree",
@@ -77,7 +77,7 @@
     "verdict": "REVIEW_OK",
     "reviewVersion": "hook-watch@1"
   },
-  "reviewHash": "0xefd85d6459a4c8d590e63b85fa9fe558f0dd1f5f5b4f284bb2e23fa6e8e86f54",
-  "reviewedAt": "2026-10-07T05:53:03.923Z",
-  "file": "D:\\workbuddy-use\\汉客松-参赛包\\09-AI判定留痕\\承保复核-policy0.json"
+  "reviewHash": "0xd885377ad92d25f576ca72a5ec21927e94bde21f4d1620dfeb5d5c599b15e483",
+  "reviewedAt": "2026-10-07T05:58:31.745Z",
+  "file": "D:\\workbuddy-use\\汉客松-参赛包\\09-AI判定留痕\\承保复核-chain11155111-policy0.json"
 }

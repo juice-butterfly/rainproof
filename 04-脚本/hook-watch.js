@@ -52,6 +52,7 @@ const REVIEW_VERSION = "hook-watch@1";
 const STALE_FEED_SEC = 24 * 3600;   // 超过这个年纪的喂价 = 基线不可信（v2 合约里是硬闸门）
 const DEVIATION_LIMIT_PCT = 60;     // 链上累计值与三模型中位数的允许背离（与判定层 R2 同口径）
 const DEFAULT_BLOCKS = 10000;       // 扫描深度：publicnode 的 eth_getLogs 单次上限是 50000
+const FEED_LOOKBACK_BLOCKS = 10000; // ★ 喂价新鲜度的查询窗口必须固定：若跟着扫描起点走，留痕哈希每轮都会漂
 
 const ARGV = process.argv.slice(2);
 const has = (f) => ARGV.includes(f);
@@ -128,17 +129,14 @@ async function surfaceOf(c, id, isV2) {
   };
 }
 
-/** 喂价新鲜度（一律以「投保所在区块」为观察时刻，所以这份留痕隔天重跑也得到同一个哈希）
- *  v2 直接读链上 lastFeedAt；v1 没有它，用投保区块之前最近一次 RainfallUpdated 的区块时间等价实现 */
+/** 喂价新鲜度
+ *  ★ 一律用「投保区块之前最近一次 RainfallUpdated」反推，**不直接读 v2 的 lastFeedAt**：
+ *    lastFeedAt 是可变映射，之后每喂一次价它就变，直接读会让这份留痕的哈希随时间漂移；
+ *    而链上最后一次喂价正是 lastFeedAt 的来源（rejectFeed 不刷新它），两者在投保那一刻等价。 */
 async function feedInfo({ c, provider, isV2, regionId, asOfSec, fromBlock, toBlock }) {
-  if (isV2) {
-    const t = Number(await c.lastFeedAt(regionId));
-    if (!t) return { known: false, note: "该区域在 v2 合约里还没有喂过价（lastFeedAt = 0）" };
-    return { known: true, source: "lastFeedAt(链上)", time: t, ageSeconds: asOfSec - t, block: null, txHash: null, confidence: null };
-  }
   const logs = await c.queryFilter(c.filters.RainfallUpdated(regionId), fromBlock, toBlock);
   if (!logs.length) {
-    return { known: false, note: `投保区块之前、最近 ${toBlock - fromBlock + 1} 个区块内没有该区域的喂价事件（v1 没有 lastFeedAt 字段）` };
+    return { known: false, note: `投保区块之前、最近 ${FEED_LOOKBACK_BLOCKS} 个区块内没有该区域的喂价事件（${isV2 ? "v2 的 lastFeedAt 由该事件维护" : "v1 没有 lastFeedAt 字段"}）` };
   }
   const last = logs[logs.length - 1];
   const blk = await provider.getBlock(last.blockNumber);
@@ -157,7 +155,12 @@ async function buildRecord({ c, provider, isV2, noModels, chainId, addr, log, fr
   const blk = await provider.getBlock(log.blockNumber);
   const asOfSec = Number(blk.timestamp);          // ★ 观察时刻 = 投保交易所在区块的时间（不可变、可复算）
 
-  const feed = await feedInfo({ c, provider, isV2, regionId: s.regionId, asOfSec, fromBlock, toBlock: log.blockNumber });
+  // ★ 起点固定为「投保区块往前 FEED_LOOKBACK_BLOCKS 块」，不用扫描游标 fromBlock：
+  //   否则同一份保单换个扫描窗口重跑会得到不同的 note、进而不同的 reviewHash。
+  const feed = await feedInfo({
+    c, provider, isV2, regionId: s.regionId, asOfSec,
+    fromBlock: Math.max(0, log.blockNumber - FEED_LOOKBACK_BLOCKS), toBlock: log.blockNumber,
+  });
 
   let models = null;
   let modelsError = null;
@@ -272,7 +275,7 @@ async function sweep({ c, provider, isV2, noModels, dry, force, chainId, addr, f
   let written = 0, skipped = 0;
   for (const log of logs) {
     const id = Number(log.args.policyId);
-    const file = path.join(OUT_DIR, `承保复核-policy${id}.json`);
+    const file = path.join(OUT_DIR, `承保复核-chain${chainId}-policy${id}.json`);   // 带链号：同址两条链是两个合约
     if (fs.existsSync(file) && !force) {
       console.log(`[${ts()}] 🪝 保单 #${id} 已经复核过（${path.basename(file)}），跳过（要重做加 --force）`);
       skipped++;

@@ -176,7 +176,14 @@ function synthModels(region, startDate, targetMm, onchainValue) {
   const endDate = UNTIL || shDate(p.endTime);
   const onchainCum = Number(await c.rainfall(p.regionId));
   const incrementMm = Number(await c.rainfallDuring(POLICY_ID));
-  // v2 的阈值随窗口时长走（24/48/72h → 50/100/150mm），v1 只有一个 THRESHOLD。
+  // 阈值必须从「正在判定的那份合约」读，不能从定价表读 —— 2026-10-07 全仓审计 D1:
+  //   链上 v2: thresholdOf(h) = 50 × h / 24（24/48/72h → 50/100/150mm，可线性外推）
+  //   定价 v3: 国标 GB/T 28592 两档表 {12:[30,70], 24:[50,100]}mm（04-脚本 与 10-金融与定价/pricing-engine.json 口径）
+  // 两套档线服务于不同的东西（v2 是「按窗口缩放的保护线」，v3 是「国标暴雨等级」），
+  // 所以 AI 层下游的 thresholdMm 一定要跟着被判定合约走。曾经把 v3 的 12h 线（30mm）
+  // 写成 50×12/24 = 25mm 并列进对外材料里，同一个「12h 暴雨险」出现两个数 —— 对外引用
+  // 档线时必须连合约名、窗口一起写。v2 上 hours 只允许 24/48/72（hoursAllowed），
+  // 所以 12h 那行在 v2 上永远走不到。
   const thresholdMm = Number(isV2 ? await c.thresholdOf(p.windowHours) : await c.THRESHOLD());
   const minConfidence = Number(await c.MIN_CONFIDENCE());
 

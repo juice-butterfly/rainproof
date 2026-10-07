@@ -115,6 +115,22 @@ console.log("\n[⑤ 判定口径] 赔付按「投保后的增量」，不是累�
   ok("没有「现在就能申请赔付」这种承诺", !/现在就能申请赔付/.test(index));
 }
 
+console.log("\n[⑥ 窄屏不溢出的静态代理] 长地址 / 长数字必须能换行，否则 390px 下横向滚动");
+{
+  // 来源：2026-10-07 全仓只读审计「390px 横向溢出 0 处」在仓库内不可复现 ——
+  // 真溢出要靠 CDP 量（仓库外的 D:\DSH\_tmp\overflow.js）。这里只钉住「能防溢出的那条 CSS 还在」：
+  // flex/grid 子项默认 min-width:auto，长 0x 地址会把格子顶破；min-width:0 + overflow-wrap:anywhere 是解药。
+  const pages = [
+    ["05-演示站点/index.html", path.join(DEMO, "index.html")],
+    ["05-演示站点/verifier.html", path.join(DEMO, "verifier.html")],
+    ["06-核验台单文件/汉客松-链上核验台.html", path.join(__dirname, "..", "06-核验台单文件", "汉客松-链上核验台.html")],
+  ];
+  const srcs = pages.map(([n, p]) => [n, fs.readFileSync(p, "utf8")]);
+  ok("index.html 的栅格子项有 min-width:0（.grid2 > * / .cols > *）", /\.grid2\s*>\s*\*[^{]*\{[^}]*min-width:0/.test(index));
+  for (const [n, s] of srcs) ok(`${n}：至少一条 min-width:0 守卫`, /min-width:0/.test(s));
+  for (const [n, s] of srcs.slice(1)) ok(`${n}：长地址容器有 overflow-wrap:anywhere`, /overflow-wrap:anywhere/.test(s));
+}
+
 console.log("\n" + "=".repeat(56));
 console.log(`结果：${pass} 项通过 / ${fail} 项失败`);
 console.log(fail === 0 ? "前端契约没被改坏" : "契约破了，别提交");

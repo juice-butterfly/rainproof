@@ -988,7 +988,7 @@ async function attachContract(addr, quiet) {
     S.meta = {
       premium:  await S.readC.PREMIUM_DEFAULT(),
       payout:   await S.readC.PAYOUT_MAX(),
-      threshold:Number(await S.readC.thresholdOf(Number($("hoursInput").value) || 24)),
+      threshold:Number(await S.readC.thresholdOf(Number($("hoursInput").value) || 72)),
       minH:     await S.readC.MIN_HOURS(),
       maxH:     await S.readC.MAX_HOURS(),
       paused:   await S.readC.paused()
@@ -1574,7 +1574,7 @@ $("addrInput").addEventListener("keydown", e => { if (e.key === "Enter") $("save
    这里如果不跟着变，buyPolicy 会因为 premium mismatch 直接 revert。 */
 async function refreshPremium() {
   const region = Number($("regionSel").value) || 1;
-  const hours = Number($("hoursInput").value) || 24;
+  const hours = Number($("hoursInput").value) || 72;   // 兜底必须等于下拉框的默认档（72，见 check-ui ②）——写 24 会静默换成另一条档线
   if (!S.readC || !S.meta) return null;
   let p = S.meta.premium;
   try {

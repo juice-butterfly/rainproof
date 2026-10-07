@@ -61,6 +61,11 @@ t("不支持的类型直接报错，不做隐式转换", () => {
   assert.throws(() => canonicalize(undefined), /不支持的类型/);
   assert.throws(() => canonicalize(NaN), /非有限数/);
   assert.throws(() => canonicalize(Infinity), /非有限数/);
+  // 非纯对象：字段看不见 ⇒ 必须报错，不能静默哈希成 {}（审计 A4）
+  assert.throws(() => canonicalize(new Date(0)), /只接受纯对象/);
+  assert.throws(() => canonicalize(new Map([["a", 1]])), /只接受纯对象/);
+  assert.throws(() => canonicalize({ when: new Date(0) }), /只接受纯对象/);   // 嵌套也要拦
+  assert.strictEqual(canonicalize(Object.create(null)), "{}");              // 无原型纯对象仍合法
 });
 
 /* ---- 5. 真实快照形状：交付值改了，哈希必须跟着变 ---- */

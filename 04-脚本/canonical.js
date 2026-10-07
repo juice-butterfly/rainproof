@@ -35,6 +35,12 @@ function canonicalize(v) {
   if (typeof v === "string") return JSON.stringify(v);
   if (Array.isArray(v)) return "[" + v.map(canonicalize).join(",") + "]";
   if (typeof v === "object") {
+    // 只接受【纯对象】。Date / Map / 类实例的字段用 Object.keys 看不见，
+    // 会被静默序列化成 {} —— 链上哈希「看起来正常，但对不上账」（审计 A4）。
+    const proto = Object.getPrototypeOf(v);
+    if (proto !== Object.prototype && proto !== null) {
+      throw new Error("canonicalize: 只接受纯对象，收到 " + ((v.constructor && v.constructor.name) || "非纯原型对象"));
+    }
     return "{" + Object.keys(v).sort()
       .map((k) => JSON.stringify(k) + ":" + canonicalize(v[k])).join(",") + "}";
   }

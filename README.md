@@ -143,7 +143,7 @@ cd ../04-脚本   && npm install
 
 ```bash
 cd 07-测试工具
-npm test          # = check-canonical && check-ai && check-ui && e2e && e2e:v2（共 229 项断言）
+npm test          # = check-canonical && check-ai && check-ui && e2e && e2e:v2（共 232 项断言）
 ```
 
 - `check-canonical.js`：确定性哈希口径（递归键排序、数值精度）自检

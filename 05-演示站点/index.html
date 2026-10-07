@@ -233,7 +233,7 @@
         </div>
         <button class="btn block" id="buyBtn" style="margin-top:14px" disabled>连接钱包后投保</button>
         <div class="note" id="buyHint">
-          保单期间该区域<strong>累计降雨 ≥ 阈值</strong> 就能申请赔付，赔 <strong id="payoutShow">—</strong>。
+          保单期间该区域<strong>新增累计降雨 ≥ 阈值</strong> 就能申请赔付（基线 = 投保当刻的链上雨量），赔 <strong id="payoutShow">—</strong>。
         </div>
       </div>
     </section>
@@ -618,7 +618,7 @@ async function loadRegions() {
           <span><b>${v}</b> mm${hit ? ' <span class="tag gold" style="margin-left:6px">已超阈值</span>' : ""}</span>
         </div>
         <div class="bar"><i class="${hit ? "hit" : ""}" style="width:${pct}%"></i></div>
-        <div class="rnote">阈值 ${thr} mm · ${hit ? "买这个区域的保单现在就能申请赔付" : `距触发还差 ${thr - v} mm`}</div>
+        <div class="rnote">阈值 ${thr} mm · ${hit ? "已越过阈值 · 赔付按<b>投保后的增量</b>算，须在触发前投保" : `距触发还差 ${thr - v} mm`}</div>
       </div>`);
     } catch (e) {
       out.push(`<div class="empty">区域 #${id} 读取失败：${esc(e.message || e)}</div>`);

@@ -1,115 +1,77 @@
 ---
 name: 雨证 · RainProof 演示与核验界面
-description: 深色运营台：真实雨幕做底，细线分段，数字用等宽体说清楚
+description: 深色量测仪：真实雨幕做底，五支柱读数，数字用等宽体说清楚
 colors:
-  bg: "#070E19"
-  bg-2: "#0A1523"
-  panel: "#0C1725"
-  panel-2: "#101E30"
-  ink: "#E9F0F8"
-  dim: "#A9BACB"
-  faint: "#7F93A9"
-  blue: "#3B82F6"
-  blue-light: "#7FB0FF"
-  accent: "#FFC857"
+  night: "#050A12"
+  night-2: "#0A1220"
+  surface: "#0D1727"
+  surface-2: "#121E31"
+  ink: "#EDF3FA"
+  ink-2: "#A6B8CB"
+  ink-3: "#6E8299"
+  line: "rgba(150,180,215,0.13)"
+  line-2: "rgba(150,180,215,0.26)"
+  measure: "#34D3E4"
+  measure-dim: "rgba(52,211,228,0.16)"
+  money: "#FFC857"
+  money-dim: "rgba(255,200,87,0.14)"
+  evi: "#9E8CF5"
+  evi-dim: "rgba(158,140,245,0.16)"
   ok: "#3FD9A5"
   bad: "#F0836F"
-  warn: "#F2B33D"
-  cyan: "#2FD3EE"
-  hair: "rgba(148,180,215,0.14)"
-  hair-strong: "rgba(148,180,215,0.26)"
 typography:
-  metric:
+  hero:
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-    fontSize: "26px"
-    fontWeight: 600
-    lineHeight: 1.1
+    fontSize: "46px"
+    fontWeight: 620
+    lineHeight: 1.05
     letterSpacing: "-0.01em"
+  big:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+    fontSize: "30px"
+    fontWeight: 620
+    lineHeight: 1.1
   h1:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif"
+    fontSize: "22px"
+    fontWeight: 640
+    lineHeight: 1.25
+  num:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
     fontSize: "19px"
-    fontWeight: 600
-    lineHeight: 1.3
-  section:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif"
-    fontSize: "14px"
-    fontWeight: 600
-    lineHeight: 1.35
+    fontWeight: 620
+    lineHeight: 1.2
   body:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif"
-    fontSize: "13.5px"
+    fontSize: "14px"
     fontWeight: 400
-    lineHeight: 1.65
-  table:
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+    lineHeight: 1.7
+  data:
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif"
     fontSize: "12.5px"
     fontWeight: 400
-    lineHeight: 1.55
+    lineHeight: 1.8
   label:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif"
     fontSize: "11px"
     fontWeight: 500
     lineHeight: 1.4
 rounded:
-  xs: "6px"
-  sm: "8px"
-  md: "12px"
+  xs: "5px"
+  sm: "7px"
+  md: "10px"
   pill: "99px"
 spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "12px"
-  lg: "20px"
-  xl: "26px"
-  wrap: "24px"
-components:
-  panel:
-    backgroundColor: "{colors.panel}"
-    rounded: "{rounded.md}"
-    padding: "18px 20px"
-  button-primary:
-    backgroundColor: "{colors.blue}"
-    textColor: "#061021"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    padding: "11px 20px"
-  button-default:
-    backgroundColor: "{colors.bg-2}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
-    padding: "11px 20px"
-  button-small:
-    backgroundColor: "transparent"
-    textColor: "{colors.dim}"
-    rounded: "{rounded.xs}"
-    padding: "7px 12px"
-  tag:
-    backgroundColor: "transparent"
-    textColor: "{colors.blue-light}"
-    typography: "{typography.label}"
-    rounded: "{rounded.xs}"
-    padding: "2px 7px"
-  tag-accent:
-    backgroundColor: "transparent"
-    textColor: "{colors.accent}"
-    typography: "{typography.label}"
-    rounded: "{rounded.xs}"
-    padding: "2px 7px"
-  metric:
-    textColor: "{colors.accent}"
-    typography: "{typography.metric}"
-  note:
-    backgroundColor: "rgba(242,179,61,0.055)"
-    textColor: "{colors.dim}"
-    typography: "{typography.table}"
-    rounded: "{rounded.sm}"
-    padding: "10px 12px"
-  toast:
-    backgroundColor: "{colors.bg-2}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.md}"
-    padding: "12px 20px"
+  s1: "4px"
+  s2: "8px"
+  s3: "12px"
+  s4: "16px"
+  s5: "24px"
+  s6: "32px"
+  s7: "48px"
+  s8: "64px"
+  wrap: "32px"
+components: "组件 token 见 05-演示站点/index.html 的 :root（三页共用同一套）；上一版的 panel / button-* / tag / tag-accent / metric / note / toast 映射随「量测仪」重设计作废，语义与用法见正文 §Components。"
 ---
 
 # 雨证 · RainProof — DESIGN
@@ -118,10 +80,10 @@ components:
 
 **给谁看的、用来干什么**：这是一个 **Operate** 型界面 —— 评委和骑手来看「链上发生了什么、我这单赔不赔、现在能不能投保」。扫描性、一致性、真实状态优先于表现力。
 
-**视觉立场**：像一台**在雨天运行的运营终端**。底色是雨夜（近乎黑的深蓝），真实雨幕由 canvas 画在最底层、强度由链上雨量驱动；上面是**平坦分段 + 发丝线 + 留白**，不用卡片堆叠、不用阴影、不用玻璃。数字（雨量、保费、赔付额、区块高度）一律等宽体 + `tabular-nums`，因为它们是这台机器真正的读数。
+**视觉立场**：像一台**在雨天运行的量测仪**。底色是雨夜（近乎黑的深蓝），雨幕由 canvas 画在最底层、强度由链上雨量驱动；上面是**平坦分段 + 发丝线 + 留白**，不用卡片堆叠、不用阴影、不用玻璃。**三个语义色域各司其职**：青 = 毫米数与刻度，琥珀 = 金额，鸢尾 = 哈希与地址。数字（雨量、保费、赔付额、区块高度）一律等宽体 + `tabular-nums`；正文、说明、按钮、标签一律 UI 字 —— 等宽是数据面的字体，不是技术感的戏服。
 
 **三条设计承诺**：
-1. **平面分段，不是卡片堆叠**。分区靠 1px 发丝线与 26px 上留白，不靠阴影与彩色边条。
+1. **平面分段，不是卡片堆叠**。分区靠 1px 发丝线与 32px 上留白，不靠阴影与彩色边条。
 2. **一个作者化的动效时刻**：雨幕。除此之外页面几乎不动。
 3. **页面的每个表面都经过设计**，包括浏览器自己的那部分（选区、光标、滚动条、焦点环、占位符、下划线偏移）。
 
@@ -129,24 +91,22 @@ components:
 
 | token | 值 | 用途 |
 |---|---|---|
-| `--bg` | `#070E19` | 页面底（雨夜幕布） |
-| `--bg-2` | `#0A1523` | 浮起表面（toast、次级底） |
-| `--panel` | `#0C1725` | 面板底 |
-| `--panel-2` | `#101E30` | 面板内嵌块（表头、条纹） |
-| `--ink` | `#E9F0F8` | 主文字 |
-| `--dim` | `#A9BACB` | 次级文字、说明 |
-| `--faint` | `#7F93A9` | 三级文字、单位、时间 |
-| `--blue` / `--blue-l` / `--blue-d` | `#3B82F6` / `#7FB0FF` / `#1D4ED8` | 主色（操作、链接、主要按钮底）；`-d` 用于按压态与深底上的描边 |
-| `--accent` | `#FFC857` | 强调（保费数值、触发线、已触发标记） |
-| `--ok` / `--bad` / `--warn` | `#3FD9A5` / `#F0836F` / `#F2B33D` | 状态：已赔付 / 失败 / 警告 |
-| `--hair` / `--hair-2` | `rgba(148,180,215,.14)` / `.26` | 1px 发丝线（分隔、描边）；`-2` 用于悬停与滚动条 |
-| `--card` / `--line2` | `rgba(255,255,255,.028)` / `rgba(242,179,61,.30)` | 可选表面（离线核验台在用）：内嵌块底 / 琥珀次级描边。主页面不需要就不定义 |
+| `--night` / `--night-2` | `#050A12` / `#0A1220` | 页面底（雨夜幕布）/ 浮起表面（toast、次级底） |
+| `--surface` / `--surface-2` | `#0D1727` / `#121E31` | 面板底 / 面板内嵌块（表头、条纹） |
+| `--ink` / `--ink-2` / `--ink-3` | `#EDF3FA` / `#A6B8CB` / `#6E8299` | 主文字 / 次级文字、说明 / 三级文字、单位、时间 |
+| `--line` / `--line-2` | `rgba(150,180,215,.13)` / `.26` | 1px 发丝线（分隔、描边）；`-2` 用于悬停与滚动条 |
+| `--measure` / `--measure-dim` | `#34D3E4` / `rgba(52,211,228,.16)` | **只给**毫米数、刻度、阈值线、窗口进度、选中态描边 |
+| `--money` / `--money-dim` | `#FFC857` / `rgba(255,200,87,.14)` | **只给** BOT 金额：保费、赔付额、资金池、越线的那一段 |
+| `--evi` / `--evi-dim` | `#9E8CF5` / `rgba(158,140,245,.16)` | **只给**哈希、地址、交易号、签名、模型版本 |
+| `--ok` / `--bad` | `#3FD9A5` / `#F0836F` | 状态：校验通过 / 真错误（各自唯一用途，不借用） |
 
-> 历史变量名 `--jade` / `--jade-l` / `--jade-d` 是这套蓝的别名（早期是翡翠绿）。它们**还在被引用**，所以要么连别名一起定义、要么连引用一起改 —— 只改一半会让那一半规则静默失效（离线核验台的焦点环就是这么丢的）。
+> 旧名 `--bg` / `--bg2` / `--panel` / `--panel2` / `--dim` / `--faint` / `--hair` / `--hair-2` / `--blue` / `--blue-l` / `--accent` / `--cyan` / `--mono` / `--sans` / `--jade*` 全部保留为**别名**（历史规则还在引用）。而 `--amber` / `--blue-d` / `--gold*` / `--warn` / `--card` / `--line2` 这几个**私有色已从 `:root` 删除** —— 只改一半会让那一半规则静默失效（离线核验台的焦点环就是这么丢过一次的）。
+>
+> **`--rain`（0–1）是运行时状态变量**，不是配色：主页面由 JS 写入、雨幕读它。两个核验台没有雨幕层，但同样保留这一行 —— **三页 `:root` 逐字相同**比「少一个用不上的变量」更值钱（`check-redesign.js` ① 会验哈希）。
 
 **规则**
-- **对比度**：正文与 placeholder ≥ **4.5:1**，大字与图表标记 ≥ **3:1**。`--faint` 只用于 ≥ 11px 的标签/单位，且必须落在 `--panel` 之上（不要压在 `--panel-2` 的浅块上）。
-- **在有色表面上，次级文字从那一路色相里调，绝不用灰**。琥珀面板里的说明文字用琥珀偏白的色，蓝色面板里用蓝色偏白的色。
+- **对比度**：正文与 placeholder ≥ **4.5:1**，大字与图表标记 ≥ **3:1**。`--ink-3` 只用于 ≥ 11px 的标签/单位，且必须落在 `--surface` 之上（不要压在 `--surface-2` 的浅块上）。
+- **次级文字一律中性灰阶（`--ink-2` / `--ink-3`）**，不再按色相调。旧规则「琥珀面板里的说明文字用琥珀偏白的色，蓝色面板里用蓝色偏白的色」已作废：颜色只承担数据语义，只有 `.tag.*` 这类自带语义底的徽标内部用同色相亮字。
 - 颜色只承担**语义**（状态、可操作、阈值），不做装饰。页面里没有渐变文字、没有装饰性彩色边条。
 - 值的写法用 CSS 变量（见 `05-演示站点/index.html` 的 `:root`）；三个页面（主页 / 在线核验台 / 离线核验台）必须引用**同一套 token**。
 
@@ -156,67 +116,70 @@ components:
 
 | token | 值 | 用途 |
 |---|---|---|
-| `--t-metric` | 26px / 600 / 等宽 | 唯一的大数字：应付保费 |
-| `--t-h1` | 19px / 600 | 页面标题 |
-| `--t-h2` | 14px / 600 | 分区标题（其后可接一行 `em` 说明） |
-| `--t-body` | 13.5px / 400 / 行高 1.65 | 正文、控件 |
-| `--t-tbl` | 12.5px / 等宽 | 表格、事件流、说明块 |
-| `--t-lab` | 11px | 标签、单位、徽标（**下限**，不再更小） |
+| `--t-hero` | 46px / 620 / 等宽 | 全页唯一主读数：选中城市的累计降雨（仪表读数，不是版面骨架） |
+| `--t-big` | 30px / 620 / 等宽 | 金额读数：应付保费、赔付上限 |
+| `--t-h1` / `--t-h2` | 22px / 640 | 页面标题 / 分区标题（其后可接一行 `em` 说明） |
+| `--t-num` | 19px / 620 / 等宽 | 读数条与表格里的数字 |
+| `--t-body` | 14px / 400 / 行高 1.7 | 正文、控件 |
+| `--t-data` | 12.5px / 400 / 行高 1.8 | 说明块、注释 |
+| `--t-lab` | 11px / 500 | 标签、单位、徽标（**下限**，不再更小） |
+
+> `--t-metric`（= `--t-num`）、`--t-tbl`（= `--t-data`）、`--t-h2`（= `--t-h1`）是旧名别名，历史规则还在引用。
 
 **规则**
 - 层级靠**字号 + 字重**两层台阶，不靠颜色深浅堆叠。分区标题与正文的差距必须一眼可见。
 - **数值一律 `font-variant-numeric: tabular-nums`**（等宽体 + 表格数字），这样纵向读数能对齐。
 - 中文正文行宽 ≤ 75 字符；行高 ≥ 1.6。
-- **分区之间也要有台阶**。全页只有降雨看板是 `.sec.lead`（17px / 660 / `--ink`），其余分区标题与 `<summary>` 统一 14px / 600 / `--dim`：四个同级的大标题等于没有入口。层级只用字号、字重、颜色深浅，**不加编号、不加色块、不加边条**。
+- **分区之间也要有台阶**。全页分区标题统一 22px / 640 / `--ink`，`<summary>` 14px / 600 / `--ink-2`；主读数只有一处（降雨量测里选中城市那一行），不让它变成版面骨架。层级只用字号、字重、颜色深浅，**不加编号、不加色块、不加边条**。
 - **同一个状态只说一遍**。越线与否和「还差多少」写在各自那一行（`.rnote`）；「竖线是触发线、赔付按投保后的增量算」只在看板底部写一次（`.rlegend`）；「触发线」三个字只出现在被选中的那一行（`.region:not(.is-sel) .bar::before{content:""}`）。同一件事在三条位置各说一遍，会把读数淹没。
-- **标题上方的空间多于下方**：分区 `padding-top` 26px，标题到首块内容的间距 12px。
+- **标题上方的空间多于下方**：分区 `padding-top` 32px，标题到首块内容的间距 12px。
 - 不用 display 字体做「设计感」；等宽体只用于代码、哈希、数字、度量。
 
 ## Layout
 
-- 容器：`max-width: 1200px`，左右 `padding: 0 24px`，页面底部 72px 余白。
+- 容器：`max-width: 1240px`，左右 `padding: 0 32px`，页面底部 72px 余白。
 - 顶栏：品牌（手绘 SVG 标记 + 标题 + 一行说明）与链状态栏同排、可换行；下接 1px 发丝线。
 - **状态 rail**：3 格横向网格（资金池余额 / 剩余可赔付 / 合约地址），格间 1px 竖线分隔，每格「小写标签 + 大值」。
-- 主体两栏 `grid-template-columns: 1.55fr .95fr`：左栏是数据（降雨看板、链上动态），右栏是操作与解释（投保、AI 层做了什么），**右栏整列一起 sticky**（`.rcol{position:sticky;top:20px;align-self:start}`）。只粘「投保」那一块会在它下方留一段跟着滚的空白 —— 粘的就该是整列。
+- 主体两栏 `grid-template-columns: 1.42fr .92fr`：左栏是数据（降雨看板、链上动态），右栏是操作与解释（投保、AI 层做了什么），**右栏整列一起 sticky**（`.rcol{position:sticky;top:24px;align-self:start}`）。只粘「投保」那一块会在它下方留一段跟着滚的空白 —— 粘的就该是整列。
 - 两栏的高度不必相等，但**短的那一栏底下不该是死区**：右栏的内容要撑到和左栏差不多的位置，「AI 层做了什么」放在右栏底部而不是页脚，既补上了这截高度，也把赛道结合度的正面回答放在视线里。
-- 分区之间用 `.sec + .sec{border-top:1px solid var(--hair)}` 分隔；不用卡片包裹整个分区。
-- 数据行用固定列网格，而不是 flex 文本流：保单行 `200px minmax(220px,1.15fr) minmax(300px,1.5fr) auto`；事件行 `158px minmax(0,1fr) 120px 66px`。长哈希一律 `overflow-wrap:anywhere`，移动端把 `1fr` 换成 `minmax(0,1fr)` 防止撑破列。
-- 响应式：单栏（≤ 860px）时状态 rail 与两栏折叠为竖排；表格允许横向滚动（`overflow-x:auto`），不隐藏列。事件流在窄屏默认只显示 6 条，其余折在「展开其余 N 条」按钮后面（`.ev-extra` 只在窄屏隐藏，桌面端一条不少；展开状态记在 `eventsOpen`，轮询重建列表不会把它收回去）—— 不折的话 20 条 × 3 行会吃掉 2/3 屏。
+- 分区之间用 `.sec + .sec{border-top:1px solid var(--line)}` 分隔；不用卡片包裹整个分区。
+- 数据行用固定列网格，而不是 flex 文本流：事件行 `auto minmax(0,1fr) auto`（区块+时间 / 描述 / 事件名徽标，≤ 1000px 折成两行），保单卡是 `.pid` + `.pmeta` + `.incre`（增量条）+ `.polbtns` 四段。**栅格里的长文本必须显式 `min-width:0`**：`grid-template-columns:1fr` 等于 `minmax(auto,1fr)`，子项默认 `min-width:auto`，内容的 min-content 会把轨道顶宽、整页横向溢出（窄屏曾因此多出 14px）。长哈希一律 `overflow-wrap:anywhere`，移动端把 `1fr` 换成 `minmax(0,1fr)` 防止撑破列。
+- 响应式：≤ 1000px 事件流折两行、≤ 720px 状态 rail 与两栏折叠为竖排；表格允许横向滚动（`overflow-x:auto`），不隐藏列。事件流在窄屏默认只显示 6 条，其余折在「展开其余 N 条」按钮后面（`.ev-extra` 只在窄屏隐藏，桌面端一条不少；展开状态记在 `eventsOpen`，轮询重建列表不会把它收回去）—— 不折的话 20 条 × 3 行会吃掉 2/3 屏。
 - 折叠区（`<details>`）只用于**低频配置**（合约地址、运营操作），默认收起；主流程永不折叠。
 
 ## Elevation & Depth
 
-- **只声明一次层级：1px 发丝描边**（`--hair`）。面板**没有**内阴影、没有外阴影、没有高光边。
+- **只声明一次层级：1px 发丝描边**（`--line`）。面板**没有**内阴影、没有外阴影、没有高光边。
 - 没有 `box-shadow` 柔影、没有 `backdrop-filter` 玻璃、没有零偏移彩色光晕（`0 0 0 3px`）。焦点与选中状态用**描边颜色**或**实心色块**表达，不用光晕。
 - 唯二允许的阴影：① toast 唯一一处投影（`0 12px 40px -12px #000`，用于把浮层从内容里抬起来）；② 不需要第三处。
-- 分层只靠三档底色：`--bg` < `--panel` < `--panel-2`，加上描边。
+- 分层只靠三档底色：`--night` < `--surface` < `--surface-2`，加上描边。
 
 ## Shapes
 
-- 圆角：面板与 toast `12px`；控件、说明块 `8px`；徽标、小按钮 `6px`；进度/刻度条用 `99px` 胶囊。
+- 圆角：面板与 toast `10px`；控件、说明块 `7px`；徽标、小按钮、地址行 `5px`；刻度条与城市片用 `99px` 胶囊。
 - 胶囊形只给小控件与刻度条，**不给卡片、面板或按钮**。
-- 图标一律**手绘几何 SVG**（圆角矩形 + 3 条斜雨线 + 一条 `--accent` 底横线，`viewBox="0 0 34 34"`），与标题**并排**，不用方块底衬、不用 emoji 或符号字形。
+- 图标一律**手绘几何 SVG**（雨量筒剖面：筒身 + 3 条刻度 + 一条 `--money` 液面线，`viewBox="0 0 34 34"`），与标题**并排**，不用方块底衬、不用 emoji 或符号字形。
 - 没有硬偏移阴影（`box-shadow: 4px 4px 0`）、没有斜切、没有描边+内高光的「幽灵卡」。
-- 雨幕：canvas 固定在底层（`#rainLayer`），`--rain` 变量（0–1）由链上雨量驱动（刻度 `max(阈值×2, 五城最大值)`，见「降雨看板」条）；`--rain` 用**感知映射** `t^0.6`（t = 该区域雨量 ÷ 刻度）—— 线性映射下 101mm 只有 0.33，画面上就是"几道极淡的斜线"，而雨幕是这一页唯一的主角动效。三轴的强度下限同样按「rain = 0.5 就该看得出在下雨」定：密度 `0.14 + 0.86·rain`、亮度 `0.30 + 0.70·rain`、单滴 alpha `0.16 + 0.42·z`。`prefers-reduced-motion: reduce` 下改为静态雨丝渐变、并把所有动画压到 `0.001ms`。离线核验台没有雨幕，也**没有** `prefers-reduced-motion` 兜底（as-built 差异，待补）。
+- 雨幕：canvas 固定在底层（`#rainLayer`），`--rain` 变量（0–1）由链上雨量驱动（刻度 `max(阈值×2, 五城最大值)`，见「降雨看板」条）；`--rain` 用**感知映射** `t^0.6`（t = 该区域雨量 ÷ 刻度）—— 线性映射下 101mm 只有 0.33，画面上就是"几道极淡的斜线"，而雨幕是这一页唯一的主角动效。三轴的强度下限同样按「rain = 0.5 就该看得出在下雨」定：密度 `0.14 + 0.86·rain`、亮度 `0.30 + 0.70·rain`、单滴 alpha `0.16 + 0.42·z`。`prefers-reduced-motion: reduce` 下改为静态雨丝渐变、并把所有动画压到 `0.001ms`。两个核验台没有雨幕层，但同样带 `prefers-reduced-motion` 兜底（静态雨丝）；≤ 720px 主页面不再画 canvas（手机省电），由静态渐变换掉。
 
 ## Components
 
-组件 token 见 frontmatter（`panel` / `button-primary` / `button-default` / `button-small` / `tag` / `tag-accent` / `metric` / `note` / `toast`）。行为约定：
+组件 token 见 `05-演示站点/index.html` 的 `:root`（三页共用同一套；本文件的 frontmatter 只列色阶与字阶）。行为约定：
 
-- **按钮**：hover 只改描边与底色，不位移、不加阴影；`:active` 允许 1px 下沉；`:disabled` 用 `opacity:.5` + **虚线描边**，语义是「还没连钱包 / 条件不满足」。主操作只有一个（`.primary` 实心蓝），其余为描边按钮。
-- **输入控件**：`select` 自绘箭头（`appearance:none` + 右侧 34px padding + `::after`），聚焦时描边变 `--blue-l` 并带 3px 低透明色环（唯一允许的聚焦光晕，仅限表单控件）。
+- **按钮**：hover 只改描边与底色，不位移、不加阴影；`:active` 允许 1px 下沉；`:disabled` 用 `opacity:.5` + **虚线描边**，语义是「还没连钱包 / 条件不满足」。主操作只有一个（`.primary` 实心 `--measure`），其余为描边按钮。
+- **输入控件**：`select` 自绘箭头（`appearance:none` + 右侧 34px padding + `::after`），聚焦时描边变 `--measure` 并带 3px 低透明色环（唯一允许的聚焦光晕，仅限表单控件）。
 - **状态**：每个可交互元素必须有 hover / focus-visible / disabled，数据区必须有 loading（转圈 + 文案）/ empty（说明下一步做什么）/ error（说清问题与恢复路径）四态。空态要写「为什么会空 + 怎么让它不空」，例如「连钱包后，这里会列出你在本合约上的全部保单」。
-- **降雨看板**：每条区域一行 —— 行首「城市 + `#id`」、行尾「链上雨量 + 状态徽标」；下方是刻度条（`min(1, 雨量 ÷ (阈值×2))`，阈值位置在 50% 处并画触发线），再下面是「阈值 50 mm · 距触发还差 N mm」的读数行。**刻度公式与触发线位置被 `07-测试工具/check-ui.js` 锁定**，是演示可信度的一部分。注意两个刻度不是同一个：条子回答「这条线跨过去没有」（分母 `阈值×2`），背景雨幕回答「这场雨有多大」（分母 `max(阈值×2, 五城最大值)`）—— 如果雨幕也按 `阈值×2` 封顶，演示链上五城除武汉外会全部顶格，动效层次就没了。读数行只写这一行独有的数（未越线「距触发还差 N mm」/ 已越线「已越过 N mm」），「竖线是什么、赔付按增量算」看板底部只写一次（`.rlegend`），「触发线」三个字只出现在被选中的那一行。
+- **降雨量测**：城市片选城市 → 主读数行（46px 累计降雨 + 距阈值线 / 阈值 / 满量程 / 「背景雨幕由此行驱动」）→ **五支柱图**（同一把尺子：满量程 = 2 × 阈值，越线的那一段用金额色，超出满量程顶格）→ 柱下标签（`#id · 值 mm`）→ 图例。旧的横条列表（`.region` / `.bar`）保留在 DOM 与 CSS 里但 `display:none` —— `check-ui.js` ① 锁的是它的刻度公式与触发线位置，是演示可信度的一部分。注意两个刻度不是同一个：条子回答「这条线跨过去没有」（分母 `阈值×2`），背景雨幕回答「这场雨有多大」（分母 `max(阈值×2, 五城最大值)`）—— 如果雨幕也按 `阈值×2` 封顶，演示链上五城除武汉外会全部顶格，动效层次就没了。读数行只写这一行独有的数（未越线「距触发还差 N mm」/ 已越线「已越过 N mm」），「竖线是什么、赔付按增量算」看板底部只写一次（`.rlegend`），「触发线」三个字只出现在被选中的那一行。
 - **AI 层（右栏底部）**：三行「名字 + 一句人话」—— 喂价验收 / 判定复核 / 承保定价，回答「AI 到底在链上链下做了什么」。放在右栏而不是页脚 12.5px 的说明块里：这是赛道结合度的正面回答，压在页脚等于没有。
-- **数据行**：保单与事件都是「列头 + 行」的表格化网格，不用卡片；行间 1px 发丝线；哈希与地址用等宽体、中段省略、可复制/可链接（`核验 ↗`）。
+- **数据行**：事件是「区块+时间 / 描述 / 事件名徽标 / 短哈希」四段网格，行间 1px 发丝线，行高恒定（哈希中段省略、`title` 放全文，一格一个哈希）；保单是三层卡（身份 / 窗口与阈值 / 增量条）+ 按钮行，每张卡的每个按钮点不动时自己会写出原因。地址、哈希一律等宽 + `overflow-wrap:anywhere`、可复制/可链接（`核验 ↗`）。
 - **toast**：底部居中、单条、自动消失 —— **普通提示 5 秒、错误 12 秒**（错误要把恢复路径念完，3 秒不够）；文案是「发生了什么 + 下一步」，前缀用冒号而不是破折号；`role="status"` + `aria-live="polite"`，收起动画结束后**清空文字**（否则屏幕阅读器会重念旧内容）。
-- **浏览器表面**：`::selection`、`caret-color`、`::placeholder`、`scrollbar-color` / `::-webkit-scrollbar`、`:focus-visible{outline:2px solid var(--blue-l);outline-offset:2px}`、`a{text-underline-offset:3px}` —— 这些都要显式写，默认样式在这个深色底上不可接受。
+- **浏览器表面**：`::selection`、`caret-color`、`::placeholder`、`scrollbar-color` / `::-webkit-scrollbar`、`:focus-visible{outline:2px solid var(--measure);outline-offset:2px}`、`a{text-underline-offset:3px}` —— 这些都要显式写，默认样式在这个深色底上不可接受。
 
 ## Do's and Don'ts
 
 **Do**
 - 保留雨幕作为唯一的主角动效，其余动效时长 ≤ 0.2s 且只解释状态变化。
-- 数字用等宽 + `tabular-nums`；单位（SepETH、mm、字节）比数字小一号且用 `--faint`。
+- 数字用等宽 + `tabular-nums`；单位（BOT、mm、字节）比数字小一号、颜色 `--ink-3`。
 - 每个空态、错误态都写「下一步怎么办」。
 - 三个页面共用一套 token；新增页面从 `:root` 复制，不另起色值。
 - 改动页面后跑 `cd 07-测试工具 && npm test`（六道门禁，251 项）与 `node 07-测试工具/check-html-syntax.js`。
@@ -224,12 +187,19 @@ components:
 **Don't**
 - ❌ 卡片左侧/右侧的彩色边条（≥ 1px 的 `border-left/right` 装饰）。
 - ❌ emoji 或 Unicode 字形当图标；❌ 渐变文字；❌ 玻璃模糊（`backdrop-filter`）做装饰；❌ 零偏移彩色光晕；❌ 硬偏移阴影。
-- ❌ 「大数字 + 小标签 + 辅证统计」的 hero 指标块当页面结构；本页只有**一个**大数字（应付保费），其余读数走状态 rail 与数据行。
+- ❌ 「大数字 + 小标签 + 辅证统计」的 hero 指标块当页面结构；本页只有**两处**大数字，且都是仪表读数而不是骨架：选中城市的累计降雨（46px，全页唯一）与应付保费（30px），周围不放「辅证统计」。
 - ❌ 同尺寸「图标 + 标题 + 文字」卡片阵列；❌ 卡片里再套卡片。
 - ❌ 标题上方的 kicker / eyebrow；❌ 无信息量的 01 / 02 / 03 章节编号。
-- ❌ 进度环、迷你图、柔影圆角块假装内容；❌ 用等宽体当「技术感」戏服。
+- ❌ 进度环、迷你图、柔影圆角块假装内容。
+- ❌ **等宽字体用于正文、说明、按钮与标签**（`.note` / `.btn` / `.f` / `.chip` / `h1` / `h2` 上出现次数必须是 0）。等宽是数据面的字体，不是技术感的戏服。
+
+**本轮明确松开的四条**（2026-10-07 重设计，其余禁令全部保留）：
+1. **允许给「越线的那一段」上金额色** —— 原禁令反对「用颜色表达重要程度」，而这里是数据编码：金色段 = 会被结算的毫米数，删掉它这个图形就没信息了。
+2. **保留大数字，但换了角色** —— 反对的是「大数字 + 小标签 + 辅证统计」当骨架；新稿的主读数是仪表读数。
+3. **允许骨架屏** —— 它传达「正在读链」，不是无信息量的装饰占位。
+4. **允许 `prefers-reduced-motion` 静态雨丝兜底**。
 - ❌ 任何会被代码反驳的文案（例如「现在就能申请赔付」—— 判定只看**投保后的增量**）。
 
-**三页现状（as-built 2026-10-07）**：`05-演示站点/index.html` 结构层已按本文件重构（状态 rail、数据行、去装饰）；`05-演示站点/verifier.html` 与 `06-核验台单文件/汉客松-链上核验台.html` 已同步同一套 token 与元素语言。机械检测（impeccable `detect`）在这三页上：**侧边色条 0 / 图标方块 0 / 11px 以下正文 0**；剩余告警只有该检测器对深色主题误判的 low-contrast（其报出的背景色在文件里不存在）。
+**三页现状（as-built 2026-10-07，量测仪版）**：三页已按本文件重构 —— `05-演示站点/index.html` 结构层（铭牌 + 四格读数条 + 五支柱雨量图 + 开单卡的代理控件 + 三层保单卡 + 事件流四段），`05-演示站点/verifier.html` 与 `06-核验台单文件/汉客松-链上核验台.html` 共用同一套 CSS（两份 `<style>` 逐字一致，各自最多 5 处 JS 内联色改成令牌，逻辑一行未动）。机械检测：三页 `:root` 各 55 个令牌、**逐字相同**；`.note` / `.btn` / `.f` / `.chip` / `h1` / `h2` 上等宽 **0 处**；`npm test` 六道 **251 项全绿**；`check-html-syntax.js` 5 段全过；390px 横向溢出 **0**（`scrollW 390 / badCount 0`，1440px 亦 0）。旧 as-built 差异（核验台缺 `prefers-reduced-motion` 兜底）已随本轮同步消失。
 
-**2026-10-07 晚的六条修订**（评审意见落地，只动 `05-演示站点/index.html`）：分区标题分出台阶（`.sec.lead` = 降雨看板）· 右栏改为整列 sticky 并把「AI 层做了什么」从页脚搬进来 · 越线状态只说一遍 · 雨幕加感知映射 `t^0.6` 并抬高三轴强度下限 · 窄屏事件流默认 6 条 + 展开按钮。改动后 `check-ui.js` 21 项与 `check-html-syntax.js` 均通过。
+**2026-10-07 晚的修订**（评审意见落地，只动 `05-演示站点/index.html`）：右栏改为整列 sticky 并把「AI 层做了什么」从页脚搬进来 · 雨幕加感知映射 `t^0.6` 并抬高三轴强度下限 · 窄屏事件流默认 6 条 + 展开按钮。其中「分区标题分出台阶（`.sec.lead` = 降雨看板）」与「越线状态只说一遍」两条已被当天的「量测仪」重设计取代 —— **现在全页分区标题统一 22px/640，主读数只有选中城市那一处**。改动后 `check-ui.js` 21 项与 `check-html-syntax.js` 均通过。

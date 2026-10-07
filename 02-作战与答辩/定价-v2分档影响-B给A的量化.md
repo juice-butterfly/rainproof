@@ -180,3 +180,12 @@ node audit_numbers.js --self-check     # 17 项自检 + 五城六档权威 p + v
 ```
 
 A2 的三张概率表与 §三 的分档期望赔付是同一脚本的同一份缓存上算出的（`cache/<key>-2015-10-01_2026-09-30.json`，逐小时，`Math.round(mm*10)` 整数十分位）。
+
+---
+
+## 九、给 A 的两处待同步（B 不能改 A 的目录，2026-10-07 提交后扫描发现）
+
+1. **`README.md:69` 与 `README.md:253` 的「准备金下限没有自动规则」现在只对 v1 成立。** v2 的 `openExposure`（`03-合约/RainDeliveryInsuranceV2.sol:118`，买入 `:238` 累加 / 赔付 `:356` 回收 / 到期结算 `:379` 回收）+ `reserveOf() = max(reserve, openExposure)`（`:451-452`，`withdrawPool` 在 `:464` 强制）就是那条自动规则。建议在这两处各加一句版本限定，否则 README 与 v2 源码对不上。
+2. **`README.md:256` 的规则式建议统一成总和口径**：现写 `reserve ≥ 该区域在保保单数 × PAYOUT`，与 `10-金融与定价/精算口径.md` §6.3 已统一后的 `reserve ≥ Σ_区域(该区域在保保单数 × PAYOUT)`（= 未了结保单数 × PAYOUT）保持一字不差更好。B 已在 §6.3 加了口径说明：早期 `max over regions` 与操作步骤 `setReserve(N × 0.01)` 自相矛盾，且与 v2 的 `openExposure` 不一致。
+
+B 侧已同步的 7 处：`提交材料/评委问答.md:129`（`balanceOf` → `poolBalance()`，合约里根本没有 `balanceOf`，照抄会当场 call 失败）、`提交材料/评委问答.md` Q6 一句话答 + 展开 + 红线、`提交材料/演示讲稿.md:112` 与 `:159`、`提交材料/产品说明与商业模式.md:187`、`10-金融与定价/精算口径.md` §6.3、`10-金融与定价/reserve_mc.js:8`、`02-作战与答辩/待解决问题清单-10-07.md` P1-12（标 ✅ v2 已解决）。

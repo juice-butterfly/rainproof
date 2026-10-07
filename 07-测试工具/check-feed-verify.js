@@ -4,9 +4,10 @@
  * 用法：node 07-测试工具/check-feed-verify.js          只跑判定规则的离线用例
  *       node 07-测试工具/check-feed-verify.js --live   额外真拉一次三个模型（需代理）
  *
- * 为什么不在 `npm test` 的五道门禁里：那五道的断言总数（232）被十份提交材料引用，
- * 加进来要挨个改材料里的数字，收益不成比例。这个脚本和 `check-html-syntax.js`
- * 一样，是「改了对应文件就该跑一次」的附加检查。
+ * 2026-10-07 晚已接进 `npm test`（**第六道**，19 项）。此前它不在门禁里 —— 而它守的正是
+ * 喂价闸门与承保复核这两块判定规则，改坏了没人知道。接进去后断言总数 232 → 251，
+ * 引用该数字的材料已同步（B 报的 P0-8，裁定见 `02-作战与答辩/决策记录.md`）。
+ * 纯离线、0 秒：只读 JSON 与纯函数，不打网络（要真拉模型加 --live）。
  */
 const path = require("path");
 const { gradeModels, fetchModelSeries, compareOnCommonDates, MODELS } =

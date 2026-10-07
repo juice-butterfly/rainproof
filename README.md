@@ -205,7 +205,7 @@ cd ../04-脚本   && npm install
 
 ```bash
 cd 07-测试工具
-npm test          # = check-canonical && check-ai && check-ui && e2e && e2e:v2（共 232 项断言）
+npm test          # = check-canonical && check-ai && check-ui && check-feed-verify && e2e && e2e:v2（共 251 项断言）
 ```
 
 - `check-canonical.js`：确定性哈希口径（递归键排序、数值精度）自检
@@ -295,7 +295,7 @@ python -m http.server 8090 --directory 05-演示站点
 | 合约（v2） | `0x89e7C942535930B61cB61631051E8b0bD670596a`（主网 677 上会是同一个地址） |
 | 运行时代码长度 | 12,378 字节 |
 | 浏览器 | https://scan.bohr.life/address/0x89e7C942535930B61cB61631051E8b0bD670596a |
-| 当前状态 | 池子 0.0868 BOT · 准备金 0.03 BOT · 6 张保单（3 张已赔付）· 五城累计 101 / 287 / 109 / 303 / 227 mm |
+| 当前状态 | 池子 0.0643 BOT · 准备金 0 BOT · 6 张保单（**6 张全部已赔付**）· 五城累计 101 / 287 / 109 / 303 / 227 mm |
 | 完整交易记录 | [BOT Chain 968 的全部链上事件](02-作战与答辩/汉客松-交易哈希清单.md)（§五） |
 
 演示页、核验台、PPT 与截图读的都是这一条链：`05-演示站点/index.html` 里 `CHAIN_ID = 968n`，

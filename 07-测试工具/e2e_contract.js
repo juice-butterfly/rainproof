@@ -47,6 +47,20 @@ const H = (s) => ethers.keccak256(ethers.toUtf8Bytes(s));
   const chain = ganache.provider({ logging: { quiet: true }, chain: { hardfork: "shanghai" } });
   const provider = new ethers.BrowserProvider(chain);
 
+  // ★ 本地 harness 的坑，真链不存在：eth_estimateGas 偶尔**低估** —— 实测 updateRainfall 估到
+  //   50,519，上链后正好烧完 50,519 gas 才 out-of-gas revert（收据里没有 reason、没有 revert 数据），
+  //   而同一状态 eth_call 却成功。表现是「约十次崩一次」的假失败，崩点恒在 [3] 喂价的 feed().wait()。
+  //   对策与 07-测试工具/e2e_v2.js:59-65 同一套（一处共享守卫，不在每个调用点上贴）：估不到就给宽裕值，
+  //   估出来偏低也抬到 150 万。交易仍由 EVM 裁决 —— 真实 require 失败照样在 tx.wait() 抛出，
+  //   gasUsed 也照实打印，不会盖住合约缺陷。
+  const estGas = provider.estimateGas.bind(provider);
+  provider.estimateGas = async (tx) => {
+    let v = 0n;
+    try { v = await estGas(tx); }
+    catch (e) { console.log(`     [gas 兜底] 估算失败：${e.shortMessage || e.message}`); }
+    return v < 500_000n ? 1_500_000n : v;
+  };
+
   // ★ 余额必须用裸 RPC 读。
   //   ethers v6 的 AbstractProvider 对 getBalance 有 250ms 结果缓存，
   //   ganache 又是即时出块 —— 前后两次读会拿到同一个值，测出来的"没到账"是假的。
@@ -80,6 +94,11 @@ const H = (s) => ethers.keccak256(ethers.toUtf8Bytes(s));
   // 喂价辅助：默认 90 分置信度 / 3 个数据源
   const feed = (regionId, mm, confidence = 90, sources = 3, tag = "") =>
     c.connect(operator).updateRainfall(regionId, mm, H(`snapshot:${regionId}:${mm}:${tag}`), confidence, sources);
+  // 只读版喂价（走 eth_call，不花 gas）。**revert 断言必须用它** —— 本文件 :24 的约定：
+  // 用交易版时，"合约拒绝了"这件事是被「估算 gas 失败 → ethers 抛错」间接满足的，
+  // 一旦 gas 兜底（见文件顶部 estimateGas 包装）把估算失败吞掉，断言就会变成假的「本该失败却成功了」。
+  const feedCall = (regionId, mm, confidence = 90, sources = 3, tag = "") =>
+    c.connect(operator).updateRainfall.staticCall(regionId, mm, H(`snapshot:${regionId}:${mm}:${tag}`), confidence, sources);
 
   // ---------- 1 资金池 ----------
   console.log("\n[1] 资金池 —— ★ 教科书骨架版的致命 bug 就在这");
@@ -130,9 +149,9 @@ const H = (s) => ethers.keccak256(ethers.toUtf8Bytes(s));
   await (await feed(1, 30)).wait();
   ok("武汉累计降雨推到 30mm");
   await expectRevert("累计值倒退要拒绝",
-    () => feed(1, 10), "must not decrease");
+    () => feedCall(1, 10), "must not decrease");
   await expectRevert("置信度低于 MIN_CONFIDENCE 要拒收",
-    () => feed(1, 31, 59), "feed confidence too low");
+    () => feedCall(1, 31, 59), "feed confidence too low");
   await expectRevert("喂价缺少证据哈希要拒绝",
     () => c.connect(operator).updateRainfall.staticCall(1, 31, ethers.ZeroHash, 90, 3), "evidence required");
   ok("喂价验收：置信度 59 被合约真拒收（不是只写在文档里）", "未改动链上 rainfall");

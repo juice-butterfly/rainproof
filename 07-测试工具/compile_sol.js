@@ -1,14 +1,18 @@
 /**
  * 编译 RainDeliveryInsurance.sol
- * 用法：NODE_PATH=<workspace>/node_modules node compile.js <sol文件> <输出目录>
+ * 用法：NODE_PATH=<workspace>/node_modules node compile.js <sol文件> <输出目录> [--via-ir]
+ *
+ * `--via-ir`：v2 的 `buyPolicy` 等函数字段较多，默认流水线会报 Stack too deep，
+ * 按 solc 自己的建议改用 viaIR 流水线编译（v1 仍走默认流水线，字节码保持不变）。
  */
 const fs = require("fs");
 const path = require("path");
 const solc = require("solc");
 
 const SRC = process.argv[2];
-const OUT = process.argv[3] || path.dirname(SRC);
+const OUT = process.argv[3] && !process.argv[3].startsWith("--") ? process.argv[3] : path.dirname(SRC);
 const NAME = path.basename(SRC);
+const VIA_IR = process.argv.includes("--via-ir");
 
 const source = fs.readFileSync(SRC, "utf8");
 
@@ -18,6 +22,7 @@ const input = {
   settings: {
     optimizer: { enabled: true, runs: 200 },
     evmVersion: "paris",          // Sepolia 已支持 Cancun，但 paris 更保险
+    viaIR: VIA_IR,
     outputSelection: {
       "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "metadata"] }
     }
@@ -26,6 +31,7 @@ const input = {
 
 console.log("solc 版本 :", solc.version());
 console.log("源文件    :", NAME);
+console.log("viaIR     :", VIA_IR);
 
 const out = JSON.parse(solc.compile(JSON.stringify(input)));
 
@@ -60,6 +66,9 @@ for (const n of names) {
 
   const deployBytes = c.evm.bytecode.object.length / 2;
   const runtimeBytes = c.evm.deployedBytecode.object.length / 2;
+  // 把运行时字节数落成旁车文件：e2e 断言「部署后链上 code 长度 == 编译报告」时读它，
+  // 免得每次改合约都要手改测试里的魔数（以前就是这么过期的）。
+  fs.writeFileSync(path.join(OUT, `${n}.runtime-size.txt`), String(runtimeBytes), "utf8");
   console.log(`\n  ${n}`);
   console.log(`    ABI 条目        : ${c.abi.length}`);
   console.log(`    部署字节码      : ${deployBytes} 字节`);

@@ -300,7 +300,7 @@ function main() {
 
   // 落盘
   const outFile = path.join(__dirname, 'audit-verified.json');
-  fs.writeFileSync(outFile, JSON.stringify(report, null, 2) + '\n', 'utf8');
+  emit(outFile, JSON.stringify(report, null, 2) + '\n');
   console.log(`已写出 ${path.relative(process.cwd(), outFile)}`);
 
   if (argv.includes('--self-check')) selfCheck(report);
@@ -383,11 +383,45 @@ function selfCheck(report) {
   if (fail > 0) process.exitCode = 1;
 }
 
+// ── 链上 gas 成本：全仓唯一来源 ───────────────────────────────────────────────
+// 以前 `pricing_engine.js` / `tier_design_b2b.js` / `derive_metrics.js` 各抄了一份
+// 0.00013 / 0.00012，改一处漏另两处就静默漂移 —— 统一放这里，别的文件从这取。
+// 口径是「gas 用量 × gas 单价」：用量是真链实测、与网络无关；单价是**那条链那天的价**。
+// ⚠️ 1.080 / 2.500 gwei 是 **Sepolia** 2026-10-06 的价，**不是 968 的价** —— 968 现网 20 gwei
+// ⇒ 同样两笔约 0.0024369 / 0.00098594 BOT（`02-作战与答辩/决策记录.md:40` 链上实测
+// 0.002458 BOT，差 0.9%，来自 gas 用量口径 122,900 vs 121,845）。换链必须重算，
+// `node margin_check.js` 会同时打印 20 gwei 口径和每一格转负的 gwei。
+const GAS_UNITS = { buyPolicy: 176579, judge: 121845, payout: 49297 };  // gas 用量（实测）
+const GAS_GWEI  = { buyPolicy: 2.616,  judge: 1.080,  payout: 2.500 };  // 单价（Sepolia）
+// 取整到 1e-5：与合约/正文里的 0.00013 / 0.00012 保持同一表示
+const gasEthAt  = (units, gwei) => Math.round(units * gwei * 1e-9 * 1e5) / 1e5;
+const JUDGE_GAS  = gasEthAt(GAS_UNITS.judge, GAS_GWEI.judge);    // 0.00013
+const PAYOUT_GAS = gasEthAt(GAS_UNITS.payout, GAS_GWEI.payout);  // 0.00012
+// 自证：正文里写的"121,845 gas @1.080 gwei ⇒ 0.00013"必须真的算得出来，否则这堆数在互相骗
+for (const k of ['judge', 'payout']) {
+  const raw = GAS_UNITS[k] * GAS_GWEI[k] * 1e-9;
+  const cst = k === 'judge' ? JUDGE_GAS : PAYOUT_GAS;
+  if (Math.abs(raw - cst) > 5e-6) throw new Error(`gas 口径自相矛盾：${k} 用量 × 单价 = ${raw}，常量却是 ${cst}`);
+}
+
+// ── 产物落盘：时间戳不该制造 git 噪声 ─────────────────────────────────────────
+// 重跑脚本时产物里唯一会变的就是 generatedAt / "生成时间" 这类 ISO 时间戳（而那个字段
+// 本来就判不出"数是不是旧的"，见文件头注释）。所以**除时间戳外内容一致就不重写**，
+// 让重跑后 `git status` 保持干净。返回 true = 真的写了，false = 只有时间戳在动、已跳过。
+const ISO_TS_RE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/g;
+function emit(file, text) {
+  const bare = (s) => s.replace(ISO_TS_RE, '@TS@');
+  try { if (bare(fs.readFileSync(file, 'utf8')) === bare(text)) return false; } catch (_) { /* 不存在，写 */ }
+  fs.writeFileSync(file, text);
+  return true;
+}
+
 // 供 `derive_metrics.js` 复用同一套口径（改这里必须同时想清楚那边）
 module.exports = {
   DATA_START, DATA_END, DURATIONS, THRESHOLD, TIERS,
   toDecimillimetres, loadCity, countHits, windowSums, sourceMtime,
   monthIndex, bootstrapCI, boundaryWindows, thresholdBasis10, tierStats,
+  GAS_UNITS, GAS_GWEI, JUDGE_GAS, PAYOUT_GAS, gasEthAt, emit,
 };
 
 if (require.main === module) main();

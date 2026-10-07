@@ -6,6 +6,7 @@
 // 用法：cd 10-金融与定价 && node margin_check.js
 const fs = require('fs');
 const path = require('path');
+const A = require('./audit_numbers.js');   // 借 gas 口径（用量/单价/取整），不另抄一份
 
 const rep = JSON.parse(fs.readFileSync(path.join(__dirname, 'pricing-engine.json'), 'utf8'));
 const E = rep.meta.economics;
@@ -80,8 +81,34 @@ const breakEven = rows.map((r) => ({ key: `${r.c.regionName} ${r.c.hours}h ${r.c
 console.log(`N=1：期望赔付可以放大到 ${Math.min(...breakEven.map((b) => b.k)).toFixed(1)}× ~ ${Math.max(...breakEven.map((b) => b.k)).toFixed(1)}× 才转负（最脆弱格：${breakEven.reduce((a, b) => (a.k < b.k ? a : b)).key}）`);
 console.log(`N=1000：期望赔付可以放大到 ${Math.min(...breakEven.map((b) => b.k1000)).toFixed(1)}× ~ ${Math.max(...breakEven.map((b) => b.k1000)).toFixed(1)}× 才转负`);
 console.log(`作为对照，97.5% 上界 ÷ E[f] 的最大值 = ${Math.max(...rows.map((r) => r.qUp / r.q)).toFixed(3)}×（即真实概率取到上界时仍远未触及转负点）`);
-console.log(`若判定 gas + 赔付 gas 同时涨 50%：最小的期望净收益变为 ${sgn(Math.min(...rows.map((r) => r.prem - r.cost1 * 1.5 - r.expPay)))} ETH/份`);
-console.log(`若判定 gas + 赔付 gas 同时涨 200%（= 3×）：最小的期望净收益变为 ${sgn(Math.min(...rows.map((r) => r.prem - r.cost1 * 3 - r.expPay)))} ETH/份`);
+// 这两行原本是"把成本总额乘 1.5 / 乘 3"——等于让 **gas 用量和单价一起涨**。
+// 真实风险是**单价**在浮：本表的 gas 单价取自 Sepolia（判定 1.080 / 赔付 2.500 gwei），
+// 而要部署/演示的 BOT Chain 968 链上实测是 20 gwei。所以下面按「gas 用量 × 单价」重算成本腿，
+// 直接给出 20 gwei 口径与"哪一档 gwei 会让格转负"。
+const U = E.gasUnits, G = E.gasGwei;
+if (!U || !G) {
+  console.log('（pricing-engine.json 的 meta.economics 里没有 gasUnits/gasGwei —— 重跑 node pricing_engine.js 后本节能给出逐 gwei 口径）');
+} else {
+  const ratio = G.judge / G.payout;                 // 判定/赔付的单价之比（同链同源，按比例缩放）
+  const costAt = (gwei, N, q) => A.gasEthAt(U.judge, gwei * ratio) / N + A.gasEthAt(U.payout, gwei) * q;
+  const drift = Math.max(...rows.map((r) => Math.abs(costAt(G.payout, 1, r.q) - r.cost1)));
+  console.log(`按「用量 × 单价」重算的成本与产物 costPerPolicyEth 的最大偏差 = ${drift.toExponential(1)} ETH/份（应为 0）`);
+  for (const gwei of [G.payout, 5, 10, 20]) {
+    const m = rows.map((r) => r.prem - costAt(gwei, 1, r.q) - r.expPay);
+    const tag = gwei === 20 ? '   ← 968 现网 20 gwei（02-作战与答辩/决策记录.md:40 链上实测 0.002458 BOT）'
+      : gwei === G.payout ? '   ← 本表口径（Sepolia）' : '';
+    console.log(`赔付 gas 单价 ${String(gwei).padStart(5)} gwei：N=1 最小期望净收益 ${sgn(Math.min(...m))} ETH/份，净收益 ≤ 0 的格数 ${m.filter((v) => v <= 0).length}/${rows.length}${tag}`);
+  }
+  const gBreak = (N) => rows.map((r) => ({
+    key: `${r.c.regionName} ${r.c.hours}h ${r.c.segKey}`,
+    g: (r.prem - r.expPay) / (U.judge * ratio * 1e-9 / N + U.payout * 1e-9 * r.q),
+  }));
+  for (const N of [1, 1000]) {
+    const b = gBreak(N);
+    console.log(`N=${N}：全部格转负的赔付 gas 单价 = ${Math.min(...b.map((x) => x.g)).toFixed(2)} ~ ${Math.max(...b.map((x) => x.g)).toFixed(2)} gwei（最脆弱格：${b.reduce((a, x) => (a.g < x.g ? a : x)).key}）`);
+  }
+  console.log(`（对照旧口径"成本总额 ×1.5 / ×3"：最小期望净收益 ${sgn(Math.min(...rows.map((r) => r.prem - r.cost1 * 1.5 - r.expPay)))} / ${sgn(Math.min(...rows.map((r) => r.prem - r.cost1 * 3 - r.expPay)))} ETH/份）`);
+}
 
 console.log(`\n== 构造性证明（不依赖任何一格实测值）==`);
 const ceilTick = (v) => Math.ceil(v / E.ceilTickEth) * E.ceilTickEth;

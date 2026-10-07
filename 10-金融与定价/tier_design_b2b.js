@@ -31,8 +31,7 @@ const PAYOUT_MAX = 0.01;                   // RainDeliveryInsuranceV2.sol:30
 const MIN_PREMIUM = 0.0002;                // :32
 const R_TARGET = 0.6;                      // 目标赔付率（口径见 指标推导-变量表.md §2.1）
 const CEIL_TICK = 1e4;                     // 链上取整到 0.0001 ETH（与现价规则一致）
-const JUDGE_GAS = 0.00013;                 // 一次 AI 判定的链上成本
-const PAYOUT_GAS = 0.00012;                // 一次赔付转账的链上成本
+const { JUDGE_GAS, PAYOUT_GAS } = A;       // 与 pricing_engine.js 同源：audit_numbers.js 的 gas 口径
 const REPS = 4000;
 const SEED = 20261007;
 
@@ -289,7 +288,7 @@ function main() {
     };
   }
 
-  fs.writeFileSync(path.join(__dirname, 'b2b-tier-design.json'), JSON.stringify(report, null, 2) + '\n');
+  A.emit(path.join(__dirname, 'b2b-tier-design.json'), JSON.stringify(report, null, 2) + '\n');
   return report;
 }
 

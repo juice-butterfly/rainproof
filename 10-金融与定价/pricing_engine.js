@@ -161,8 +161,8 @@ const R_TARGET        = 0.60;      // 目标赔付率（口径见 指标推导-�
 const MIN_COST_MARKUP = 0.25;      // 成本地板加成：盖住运营 / 获客 / 资本成本
 const MIN_PREMIUM_ABS = 0.00002;   // 合约硬地板（sanity bound，不是经济地板）
 const PREMIUM_CAP     = 0.002;     // 尊严上限 = 赔付上限的 20%。超过就不卖，不加价
-const JUDGE_GAS       = 0.00013;   // 实测：一次 AI 判定上链 121,845 gas @1.080 gwei
-const PAYOUT_GAS      = 0.00012;   // 实测：一次赔付转账 49,297 gas @2.500 gwei
+// gas 定义在 `audit_numbers.js`（全仓唯一来源：用量 × 单价，并附"这不是 968 的价"的告警）
+const { JUDGE_GAS, PAYOUT_GAS, GAS_UNITS, GAS_GWEI } = A;
 const CEIL_TICK       = 1e5;       // 上整到 0.00001 ETH，定价只许往上。
                                    // 为什么不是仓里既有的 0.0001：平台批量价会落到
                                    // 0.00002~0.0001 区间，0.0001 的格子在那里是 50% 粒度，
@@ -530,6 +530,11 @@ function main() {
         payoutMaxEth: PAYOUT_MAX, targetLossRatio: R_TARGET,
         minCostMarkup: MIN_COST_MARKUP, minPremiumAbsEth: MIN_PREMIUM_ABS,
         premiumCapEth: PREMIUM_CAP, judgeGasEth: JUDGE_GAS, payoutGasEth: PAYOUT_GAS,
+        // 「用量 × 单价」的原始口径也落进产物：只写 0.00013/0.00012 判不出它属于哪条链，
+        // 而"哪条链"正是这两个数最容易被误读的地方
+        gasUnits: GAS_UNITS, gasGwei: GAS_GWEI,
+        gasCaliber: 'gas 用量取真链实测（与网络无关）；单价取 Sepolia 2026-10-06（判定 1.080 / 赔付 2.500 gwei）。'
+          + '同两笔在 BOT Chain 968（20 gwei）≈ 0.0024369 / 0.00098594 BOT —— 换链必须用 node margin_check.js 重算',
         ceilTickEth: 1 / CEIL_TICK, maxBatchDiscountBps: MAX_BATCH_DISCOUNT_BPS,
       },
       thresholdsMm: THRESHOLDS, tierBps: TIER_BPS,
@@ -545,7 +550,7 @@ function main() {
     cells: rows, batchBands: bands, reserve, ratios, payload,
   };
 
-  fs.writeFileSync(path.join(__dirname, 'pricing-engine.json'), JSON.stringify(report, null, 2) + '\n');
+  A.emit(path.join(__dirname, 'pricing-engine.json'), JSON.stringify(report, null, 2) + '\n');
   return report;
 }
 

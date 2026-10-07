@@ -18,6 +18,8 @@
  */
 "use strict";
 
+const A = require('./audit_numbers.js');   // 只为共享的 emit()：产物落盘不制造时间戳噪声
+
 const fs = require("fs");
 const path = require("path");
 
@@ -248,6 +250,6 @@ if (args.includes("--self-check")) {
     recommendedV2: REC_V2,
   };
   const dst = path.join(__dirname, "tier-ratio.json");
-  fs.writeFileSync(dst, JSON.stringify(out, null, 2) + "\n", "utf8");
+  A.emit(dst, JSON.stringify(out, null, 2) + "\n");
   console.log(`\n已写出 ${path.relative(path.join(__dirname, ".."), dst)}`);
 }

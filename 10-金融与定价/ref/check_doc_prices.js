@@ -52,6 +52,16 @@ const ALLOWED_EXTRA = new Set([
   0.000451, 0.000620, 0.000990, 0.001921, // tier_ratio.js §九 对照表里的 v1 口径公平保费
 ]);
 
+// 按**文件**的例外：个别文件里有不是保费的 0.00xxxx 字面量（BOT Chain 的 gas 成本）。
+// 只在该文件放行、并把放行记录打印出来 —— 不许往全局 ALLOWED_EXTRA 里追加，
+// 那等于把门禁慢慢放空（真正的手抄错价会跟着一起漏过去）。
+const NON_PRICE_BY_FILE = {
+  '02-作战与答辩/决策记录.md': {
+    '0.00107586': 'v2 部署 estimateGas 53,793 的预估成本（决策记录:39）—— BOT 链 gas，不是保费',
+    '0.002458':   '968 20 Gwei 下单笔判定 gas 成本（决策记录:40）—— BOT 链 gas，不是保费',
+  },
+};
+
 const FILES = [
   '提交材料/产品说明与商业模式.md',
   '提交材料/项目介绍.md',
@@ -73,14 +83,17 @@ for (const rel of FILES) {
   // 只看 0.0000X ~ 0.0099 这一段（ETH 计价），且排除明显是"元"或百分比的位置
   const hits = text.match(/0\.00[0-9]{3,6}/g) || [];
   const foreign = new Map();
+  const excused = [];
+  const byFile = NON_PRICE_BY_FILE[rel] || {};
   for (const h of hits) {
     const v = Number(h);
     if (legit.has(v) || ALLOWED_EXTRA.has(v)) continue;
+    if (byFile[h]) { excused.push(`${h}（${byFile[h]}）`); continue; }
     foreign.set(h, (foreign.get(h) || 0) + 1);
   }
   checked += hits.length;
   if (foreign.size === 0) {
-    console.log(`  ✓ ${rel}（${hits.length} 个价格字面量，全部落在合法集合内）`);
+    console.log(`  ✓ ${rel}（${hits.length} 个价格字面量，全部落在合法集合内${excused.length ? `；按文件白名单放行 ${excused.length} 个非保费字面量：${excused.join('、')}` : ''}）`);
   } else {
     bad += foreign.size;
     console.log(`  ✗ ${rel}（${hits.length} 个字面量）→ 不认识的取值：`);

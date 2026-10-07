@@ -218,7 +218,7 @@ if (require.main === module) {
   }
   const fails = selfCheck(rep);
   const fs = require('fs'), path = require('path');
-  fs.writeFileSync(path.join(__dirname, 'tod-sensitivity.json'),
+  A.emit(path.join(__dirname, 'tod-sensitivity.json'),
     JSON.stringify({ ...rep, generatedAt: new Date().toISOString(), sourceMtime: A.sourceMtime() }, null, 2) + '\n');
   console.log(`\n落盘 10-金融与定价/tod-sensitivity.json（${((Date.now() - t0) / 1000).toFixed(1)}s）`);
   process.exit(fails ? 1 : 0);

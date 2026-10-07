@@ -9,6 +9,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const A = require("./audit_numbers.js");   // 只为共享的 emit()：产物落盘不制造时间戳噪声
 
 const REGIONS = [
   { id: 1, key: "wuhan",   name: "武汉", lat: 30.5928, lon: 114.3055 },
@@ -169,6 +170,6 @@ async function fetchYear(region, year) {
     `> 生成时间：${new Date().toISOString()}\n` +
     lines.join("\n") + "\n";
   const outPath = path.join(__dirname, "精算测算.md");
-  fs.writeFileSync(outPath, out, "utf8");
+  A.emit(outPath, out);
   console.log(`\n已写入 ${outPath}`);
 })().catch((e) => { console.error("💥", e.message); process.exit(1); });

@@ -1,7 +1,7 @@
 {
   "meta": {
     "generatedBy": "10-金融与定价/pricing_engine.js",
-    "generatedAt": "2026-10-07T12:39:47.635Z",
+    "generatedAt": "2026-10-07T16:12:45.299Z",
     "version": "v3",
     "sourceMtime": "2026-10-06T13:35:13.789Z",
     "source": "Open-Meteo Archive (ERA5) 逐小时，五城各 96,432 小时",
@@ -108,6 +108,17 @@
       "premiumCapEth": 0.002,
       "judgeGasEth": 0.00013,
       "payoutGasEth": 0.00012,
+      "gasUnits": {
+        "buyPolicy": 176579,
+        "judge": 121845,
+        "payout": 49297
+      },
+      "gasGwei": {
+        "buyPolicy": 2.616,
+        "judge": 1.08,
+        "payout": 2.5
+      },
+      "gasCaliber": "gas 用量取真链实测（与网络无关）；单价取 Sepolia 2026-10-06（判定 1.080 / 赔付 2.500 gwei）。同两笔在 BOT Chain 968（20 gwei）≈ 0.0024369 / 0.00098594 BOT —— 换链必须用 node margin_check.js 重算",
       "ceilTickEth": 0.00001,
       "maxBatchDiscountBps": 8000
     },

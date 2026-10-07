@@ -36,9 +36,10 @@ const CHAIN = {
 };
 /** 实测的每笔链上成本（变量：随 gas 价变，现场按当前 gas 价重算） */
 const COST = {
-  buyPolicy: 0.00046,   // gas 176,579 @ 2.616 gwei，由投保人付
-  judge: 0.00013,       // 一笔 submitJudgement，由 operator 付
-  payout: 0.00012,      // 一笔 claim 转账，由 operator 付
+  // 三个数都由 audit_numbers.js 的 gas 口径算出（用量 × 单价，唯一来源），这里不再手抄
+  buyPolicy: A.gasEthAt(A.GAS_UNITS.buyPolicy, A.GAS_GWEI.buyPolicy),  // 0.00046
+  judge: A.JUDGE_GAS,     // 一笔 submitJudgement，由 operator 付
+  payout: A.PAYOUT_GAS,   // 一笔 claim 转账，由 operator 付
 };
 const COST_PER_POLICY = COST.judge + COST.payout; // 池子侧要为每份保单预留的运营成本
 
@@ -284,7 +285,7 @@ function main() {
   if (argv.includes('--chain')) chainCheck(CHAIN.prices);
 
   const file = path.join(__dirname, 'metrics-derived.json');
-  fs.writeFileSync(file, JSON.stringify(out, null, 2) + '\n', 'utf8');
+  A.emit(file, JSON.stringify(out, null, 2) + '\n');
   console.log(`已写出 ${path.relative(process.cwd(), file)}`);
 
   if (argv.includes('--self-check')) selfCheck(out);

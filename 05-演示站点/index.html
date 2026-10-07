@@ -5,163 +5,219 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>雨证 · RainProof — 可验证的 AI 参数化配送险</title>
 <style>
+  /* ============================================================================
+     雨证 · 演示页设计系统（2026-10-07 重构）
+     原则：① 层级只声明一次 —— 描边或阴影，不同时（不再有"描边+内高光"的幽灵卡片）
+           ② 颜色只表状态：蓝=可操作/链接/选中，金=金额与赔付，绿=成功，红=错误
+           ③ 字阶收敛为 6 档；所有数值等宽 + tabular-nums + 右对齐
+           ④ 正文行宽 65–75ch；说明文字退到折叠区，主视线只留操作与结果
+     禁止（craft floor）：title 上的 kicker、emoji 当图标、卡片左侧 4px 彩色边、
+           玻璃模糊、渐变文字、常驻装饰动画、零偏移彩色光晕。
+     ============================================================================ */
   :root{
-    --ink:#E6EEF8; --dim:#9BB0C9; --faint:#7A90A8;
-    --blue:#2D7FF9; --blue-l:#5BA8FF; --blue-d:#14509E;
-    --cyan:#22D3EE;
-    --amber:#F5A524; --amber-l:#FFC857;
-    --bg1:#060D18; --bg2:#0B1626;
-    --line:rgba(45,127,249,.28); --line2:rgba(245,165,36,.30);
-    --card:rgba(255,255,255,.030);
-    --ok:#34D399; --bad:#F87171; --warn:#F5A524;
+    --bg:#070E19; --bg2:#0A1523; --panel:#0C1725; --panel2:#101E30;
+    --ink:#E9F0F8; --dim:#A9BACB; --faint:#7F93A9;
+    --blue:#3B82F6; --blue-l:#7FB0FF;
+    --accent:#FFC857;
+    --ok:#3FD9A5; --bad:#F0836F; --warn:#F2B33D; --cyan:#2FD3EE;
+    --hair:rgba(148,180,215,.14); --hair-2:rgba(148,180,215,.26);
+    --t-metric:26px; --t-h1:19px; --t-h2:14px; --t-body:13.5px; --t-tbl:12.5px; --t-lab:11px;
+    --r:12px; --r-sm:8px; --r-xs:6px;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Cascadia Mono",monospace;
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+    --rain:0;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html{color-scheme:dark}
   body{
-    font-family:var(--sans);color:var(--ink);font-size:14px;line-height:1.6;
+    font-family:var(--sans);color:var(--ink);font-size:var(--t-body);line-height:1.65;
     background:
-      radial-gradient(1100px 620px at 10% -8%, rgba(45,127,249,.22), transparent 62%),
-      radial-gradient(900px 540px at 94% 2%, rgba(34,211,238,.10), transparent 60%),
-      linear-gradient(178deg,var(--bg1),var(--bg2) 55%,#050A12);
-    background-attachment:fixed; -webkit-font-smoothing:antialiased; padding-bottom:60px;
+      radial-gradient(1200px 680px at 12% -14%, rgba(59,130,246,.10), transparent 64%),
+      radial-gradient(900px 520px at 88% -6%, rgba(47,211,238,.05), transparent 62%),
+      var(--bg);
+    background-attachment:fixed; -webkit-font-smoothing:antialiased; padding-bottom:72px;
   }
-  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
 
-  /* ---------- header ---------- */
-  header{padding:26px 0 18px;border-bottom:1px solid var(--line);margin-bottom:22px}
-  .brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  .logo{width:42px;height:42px;border-radius:12px;flex:none;display:grid;place-items:center;font-size:21px;
-    background:linear-gradient(145deg,var(--blue),var(--blue-d));
-    box-shadow:0 0 0 1px rgba(91,168,255,.35),0 6px 22px -8px rgba(45,127,249,.85)}
-  h1{font-size:20px;font-weight:650;letter-spacing:.3px;line-height:1.3}
-  h1 span{display:block;font-size:12px;color:var(--amber-l);font-weight:400;letter-spacing:.6px;margin-top:3px}
-  .chainbar{margin-left:auto;display:flex;align-items:center;gap:15px;flex-wrap:wrap;
-    font-family:var(--mono);font-size:12px;color:var(--dim);
-    background:rgba(9,19,34,.50);border:1px solid var(--line);border-radius:10px;padding:8px 14px;
-    backdrop-filter:blur(10px) saturate(120%);-webkit-backdrop-filter:blur(10px) saturate(120%)}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--faint);display:inline-block;margin-right:6px}
-  .dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(52,211,153,.20)}
+  /* 浏览器自己的表面也要主题化 —— 这一页是被搭建过的，不是拼装的 */
+  ::selection{background:rgba(59,130,246,.32)}
+  input,select,textarea{caret-color:var(--blue-l)}
+  ::placeholder{color:var(--faint);opacity:1}
+  a{color:var(--blue-l);text-decoration:none;text-underline-offset:3px}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--blue-l);outline-offset:2px;border-radius:3px}
+  html{scrollbar-width:thin;scrollbar-color:var(--hair-2) transparent}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--hair-2);border:2px solid transparent;background-clip:content-box;border-radius:99px}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(148,180,215,.4);background-clip:content-box}
+  .mono,.pmeta,.pai,.v,.rail-i b,footer code{font-variant-numeric:tabular-nums}
+
+  /* ---------- 顶栏 + 状态 rail ---------- */
+  header{padding:22px 0 0;border-bottom:1px solid var(--hair)}
+  .brand{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding-bottom:16px}
+  .logo{width:38px;height:38px;flex:none;display:grid;place-items:center;color:var(--blue-l)}
+  .logo svg{width:34px;height:34px;display:block}
+  h1{font-size:var(--t-h1);font-weight:640;letter-spacing:-.01em;line-height:1.25}
+  h1 span{display:block;font-size:var(--t-lab);color:var(--faint);font-weight:400;letter-spacing:.2px;margin-top:2px}
+  .chainbar{margin-left:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:11.5px;color:var(--dim)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--faint);display:inline-block;margin-right:6px}
+  .dot.on{background:var(--ok)}
   .dot.err{background:var(--bad)}
-  .chainbar b{color:var(--ink)}
+  .chainbar b{color:var(--ink);font-weight:600}
+  .rail{display:flex;flex-wrap:wrap;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+  .rail-i{padding:12px 26px 12px 0;margin-right:26px;border-right:1px solid var(--hair);min-width:150px}
+  .rail-i:last-child{border-right:none;margin-right:0}
+  .rl{display:block;font-size:var(--t-lab);color:var(--faint);letter-spacing:.3px}
+  .rail-i b{display:block;font-family:var(--mono);font-size:16px;font-weight:600;color:var(--ink);margin-top:3px}
 
-  /* ---------- 通用块 ---------- */
-  .sec{margin:26px 0 0}
-  .sec > h2{font-size:14px;font-weight:600;letter-spacing:.4px;border-left:4px solid var(--blue);
-    padding-left:11px;line-height:1.35;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-  .sec > h2, .sec > h2 em, footer, footer code{text-shadow:0 1px 3px rgba(3,8,18,.85)}
-  .sec > h2.gold{border-left-color:var(--amber)}
-  .sec > h2 em{font-style:normal;font-size:11.5px;color:var(--faint);font-weight:400}
-  .panel{margin-top:14px;background:rgba(9,19,34,.62);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+  /* ---------- 区块：靠 hairline 与留白分段，不靠卡片墙 ---------- */
+  .sec{padding-top:26px}
+  .sec + .sec{border-top:1px solid var(--hair)}
+  .sec > h2{font-size:var(--t-h2);font-weight:620;letter-spacing:.1px;color:var(--ink);
+    display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .sec > h2 em{font-style:normal;font-size:var(--t-lab);color:var(--faint);font-weight:400;letter-spacing:.2px}
+  .panel{background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);padding:18px 20px}
   .panel.plain{background:transparent;border-style:dashed}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:26px}
-  @media (max-width:980px){ .grid2{grid-template-columns:1fr} }
-  .k{font-size:11px;color:var(--faint);letter-spacing:.4px;margin-bottom:5px}
-  .v{font-family:var(--mono);font-size:13.5px;word-break:break-all}
+  .grid2{display:grid;grid-template-columns:1.55fr .95fr;gap:28px}
+  .stick{position:sticky;top:20px}
+  @media (max-width:1000px){ .grid2{grid-template-columns:1fr} }
+  .k{font-size:var(--t-lab);color:var(--faint);letter-spacing:.3px;margin-bottom:6px}
+  .v{font-family:var(--mono);font-size:var(--t-tbl);word-break:break-all}
   .mono{font-family:var(--mono)}
-  .mlabel{font-size:12px;color:var(--dim)}
+  .mlabel{font-size:var(--t-tbl);color:var(--dim)}
+  .metric{font-family:var(--mono);font-size:var(--t-metric);font-weight:640;line-height:1.15;
+    color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 
-  /* ---------- 按钮 ---------- */
-  .btn{border:1px solid var(--line);background:linear-gradient(160deg,rgba(45,127,249,.30),rgba(45,127,249,.12));
-    color:var(--ink);font-family:var(--sans);font-size:13.5px;font-weight:550;padding:11px 20px;
-    border-radius:10px;cursor:pointer;transition:.18s;white-space:nowrap}
-  .btn:hover:not(:disabled){border-color:var(--blue-l);background:linear-gradient(160deg,rgba(45,127,249,.5),rgba(45,127,249,.2))}
-  .btn:active:not(:disabled){transform:translateY(1px)}
-  .btn:disabled{opacity:.42;cursor:not-allowed}
-  .btn.gold{border-color:var(--line2);background:linear-gradient(160deg,rgba(245,165,36,.28),rgba(245,165,36,.1))}
-  .btn.gold:hover:not(:disabled){border-color:var(--amber-l)}
-  .btn.sm{padding:7px 13px;font-size:12px;border-radius:8px}
-  .btn.block{width:100%;padding:14px;font-size:15px;font-weight:600}
-  input,select{background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:10px;color:var(--ink);
-    font-family:var(--mono);font-size:13px;padding:11px 13px;outline:none;transition:.2s}
-  input:focus,select:focus{border-color:var(--blue-l);box-shadow:0 0 0 3px rgba(91,168,255,.13)}
-  select{cursor:pointer;font-family:var(--sans)}
+  /* ---------- 控件 ---------- */
+  .btn{border:1px solid var(--hair-2);background:var(--panel2);color:var(--ink);
+    font-family:var(--sans);font-size:13px;font-weight:560;padding:10px 18px;
+    border-radius:var(--r-sm);cursor:pointer;transition:background .16s,border-color .16s,color .16s;white-space:nowrap}
+  .btn:hover:not(:disabled){border-color:var(--blue-l);background:#152740}
+  .btn:active:not(:disabled){background:#0E1B2C}
+  .btn:disabled{opacity:.5;cursor:not-allowed;border-style:dashed}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#04101F;font-weight:640}
+  .btn.primary:hover:not(:disabled){background:#5A97F8;border-color:#5A97F8}
+  .btn.gold{border-color:rgba(255,200,87,.45);background:rgba(255,200,87,.12);color:var(--accent)}
+  .btn.gold:hover:not(:disabled){border-color:var(--accent);background:rgba(255,200,87,.2)}
+  .btn.sm{padding:6px 12px;font-size:11.5px;border-radius:var(--r-xs)}
+  .btn.block{width:100%;padding:13px;font-size:14px;font-weight:620}
+  input,select{background:#0A1521;border:1px solid var(--hair-2);border-radius:var(--r-sm);color:var(--ink);
+    font-family:var(--mono);font-size:var(--t-tbl);padding:10px 12px;outline:none;transition:border-color .16s}
+  input:hover,select:hover{border-color:rgba(148,180,215,.36)}
+  input:focus,select:focus{border-color:var(--blue-l)}
+  select{cursor:pointer;font-family:var(--sans);font-size:13px;appearance:none;padding-right:34px;
+    background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+    background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
   label.mlabel{display:block;margin-bottom:6px}
 
-  /* ---------- 配置条 ---------- */
+  /* ---------- 配置条 / 状态标签 ---------- */
   .cfg{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
-  .cfg input{flex:1 1 340px;min-width:0;font-size:12px}
-  .tag{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:6px;
-    border:1px solid var(--line);color:var(--blue-l);background:rgba(45,127,249,.12);white-space:nowrap}
-  .tag.gold{border-color:var(--line2);color:var(--amber-l);background:rgba(245,165,36,.12)}
-  .tag.red{border-color:rgba(224,107,90,.5);color:var(--bad);background:rgba(224,107,90,.12)}
-  .tag.warn{border-color:rgba(255,200,87,.5);color:var(--warn);background:rgba(255,200,87,.1)}
+  .cfg input{flex:1 1 340px;min-width:0;font-size:11.5px}
+  .tag{font-size:var(--t-lab);font-family:var(--mono);padding:3px 8px;border-radius:var(--r-xs);
+    border:1px solid var(--hair-2);color:var(--dim);white-space:nowrap}
+  .tag.gold{border-color:rgba(255,200,87,.45);color:var(--accent);background:rgba(255,200,87,.10)}
+  .tag.red{border-color:rgba(240,131,111,.45);color:var(--bad);background:rgba(240,131,111,.10)}
+  .tag.warn{border-color:rgba(242,179,61,.4);color:var(--warn);background:rgba(242,179,61,.08)}
 
-  /* ---------- 降雨看板 ---------- */
-  .region{margin-bottom:13px}
-  .region:last-child{margin-bottom:0}
-  .rtop{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;margin-bottom:5px}
-  .rtop b{font-family:var(--mono);color:var(--blue-l)}
-  .bar{height:9px;background:rgba(0,0,0,.4);border-radius:99px;position:relative;margin-top:17px;border:1px solid rgba(45,127,249,.22)}
-  .bar::before{content:"触发线";position:absolute;left:calc(50% + 6px);top:-15px;font-size:10px;letter-spacing:.6px;
-    color:var(--amber-l);white-space:nowrap}
-  .bar i{display:block;height:100%;border-radius:99px;position:relative;overflow:hidden;
-    background:linear-gradient(90deg,var(--cyan),var(--blue));transition:width .5s}
-  .bar i::after{content:"";position:absolute;inset:0;
-    background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,.26) 45%,rgba(255,255,255,.04) 60%,transparent 100%);
-    background-size:100% 260%;animation:barflow 3.4s linear infinite}
-  .bar i.hit{background:linear-gradient(90deg,var(--blue),var(--amber))}
-  .bar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:rgba(255,200,87,.85);
-    box-shadow:0 0 6px rgba(245,165,36,.55)}
-  @keyframes barflow{from{background-position:0 -130%}to{background-position:0 130%}}
-  .rnote{font-size:11px;color:var(--faint);margin-top:4px}
+  /* ---------- 降雨看板：刻度尺 + 阈值线（阈值落在 50%） ---------- */
+  .region{padding:12px 0;border-top:1px solid var(--hair)}
+  .region:first-child{border-top:none;padding-top:2px}
+  .rtop{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;font-size:var(--t-tbl)}
+  .rtop b{font-family:var(--mono);font-size:14px;color:var(--ink)}
+  .bar{height:8px;background:#08111C;border-radius:99px;position:relative;margin-top:18px;
+    outline:1px solid var(--hair)}
+  .bar::before{content:"触发线";position:absolute;left:calc(50% + 6px);top:-15px;font-size:10px;letter-spacing:.4px;
+    color:var(--faint);white-space:nowrap}
+  .bar i{display:block;height:100%;border-radius:99px;position:relative;
+    background:var(--blue);transition:width .5s cubic-bezier(.16,1,.3,1)}
+  .bar i.hit{background:var(--accent)}
+  .bar::after{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:var(--warn);opacity:.8}
+  .rnote{font-size:var(--t-lab);color:var(--faint);margin-top:5px}
   /* 选中的那一行 == 整页背景雨幕的来源 */
-  .region.is-sel .rtop > span:first-child{color:var(--cyan);font-weight:600}
+  .region.is-sel .rtop > span:first-child{color:var(--ink);font-weight:620}
   .region.is-sel .rtop > span:first-child::after{content:"背景雨幕";margin-left:7px;font-size:10px;
-    font-weight:400;letter-spacing:.4px;color:var(--cyan);border:1px solid rgba(34,211,238,.45);
-    background:rgba(34,211,238,.10);border-radius:5px;padding:1px 5px;vertical-align:1px}
-  .region.is-sel > .bar{border-color:rgba(34,211,238,.5);box-shadow:0 0 0 3px rgba(34,211,238,.07)}
+    font-weight:400;letter-spacing:.2px;color:var(--cyan);border:1px solid rgba(47,211,238,.4);
+    background:rgba(47,211,238,.07);border-radius:var(--r-xs);padding:1px 5px;vertical-align:1px}
+  .region.is-sel > .bar{outline-color:rgba(47,211,238,.45)}
 
-  /* ---------- 保单卡片 ---------- */
-  .pol{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:11px;
-    background:linear-gradient(178deg,rgba(255,255,255,.035),rgba(0,0,0,.10))}
-  .pol:last-child{margin-bottom:0}
-  .pol.paid{border-color:rgba(52,211,153,.5);background:linear-gradient(178deg,rgba(52,211,153,.10),rgba(0,0,0,.1))}
-  .pol.claimable{border-color:rgba(245,165,36,.6);background:linear-gradient(178deg,rgba(245,165,36,.13),rgba(0,0,0,.1))}
-  .pol.expired{opacity:.6}
-  .prow{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
-  .pmeta{font-family:var(--mono);font-size:11.5px;color:var(--dim);line-height:1.75}
+  /* ---------- 我的保单：数据行（不是卡片） ---------- */
+  .ptable-head{display:grid;grid-template-columns:200px minmax(220px,1.15fr) minmax(300px,1.5fr) auto;gap:18px;
+    padding:0 0 8px;border-bottom:1px solid var(--hair-2);font-size:var(--t-lab);color:var(--faint);letter-spacing:.3px}
+  .sec:has(#myPolicies .empty) .ptable-head{display:none}
+  .pol{display:grid;grid-template-columns:200px minmax(220px,1.15fr) minmax(300px,1.5fr) auto;gap:18px;
+    align-items:start;padding:13px 0;border-bottom:1px solid var(--hair)}
+  .pol:last-child{border-bottom:none}
+  .pid{font-size:13.5px;font-weight:600;line-height:1.5}
+  .pid .mono{color:var(--dim);font-weight:500}
+  .pol.paid .pid{color:var(--ok)}
+  .pol.claimable .pid{color:var(--accent)}
+  .pol.denied .pid,.pol.expired .pid{color:var(--dim)}
+  .pol.expired .pmeta,.pol.expired .pai{opacity:.7}
+  .pmeta{font-family:var(--mono);font-size:11.5px;color:var(--dim);line-height:1.75;overflow-wrap:anywhere}
+  .pai{font-family:var(--mono);font-size:11.5px;color:var(--dim);line-height:1.75;overflow-wrap:anywhere}
+  .pai b{color:var(--ink);font-weight:600}
+  .pai .none{color:var(--faint)}
+  @media (max-width:1000px){
+    .ptable-head{display:none}
+    .pol{grid-template-columns:minmax(0,1fr);gap:7px;padding:14px 0}
+  }
 
-  /* ---------- 事件流 ---------- */
-  .ev{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid rgba(45,127,249,.13);font-size:12.5px;align-items:baseline;flex-wrap:wrap}
+  /* ---------- 链上动态：数据行 ---------- */
+  .ev{display:grid;grid-template-columns:158px minmax(0,1fr) 120px 66px;gap:14px;align-items:baseline;
+    padding:9px 0;border-bottom:1px solid var(--hair);font-size:var(--t-tbl)}
   .ev:last-child{border-bottom:none}
-  .ev .en{font-family:var(--mono);font-size:11.5px;padding:2px 8px;border-radius:5px;white-space:nowrap;
-    border:1px solid var(--line);color:var(--blue-l);background:rgba(45,127,249,.1)}
-  .ev .en.gold{border-color:var(--line2);color:var(--amber-l);background:rgba(245,165,36,.1)}
-  .ev .en.blue{border-color:rgba(120,150,230,.35);color:#9DB4E8;background:rgba(120,150,230,.09)}
-  .ev .et{color:var(--dim);flex:1 1 auto;min-width:0;word-break:break-all}
-  .ev .ea{color:var(--faint);font-family:var(--mono);font-size:11px;white-space:nowrap}
-  .ev .etx{font-size:11px;color:var(--blue-l);text-decoration:none;white-space:nowrap;
-    border-bottom:1px dashed rgba(45,127,249,.5);padding-bottom:1px}
-  .ev .etx:hover{color:var(--amber-l);border-bottom-color:var(--amber-l)}
+  .ev .en{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:var(--r-xs);white-space:nowrap;
+    border:1px solid var(--hair-2);color:var(--dim);justify-self:start}
+  .ev .en.gold{border-color:rgba(255,200,87,.4);color:var(--accent)}
+  .ev .en.blue{border-color:rgba(127,176,255,.35);color:var(--blue-l)}
+  .ev .et{color:var(--dim);overflow-wrap:anywhere}
+  .ev .ea{color:var(--faint);font-family:var(--mono);font-size:11px;white-space:nowrap;text-align:right}
+  .ev .etx{font-size:11px;color:var(--blue-l);white-space:nowrap;text-align:right}
+  @media (max-width:1000px){
+    .ev{grid-template-columns:minmax(0,1fr);gap:3px}
+    .ev .ea,.ev .etx{text-align:left}
+  }
 
-  .empty{color:var(--faint);font-size:12.5px;font-style:italic}
-  .loading{color:var(--dim);font-size:12.5px}
-  .loading::after{content:"";display:inline-block;width:9px;height:9px;margin-left:8px;vertical-align:middle;
+  .empty{color:var(--faint);font-size:var(--t-tbl)}
+  .loading{color:var(--dim);font-size:var(--t-tbl)}
+  .loading::after{content:"";display:inline-block;width:8px;height:8px;margin-left:8px;vertical-align:middle;
     border:1.5px solid var(--blue);border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite}
   @keyframes sp{to{transform:rotate(360deg)}}
-  .note{border-left:3px solid var(--amber);padding:2px 0 2px 12px;margin-top:13px;color:var(--dim);font-size:12.5px;line-height:1.8}
-  .note.jade{border-left-color:var(--blue)}
-  .steps{font-size:12.5px;color:var(--dim);line-height:2}
-  .steps b{color:var(--amber-l);font-family:var(--mono)}
-  footer{margin-top:38px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--faint);line-height:1.9}
-  footer code{font-family:var(--mono);color:var(--blue-l);font-size:11.5px}
-  a{color:var(--blue-l)}
+  .note{margin-top:14px;color:var(--dim);font-size:var(--t-tbl);line-height:1.85;max-width:72ch}
+  .note b,.note strong{color:var(--ink)}
+  .steps{font-size:var(--t-tbl);color:var(--dim);line-height:2;max-width:72ch}
+  .steps b{color:var(--ink);font-family:var(--mono)}
+  footer{margin-top:26px;padding:20px 0 0;border-top:1px solid var(--hair);font-size:var(--t-tbl);color:var(--faint);line-height:1.9}
+  footer code{font-family:var(--mono);color:var(--dim);font-size:11.5px}
+  footer p{max-width:78ch;margin-bottom:9px}
+  footer p:last-child{margin-bottom:0}
+
+  /* ---------- 折叠区（设置 / 诚实说明）：说明该有，但不该占道 ---------- */
+  details.cfgbox,details.notes{margin-top:26px;border-top:1px solid var(--hair);padding-top:16px}
+  details > summary{cursor:pointer;font-size:var(--t-h2);font-weight:620;color:var(--ink);list-style:none;
+    display:flex;align-items:center;gap:9px}
+  details > summary::-webkit-details-marker{display:none}
+  details > summary::before{content:"";width:6px;height:6px;border-right:1.5px solid var(--faint);
+    border-bottom:1.5px solid var(--faint);transform:rotate(-45deg);transition:transform .18s;margin-left:2px}
+  details[open] > summary::before{transform:rotate(45deg)}
+  details > summary:hover{color:var(--blue-l)}
+  details .panel{margin-top:14px}
+
   #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(140%);
-    background:rgba(9,19,34,.82);border:1px solid var(--line);border-radius:11px;padding:12px 20px;font-size:13px;
-    max-width:min(660px,92vw);z-index:99;transition:transform .28s;box-shadow:0 12px 40px -12px #000;
-    backdrop-filter:blur(10px) saturate(120%);-webkit-backdrop-filter:blur(10px) saturate(120%)}
+    background:var(--panel2);border:1px solid var(--hair-2);border-radius:var(--r);padding:12px 18px;font-size:13px;
+    max-width:min(680px,92vw);z-index:99;transition:transform .3s cubic-bezier(.16,1,.3,1);
+    box-shadow:0 18px 44px -18px rgba(0,0,0,.9)}
   #toast.show{transform:translateX(-50%) translateY(0)}
-  #toast.err{border-color:rgba(224,107,90,.6)}
-  #toast.ok{border-color:rgba(52,211,153,.6)}
+  #toast.err{border-color:rgba(240,131,111,.6)}
+  #toast.ok{border-color:rgba(63,217,165,.6)}
 
   /* ---------- 减弱动效：静态雨丝兜底（仅 reduced-motion 下存在） ---------- */
   @media (prefers-reduced-motion: reduce){
     body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
       background:repeating-linear-gradient(103deg,transparent 0 7px,rgba(190,220,255,.035) 7px 8px)}
-    .bar i::after{animation:none}
+    *{animation-duration:.001ms !important;transition-duration:.001ms !important}
   }
 </style>
 </head>
@@ -172,40 +228,53 @@
 
 <header>
   <div class="brand">
-    <div class="logo">🌧</div>
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 34 34" fill="none">
+        <path d="M8 13.2C8 11.7 9.2 10.5 10.7 10.5h12.6c1.5 0 2.7 1.2 2.7 2.7v8.1c0 1.5-1.2 2.7-2.7 2.7H10.7C9.2 24 8 22.8 8 21.3z"
+              stroke="currentColor" stroke-width="1.5"/>
+        <path d="M13 13.6l-1.7 3.4M17.6 13.6l-1.7 3.4M22.2 13.6l-1.7 3.4"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M12.4 20.6h9.2" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
     <h1>雨证 · RainProof
       <span>可验证的 AI 参数化配送险 · 天气数据触发 · 规则写死在链上</span>
     </h1>
     <div class="chainbar">
       <span><span class="dot" id="dot"></span><span id="netText">未连接</span></span>
       <span>区块 <b id="blk">—</b></span>
-      <span>合约 <b id="addrMini">未配置</b></span>
+      <button class="btn sm" id="walletBtn">连接钱包</button>
     </div>
+  </div>
+  <div class="rail">
+    <div class="rail-i"><span class="rl">资金池余额</span><b id="poolBal">—</b></div>
+    <div class="rail-i"><span class="rl">剩余可赔付</span><b id="poolCap">—</b></div>
+    <div class="rail-i"><span class="rl">合约</span><b id="addrMini">未配置</b></div>
   </div>
 </header>
 
-<!-- ============ 配置 ============ -->
-<section class="sec">
-  <h2>合约配置<em>部署完把合约地址填这儿，会自动记住</em></h2>
-  <div class="panel">
-    <div class="cfg">
-      <input id="addrInput" spellcheck="false" placeholder="0x… 部署出来的合约地址（42 个字符）">
-      <button class="btn" id="saveBtn">保存并连接</button>
-      <button class="btn gold" id="walletBtn">连接钱包</button>
-      <span class="tag" id="modeTag">只读模式</span>
-    </div>
-    <div class="note jade" id="cfgHint">
-      还没有合约地址？先打开 <a href="verifier.html">链上核验台</a> 确认部署成功，再把地址粘到这里。
-      地址只存在你自己的浏览器里（localStorage），不上传任何地方。
-    </div>
-  </div>
-</section>
-
 <div class="grid2">
-  <!-- ============ 左栏 ============ -->
+  <!-- ============ 左栏：现状与记录 ============ -->
   <div>
     <section class="sec">
-      <h2>投保<em>1 份 0.001 SepETH</em></h2>
+      <h2>降雨看板<em>链上的累计值，由喂价脚本写入；标了「背景雨幕」的那一行，就是整页背景雨的来源</em></h2>
+      <div class="panel" id="rainBoard">
+        <div class="loading">正在读取各区域降雨</div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2>链上动态<em>合约发出的事件，按时间倒序</em></h2>
+      <div class="panel" id="events">
+        <div class="loading">正在读取事件日志</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ 右栏：这一页唯一的动作 ============ -->
+  <div>
+    <section class="sec stick">
+      <h2>投保<em>保费与阈值都从链上取，不写死在页面里</em></h2>
       <div class="panel">
         <div class="row" style="align-items:flex-end">
           <div style="flex:1 1 150px">
@@ -221,80 +290,59 @@
             </select>
           </div>
         </div>
-        <div class="row" style="margin-top:14px;justify-content:space-between">
-          <div>
-            <div class="k">应付保费</div>
-            <div class="v" style="font-size:17px;font-weight:600;color:var(--amber-l)" id="premiumShow">—</div>
-          </div>
-          <div style="text-align:right">
-            <div class="k">触发赔付条件</div>
-            <div class="v mono" style="font-size:12.5px;color:var(--blue-l)" id="threshShow">—</div>
-          </div>
-        </div>
-        <button class="btn block" id="buyBtn" style="margin-top:14px" disabled>连接钱包后投保</button>
+        <div class="k" style="margin-top:18px">应付保费</div>
+        <div class="metric" id="premiumShow">—</div>
+        <div class="k" style="margin-top:14px">触发赔付条件</div>
+        <div class="v" id="threshShow">—</div>
+        <button class="btn primary block" id="buyBtn" style="margin-top:16px" disabled>连接钱包后投保</button>
         <div class="note" id="buyHint">
           保单期间该区域<strong>新增累计降雨 ≥ 阈值</strong> 就能申请赔付（基线 = 投保当刻的链上雨量），赔 <strong id="payoutShow">—</strong>。
         </div>
       </div>
     </section>
-
-    <section class="sec">
-      <h2 class="gold">我的保单<em>连钱包后显示</em></h2>
-      <div class="panel" id="myPolicies">
-        <div class="empty">连接钱包后，这里会列出你在本合约上的全部保单。</div>
-      </div>
-    </section>
-
-    <section class="sec">
-      <h2>资金池<em>赔付准备金 · 偿付能力</em></h2>
-      <div class="panel">
-        <div class="row" style="justify-content:space-between;align-items:flex-end">
-          <div>
-            <div class="k">池子余额</div>
-            <div class="v" style="font-size:19px;font-weight:600;color:var(--blue-l)" id="poolBal">—</div>
-          </div>
-          <div style="text-align:right">
-            <div class="k">还能赔付</div>
-            <div class="v" style="font-size:15px;color:var(--amber-l)" id="poolCap">—</div>
-          </div>
-        </div>
-        <button class="btn sm gold" id="fundBtn" style="margin-top:13px" disabled>注资到资金池（自动按钱包余额封顶）</button>
-        <div class="note">
-          <strong>演示前必须先把池子喂饱。</strong>收了 1 份保费（0.001）却要赔 10 倍（0.01），
-          池子是空的就第一笔赔付都过不去 —— 这正是我在本地链上验过的那条 <code>insurance pool empty</code>。
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- ============ 右栏 ============ -->
-  <div>
-    <section class="sec">
-      <h2>降雨看板<em>链上的累计值，由喂价脚本写入；标了「背景雨幕」的那一行，就是整页背景雨的来源</em></h2>
-      <div class="panel" id="rainBoard">
-        <div class="loading">正在读取各区域降雨</div>
-      </div>
-    </section>
-
-    <section class="sec">
-      <h2 class="gold">链上动态<em>合约发出的事件，按时间倒序</em></h2>
-      <div class="panel" id="events">
-        <div class="loading">正在读取事件日志</div>
-      </div>
-    </section>
   </div>
 </div>
 
+<section class="sec">
+  <h2>我的保单<em>逐份读链上；按钮点不动时，按钮自己会写出原因</em></h2>
+  <div class="ptable-head">
+    <span>保单 / 区域</span><span>保障期与进度</span><span>链上 AI 判定（可核）</span><span>操作</span>
+  </div>
+  <div class="panel" id="myPolicies">
+    <div class="empty">连接钱包后，这里会列出你在本合约上的全部保单。</div>
+  </div>
+</section>
+
+<details class="cfgbox">
+  <summary>合约配置与运营操作</summary>
+  <div class="panel">
+    <div class="cfg">
+      <input id="addrInput" spellcheck="false" placeholder="0x… 部署出来的合约地址（42 个字符）">
+      <button class="btn" id="saveBtn">保存并连接</button>
+      <span class="tag" id="modeTag">只读模式</span>
+    </div>
+    <div class="note jade" id="cfgHint">
+      还没有合约地址？先打开 <a href="verifier.html">链上核验台</a> 确认部署成功，再把地址粘到这里。
+      地址只存在你自己的浏览器里（localStorage），不上传任何地方。
+    </div>
+    <div class="row" style="margin-top:16px">
+      <button class="btn sm gold" id="fundBtn" disabled>注资到资金池（按钱包余额自动封顶）</button>
+    </div>
+    <div class="note">
+      <strong>演示前必须先把池子喂饱。</strong>收了 1 份保费（0.001）却要赔 10 倍（0.01），
+      池子是空的就第一笔赔付都过不去 —— 这正是我在本地链上验过的那条 <code>insurance pool empty</code>。
+    </div>
+  </div>
+</details>
+
 <footer>
-  <b>这一页不依赖任何区块浏览器。</b>合约地址、账户余额、降雨值、事件日志，全部直接向节点提问取得
-  （<code>ethereum-sepolia-rpc.publicnode.com</code>）。
-  <br>
-  <b>只读模式：</b>没连钱包也能看全部数据 —— 现场万一 MetaMask 出问题，照样能演示「链上有什么」。
-  <br>
-  <b>诚实说明：</b>喂价脚本是<strong>中心化预言机</strong>，数据可信度取决于运营方。生产环境应改用去中心化预言机网络。
+  <p><b>这一页不依赖任何区块浏览器。</b>合约地址、账户余额、降雨值、事件日志，全部直接向节点提问取得
+  （<code>ethereum-sepolia-rpc.publicnode.com</code>）。</p>
+  <p><b>只读模式：</b>没连钱包也能看全部数据 —— 现场万一 MetaMask 出问题，照样能演示「链上有什么」。</p>
+  <p><b>诚实说明：</b>喂价脚本是<strong>中心化预言机</strong>，数据可信度取决于运营方。生产环境应改用去中心化预言机网络。
   AI 在链下做三件事：<strong>验收喂进来的天气数据</strong>（三模型交叉比对，离群就拒收）、<strong>按 R1–R5 规则判定该不该赔</strong>、<strong>给五个区域定差异化保费</strong>。
   它<strong>不判断「人有没有真的受损」</strong> —— 那需要平台的订单数据，属于路线图。
-  每次判定都把输入快照和输出结论各算一个哈希写上链，第三方拿同一份快照重跑，得到的是逐字节相同的结果。
+  每次判定都把输入快照和输出结论各算一个哈希写上链，第三方拿同一份快照重跑，得到的是逐字节相同的结果。</p>
 </footer>
 </div>
 
@@ -696,39 +744,35 @@ async function loadMyPolicies() {
       // 否则现场只能把它解释成「这个功能坏了」—— 而这恰恰是判定层存在的最好证明。
       const NOBTN = { paid:"已赔付", pending_judgement:"待 AI 判定", denied:"AI 判定不赔",
                       low_confidence:"置信度不足", expired:"已过期", not_found:"不存在" };
-      // AI 判定卡：把链上那条判定记录翻成人话 —— 判定 / 置信度 / 两个证据哈希 / 模型版本。
+      // AI 判定列：把链上那条判定记录翻成人话 —— 判定 / 置信度 / 两个证据哈希 / 模型版本。
       // 数据全部来自链上 judgements(id)，不依赖任何离线文件，评委可以自己调 eth_call 对一遍。
       // 注意：合约的 sources 字段没有写入接口（submitJudgement 不带该参数），所以这里不显示"源数"。
-      const aiLine = (jm && jm.exists) ? `<div class="pmeta" style="margin-top:6px;border-top:1px solid rgba(255,255,255,.08);padding-top:6px">
-              <b>AI 判定</b>
-              <span class="tag ${Number(jm.decision) === 1 ? "gold" : "warn"}" style="margin:0 4px">${Number(jm.decision) === 1 ? "赔付 PAY" : "不赔 DENY"}</span>
+      // 没有判定记录时不留空白单元格 —— 空格子也要说出"为什么空"。
+      const aiLine = (jm && jm.exists) ? `<b>AI 判定</b>
+              <span class="tag ${Number(jm.decision) === 1 ? "gold" : "warn"}">${Number(jm.decision) === 1 ? "赔付 PAY" : "不赔 DENY"}</span>
               · 置信度 <b>${jm.confidence}</b>
               · ${Number(jm.kind) === 1 ? "损失判定" : "喂价验收"}
               · 输入 <span title="${jm.inputHash}">${shortHash(jm.inputHash)}</span>
               · 输出 <span title="${jm.outputHash}">${shortHash(jm.outputHash)}</span>
               · ${esc(jm.modelVersion)}
-              ${Number(jm.judgedAt) ? `　·　${new Date(Number(jm.judgedAt) * 1000).toLocaleString("zh-CN", { hour12:false })}` : ""}
-            </div>` : "";
+              ${Number(jm.judgedAt) ? `　·　${new Date(Number(jm.judgedAt) * 1000).toLocaleString("zh-CN", { hour12:false })}` : ""}`
+        : `<span class="none">— 尚未登记 AI 判定</span>`;
       rows.push(`<div class="pol ${status}">
-        <div class="prow">
-          <div>
-            <div style="font-size:14px;font-weight:600">#${id} · ${esc(name)}
-              <span class="tag ${claimable ? "gold" : status === "paid" ? "" : "warn"}" style="margin-left:6px">${label}</span>
-            </div>
-            <div class="pmeta">
-              保障 ${fmt(from)} → ${fmt(to)}
-              ${status === "active" ? `　·　距触发还差 <b style="color:var(--warn)">${Number(short)}</b> mm` : ""}
-              ${claimable ? `　·　已满足赔付条件` : ""}
-              ${status === "pending_judgement" ? `　·　雨量已达标，等 AI 判定登记上链` : ""}
-              ${status === "denied" ? `　·　AI 判定为不赔（结论与两个证据哈希都已上链，可查）` : ""}
-              ${status === "low_confidence" ? `　·　AI 置信度低于合约验收门槛，按规则不予赔付` : ""}
-              ${status === "paid" ? `　·　已收到 ${fmtEth(S.meta.payout)} SepETH` : ""}
-            </div>
-            ${aiLine}
-          </div>
-          <button class="btn sm ${claimable ? "gold" : ""}" data-claim="${id}"
-            ${claimable ? "" : "disabled"}>${claimable ? "申请赔付 " + fmtEth(S.meta.payout) + " SepETH" : (NOBTN[status] || "未达条件")}</button>
+        <div class="pid"><span class="mono">#${id}</span> ${esc(name)}
+          <span class="tag ${claimable ? "gold" : status === "paid" ? "" : "warn"}">${label}</span>
         </div>
+        <div class="pmeta">
+          保障 ${fmt(from)} → ${fmt(to)}
+          ${status === "active" ? `<br>距触发还差 <b style="color:var(--warn)">${Number(short)}</b> mm` : ""}
+          ${claimable ? `<br>已满足赔付条件` : ""}
+          ${status === "pending_judgement" ? `<br>雨量已达标，等 AI 判定登记上链` : ""}
+          ${status === "denied" ? `<br>AI 判定为不赔（结论与两个证据哈希都已上链，可查）` : ""}
+          ${status === "low_confidence" ? `<br>AI 置信度低于合约验收门槛，按规则不予赔付` : ""}
+          ${status === "paid" ? `<br>已收到 ${fmtEth(S.meta.payout)} SepETH` : ""}
+        </div>
+        <div class="pai">${aiLine}</div>
+        <button class="btn sm ${claimable ? "gold" : ""}" data-claim="${id}"
+          ${claimable ? "" : "disabled"}>${claimable ? "申请赔付 " + fmtEth(S.meta.payout) + " SepETH" : (NOBTN[status] || "未达条件")}</button>
       </div>`);
     }
     box.innerHTML = rows.join("");

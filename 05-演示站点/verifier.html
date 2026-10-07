@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>雨证 · RainProof — Sepolia 链上核验台</title>
+<title>雨证 · RainProof — BOT Chain 链上核验台</title>
 <style>
   :root{
     --ink:#E9F0F8; --dim:#A9BACB; --faint:#7F93A9;
@@ -229,7 +229,7 @@
         <path d="M12.4 20.6h9.2" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </div>
-    <h1>雨证 · RainProof · Sepolia 链上核验台<span>不依赖任何区块浏览器</span></h1>
+    <h1>雨证 · RainProof · BOT Chain 链上核验台<span>不依赖任何区块浏览器</span></h1>
     <div class="chainbar">
       <span><span class="dot" id="dot"></span><span id="connText">连接中…</span></span>
       <span>区块 <b id="blkNum">—</b></span>
@@ -238,9 +238,9 @@
     </div>
   </div>
   <p class="subtitle">
-    这一页直接向公开节点提问，把链上的原始数据取回来显示。<b style="color:var(--dim)">它不经过 OtterScan，
-    也不经过 Etherscan。</b>请求的是
-    <code id="rpcShown">https://ethereum-sepolia-rpc.publicnode.com</code>
+    这一页直接向公开节点提问，把链上的原始数据取回来显示。<b style="color:var(--dim)">它不经过 scan.bohr.life，
+    也不经过任何后端索引服务。</b>请求的是
+    <code id="rpcShown">https://rpc.bohr.life</code>
   </p>
 </header>
 
@@ -258,8 +258,9 @@
   <div class="chips">
     <span>我这次的：</span>
     <button class="chip" data-q="0x89e7C942535930B61cB61631051E8b0bD670596a">合约 <b>0x89e7C9…596a</b></button>
-    <button class="chip" data-q="0x197ef6ca029dd59df77e28951ed6eb0cd18b26fc20463fb2d0b1bdf882eaaf03">部署交易 <b>0x197ef6…af03</b></button>
-    <button class="chip" data-q="0x867ad8250bc27f5188e3605cc0b68a68aeea1aa876acd1bda8d6378754c20ba0">判定交易 <b>0x867ad8…ba0</b>（保单 #0 · 不赔）</button>
+    <button class="chip" data-q="0xa294f0293ab391b0ff458964333bc23a9109f8b72d31a905211b1c30e9e53515">部署交易 <b>0xa294f0…e53515</b></button>
+    <button class="chip" data-q="0x25148f13742d89dce755cee28f72366ed89a6ef577ab7d13ebb36d893fcc2211">判定交易 <b>0x25148f…2211</b>（保单 #3 · 赔付 PAY）</button>
+    <button class="chip" data-q="0x07f7eff6d4daad8c1859c0a79e6496ed8f18c6709b5fc344dd693e7d7793286b">赔付交易 <b>0x07f7ef…3286b</b></button>
   </div>
 
   <div class="panel hidden" id="errPanel"></div>
@@ -286,9 +287,9 @@
 </section>
 
 <footer>
-  <b>为什么要有这一页：</b>Sepolia 的公共区块浏览器里，Etherscan / Blockscout 在国内连不上；
-  OtterScan 的页面能打开，但它取数据的后端节点（<code>sepolia-node.otterscan.io</code>）被 Cloudflare
-  拦成 403，所以永远转圈。<b>这一页绕开全部中间商，直接问节点要数据。</b>
+  <b>为什么要有这一页：</b>BOT Chain 自己的浏览器是 <code>scan.bohr.life</code>，但它显示的是「它认为的事实」；
+  这一页把 <code>eth_getLogs</code> 与 <code>eth_call</code> 的原始返回直接摆出来，字段一个不改。
+  <b>这一页绕开全部中间商，直接问节点要数据 —— 浏览器打不开也能验。</b>
   <div class="note" style="--note-line:rgba(59,130,246,.26);--note-bg:rgba(59,130,246,.06)">
     <b>打不开怎么办：</b>双击本文件即可，无需安装任何东西（只依赖同目录的 <code>ethers.umd.min.js</code>）。
     若浏览器拦截本地文件发请求，在演示站点目录执行 <code>python -m http.server 8090</code>，然后访问
@@ -307,25 +308,26 @@
 const QS = new URLSearchParams(location.search);
 
 // ?rpc=… 可临时指定节点（本地链联调用，例如 http://127.0.0.1:8545）。
-// 演示页的「核验 ↗」链接会把当前 rpc 一起带过来，否则点过去会去查公共 Sepolia，
-// 本地链上的交易当然「查不到」。
+// 演示页的「核验 ↗」链接会把当前 rpc 一起带过来，否则点过去会去查默认节点，
+// 别的链上的交易当然「查不到」。
 const RPC_OVERRIDE = QS.get("rpc");
 const NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
-  "https://ethereum-sepolia-rpc.publicnode.com",
-  "https://sepolia.gateway.tenderly.co"
-  // 原来的 https://rpc.ankr.com/eth_sepolia 已失效：Ankr 现在要求 API key，
-  // 匿名调用直接返回 -32000 Unauthorized，并且会让 ethers 一直重试探测网络。
+  "https://rpc.bohr.life"
+  // BOT Chain 测试网 968 的公共节点；主网 677 用 https://rpc.botchain.ai。
 ];
 // ★ 2026-10-06：原来这里是赛前脚手架的 SimpleStore 地址 0x5f7040…82dc（已经不在链上用了）。
-//   改成真链部署的 RainDeliveryInsurance，否则点「合约」按钮会查一个空地址。
+//   改成真链部署的 RainDeliveryInsuranceV2（BOT Chain 测试网 968），否则点「合约」按钮会查一个空地址。
 const DEFAULT_QUERY = "0x89e7C942535930B61cB61631051E8b0bD670596a";
 // ★ 真链判据：chainId 可以被本地假链伪装（prep_local_chain.js 就设成 11155111），块高不能。
-//   Sepolia 已经 1180 万+，本地假链从 0 开始。
+//   BOT Chain 已经 2500 万+，本地假链从 0 开始。
 const MIN_REAL_BLOCK = 1000000;
 // 已知真链：chainId → 显示名。NODES / ?rpc= 指向哪条链都在这里登记。
-const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
+const KNOWN_CHAINS = { 968: "BOT Chain Testnet", 677: "BOT Chain Mainnet", 11155111: "Sepolia" };
+// 计价符号跟着链走：BOT Chain（968 / 677）是 BOT，Sepolia 只在本地联调时出现。
+const CHAIN_SYM = { 968: "BOT", 677: "BOT", 11155111: "SepETH" };
 
-const S = { rpc: NODES[0], lat: null, lastAddr: null };
+const S = { rpc: NODES[0], lat: null, lastAddr: null, chainId: null };
+const SYM = () => CHAIN_SYM[S.chainId] || "BOT";
 
 /* 假链报警：红色横幅 + 顶部状态改为「本地假链」，避免演示时误当真链 */
 function showFakeChainBar(bn) {
@@ -336,7 +338,7 @@ function showFakeChainBar(bn) {
     "font:700 14px/1.7 system-ui,'Microsoft YaHei',sans-serif;padding:8px 14px;text-align:center;" +
     "box-shadow:0 2px 10px rgba(0,0,0,.35)";
   bar.textContent = "⚠ 当前连的是本地假链（块高 " + Number(bn).toLocaleString("en-US") +
-    "，chainId 被伪装成 Sepolia）—— 这一页查到的不是真链数据。去掉网址里的 ?rpc= 参数后刷新。";
+    "，chainId 被伪装成本地登记过的链）—— 这一页查到的不是真链数据。去掉网址里的 ?rpc= 参数后刷新。";
   document.body.appendChild(bar);
   document.body.style.paddingTop = "44px";
 }
@@ -357,8 +359,9 @@ async function rpc(method, params, timeout = 20000, requireNonNull = false) {
     try {
       const res = await fetch(url, {
         method: "POST",
-        // 用 text/plain 走「简单请求」，不触发预检，最稳
-        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        // BOT Chain 的节点只认 application/json：发 text/plain 会被回 415 invalid content type（2026-10-07 实测）。
+        // 代价是触发一次 CORS 预检 —— 已实测 rpc.bohr.life 的 OPTIONS 返回 204 且允许 Content-Type。
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
         signal: ctl.signal
       });
@@ -451,6 +454,7 @@ async function chainStatus(silent) {
     const cid = parseInt(id, 16);
     const chainName = KNOWN_CHAINS[cid];
     if (!chainName) throw new Error("不是已知的真链（chainId=" + cid + "）");
+    S.chainId = cid;
     const bn = Number(BigInt(blkHex));
     $("blkNum").textContent = fmtNum(big(blkHex));
     $("gas").textContent = fmtGwei(gasHex) + " Gwei";
@@ -463,8 +467,8 @@ async function chainStatus(silent) {
     $("dot").className = "dot err";
     $("connText").textContent = "连不上节点";
     $("lat").textContent = "—";
-    if (!silent) showErr("连不上 Sepolia 节点：" + e.message,
-      "检查网络。这一页访问的是 <b>ethereum-sepolia-rpc.publicnode.com</b>，是公共节点，通常能直连。");
+    if (!silent) showErr("连不上 BOT Chain 节点：" + e.message,
+      "检查网络。这一页访问的是 <b>rpc.bohr.life</b>，是公共节点，通常能直连。");
     throw e;
   }
 }
@@ -487,7 +491,7 @@ async function lookupAddress(addr, isPrimary) {
   S.lastAddr = isContract ? addr : null;
 
   const rows = [
-    ["余额", fmtEth(bal) + " <span style='font-size:12px;color:var(--dim)'>SepETH</span>", "big"],
+    ["余额", fmtEth(bal) + " <span style='font-size:12px;color:var(--dim)'>" + SYM() + "</span>", "big"],
     ["发过多少笔交易（nonce）", fmtNum(nonce), ""],
     ["这是不是合约", isContract
       ? `<span style="color:var(--ok)">是合约 ✅</span>`
@@ -530,7 +534,7 @@ async function lookupTx(hash) {
     $("logSec").classList.add("hidden");
     $("resultBody").innerHTML = `<div class="panel">
       <div class="ptitle"><span class="tag red">查不到</span></div>
-      <div class="v">节点返回 null：这条哈希在 Sepolia 上不存在。</div>
+      <div class="v">节点返回 null：这条哈希在 BOT Chain 测试网上不存在。</div>
       <div class="v small" style="margin-top:12px">
         最常见的原因：<b>哈希复制少了/多了字符</b>（完整哈希是 66 个字符：<code>0x</code> + 64 位）、
         混进了空格或尖括号、或者这笔交易还在待打包。
@@ -555,7 +559,7 @@ async function lookupTx(hash) {
     ["区块号", tx.blockNumber ? fmtNum(big(tx.blockNumber)) : "待打包", tx.blockNumber ? "" : "small"],
     ["区块时间", ts ? ago(ts) : "—", "small"],
     ["这笔是什么", isDeploy ? "<span style='color:var(--amber-l)'>部署合约</span>" : "普通转账 / 调合约", isDeploy ? "gold" : ""],
-    ["转账金额", fmtEth(tx.value) + " SepETH", ""],
+    ["转账金额", fmtEth(tx.value) + " " + SYM(), ""],
     ["Gas 实际用了", rc ? fmtNum(big(rc.gasUsed)) : "—", ""],
     ["Gas 价格", fmtGwei(tx.gasPrice) + " Gwei", "small"],
     ["nonce", fmtNum(big(tx.nonce)) + "（这是该账户发的第几笔）", "small"],
@@ -597,13 +601,15 @@ async function lookupTx(hash) {
 /* ★ 2026-10-06：加事件解码。以前这一栏只显示 topics[0] 的原始哈希，评委看不懂 —— 
    现在用合约自己的 ABI 把事件名和关键字段解出来，判定那一行直接写「不赔 DENY · 置信 95」。
    ABI 从 03-合约/RainDeliveryInsurance.abi.json 取（与所有脚本同一份，内联到这里以免 file:// 下 fetch 被拦）。 */
-const EVENT_ABI = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"address","name":"rider","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ClaimPaid","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"confidence","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"sources","type":"uint8"},{"indexed":false,"internalType":"bytes32","name":"inputHash","type":"bytes32"},{"indexed":false,"internalType":"string","name":"modelVersion","type":"string"}],"name":"FeedRejected","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"uint8","name":"kind","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"decision","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"confidence","type":"uint8"},{"indexed":false,"internalType":"bytes32","name":"inputHash","type":"bytes32"},{"indexed":false,"internalType":"bytes32","name":"outputHash","type":"bytes32"},{"indexed":false,"internalType":"string","name":"modelVersion","type":"string"}],"name":"JudgementSubmitted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"}],"name":"OperatorChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"paused","type":"bool"}],"name":"PausedSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"address","name":"rider","type":"address"},{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"endTime","type":"uint256"}],"name":"PolicyBought","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newBalance","type":"uint256"}],"name":"PoolFunded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"PoolWithdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"cumulativeMm","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"evidenceHash","type":"bytes32"},{"indexed":false,"internalType":"uint8","name":"confidence","type":"uint8"},{"indexed":true,"internalType":"address","name":"reporter","type":"address"}],"name":"RainfallUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ReserveSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"level","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"premium","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"reasonHash","type":"bytes32"}],"name":"UnderwritingDecision","type":"event"}];
+const EVENT_ABI = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"address","name":"rider","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint8","name":"tier","type":"uint8"}],"name":"ClaimPaid","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint64","name":"seconds_","type":"uint64"}],"name":"CoolingPeriodSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"required","type":"bool"}],"name":"EligibleRequiredSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"who","type":"address"},{"indexed":false,"internalType":"bool","name":"ok","type":"bool"},{"indexed":false,"internalType":"bytes32","name":"reasonHash","type":"bytes32"}],"name":"EligibleSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"openExposure","type":"uint256"}],"name":"ExposureSettled","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"confidence","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"sources","type":"uint8"},{"indexed":false,"internalType":"bytes32","name":"inputHash","type":"bytes32"},{"indexed":false,"internalType":"string","name":"modelVersion","type":"string"}],"name":"FeedRejected","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"uint8","name":"kind","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"decision","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"confidence","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"sources","type":"uint8"},{"indexed":false,"internalType":"bytes32","name":"inputHash","type":"bytes32"},{"indexed":false,"internalType":"bytes32","name":"outputHash","type":"bytes32"},{"indexed":false,"internalType":"string","name":"modelVersion","type":"string"}],"name":"JudgementSubmitted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"}],"name":"OperatorChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"paused","type":"bool"}],"name":"PausedSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"policyId","type":"uint256"},{"indexed":true,"internalType":"address","name":"rider","type":"address"},{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"effectiveFrom","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"endTime","type":"uint256"}],"name":"PolicyBought","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newBalance","type":"uint256"}],"name":"PoolFunded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"PoolWithdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"windowHours","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"premium","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"reasonHash","type":"bytes32"}],"name":"PremiumSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"cumulativeMm","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"evidenceHash","type":"bytes32"},{"indexed":false,"internalType":"uint8","name":"confidence","type":"uint8"},{"indexed":true,"internalType":"address","name":"reporter","type":"address"}],"name":"RainfallUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ReserveSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"regionId","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"level","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"premium","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"reasonHash","type":"bytes32"}],"name":"UnderwritingDecision","type":"event"}];
 const IFACE = (typeof ethers !== "undefined" && ethers.Interface) ? new ethers.Interface(EVENT_ABI) : null;
 
 function regionName(id)   { return ({ 1: "武汉", 2: "上海", 3: "北京", 4: "广州", 5: "成都" })[Number(id)] || ("区 " + id); }
 function kindLabel(k)     { return Number(k) === 1 ? "损失判定" : "喂价验收"; }      // KIND_LOSS=1 / KIND_FEED=0
 function decisionLabel(d) { return Number(d) === 1 ? "赔付 PAY" : "不赔 DENY"; }    // DECISION_PAY=1 / DECISION_DENY=0
 function levelLabel(l)    { return ["正常承保", "加价承保", "暂停承保"][Number(l)] || ("level " + l); }
+// 国标（GB/T 28592-2012）三档 → 赔付比例，与合约 tierBps(0/1/2) = 50% / 75% / 100% 对齐
+const TIER_LABEL = ["暴雨档 50%", "大暴雨档 75%", "特大暴雨档 100%"];
 
 function decodeLog(l) {
   if (!IFACE) return null;
@@ -613,15 +619,21 @@ function decodeLog(l) {
 function eventSummary(name, a) {
   try {
     switch (name) {
-      case "PolicyBought":         return `保单 #${a.policyId} · ${regionName(a.regionId)} · 保障到 ${new Date(Number(a.endTime) * 1000).toLocaleString("zh-CN", { hour12: false })}`;
-      case "RainfallUpdated":      return `${regionName(a.regionId)} 累计 ${a.cumulativeMm} mm · 置信 ${a.confidence}`;
-      case "JudgementSubmitted":   return `保单 #${a.policyId} · ${kindLabel(a.kind)} · ${decisionLabel(a.decision)} · 置信 ${a.confidence}`;
-      case "ClaimPaid":            return `保单 #${a.policyId} → 赔付 ${fmtEth(a.amount)} SepETH`;
-      case "PoolFunded":           return `注资 ${fmtEth(a.amount)} SepETH · 池子余额 ${fmtEth(a.newBalance)}`;
-      case "PoolWithdrawn":        return `提取 ${fmtEth(a.amount)} SepETH`;
-      case "UnderwritingDecision": return `${regionName(a.regionId)} · ${levelLabel(a.level)} · 保费 ${a.premium} wei`;
+      case "PolicyBought":         return `保单 #${a.policyId} · ${regionName(a.regionId)} · `
+        + `${Math.round((Number(a.endTime) - Number(a.effectiveFrom)) / 3600)} 小时窗口 · 保障到 ${new Date(Number(a.endTime) * 1000).toLocaleString("zh-CN", { hour12: false })}`;
+      case "RainfallUpdated":      return `${regionName(a.regionId)} 累计 ${a.cumulativeMm} mm · 置信 ${a.confidence} · 记录者 ${short(a.reporter)}`;
+      case "JudgementSubmitted":   return `保单 #${a.policyId} · ${kindLabel(a.kind)} · ${decisionLabel(a.decision)} · 置信 ${a.confidence} · ${a.sources} 个源`;
+      case "ClaimPaid":            return `保单 #${a.policyId} → 赔付 ${fmtEth(a.amount)} ${SYM()}` + (TIER_LABEL[Number(a.tier)] ? ` · ${TIER_LABEL[Number(a.tier)]}` : "");
+      case "PoolFunded":           return `注资 ${fmtEth(a.amount)} ${SYM()} · 池子余额 ${fmtEth(a.newBalance)}`;
+      case "PoolWithdrawn":        return `提取 ${fmtEth(a.amount)} ${SYM()}`;
+      case "UnderwritingDecision": return `${regionName(a.regionId)} · ${levelLabel(a.level)} · 保费 ${fmtEth(a.premium)} ${SYM()}`;
+      case "PremiumSet":           return `${regionName(a.regionId)} · ${a.windowHours} 小时窗口 → ${fmtEth(a.premium)} ${SYM()}`;
       case "FeedRejected":         return `${regionName(a.regionId)} · 拒收（置信 ${a.confidence} / 源 ${a.sources}）`;
-      case "ReserveSet":           return `准备金下限 ${a.amount} wei`;
+      case "ReserveSet":           return `准备金下限 ${fmtEth(a.amount)} ${SYM()}`;
+      case "ExposureSettled":      return `保单 #${a.policyId} 结清 · 未了结敞口 ${fmtEth(a.openExposure)} ${SYM()}`;
+      case "CoolingPeriodSet":     return `冷静期 ${Number(a.seconds_) / 3600} 小时`;
+      case "EligibleSet":          return `白名单 ${a.ok ? "加入" : "移出"} ${short(a.who)}`;
+      case "EligibleRequiredSet":  return `白名单${a.required ? "已启用" : "已关闭"}`;
       case "PausedSet":            return a.paused ? "已暂停" : "已恢复";
       case "OperatorChanged":      return `${short(a.from)} → ${short(a.to)}`;
       default:                     return "";
@@ -709,7 +721,7 @@ async function loadBlocks(n = 8) {
       </tr>`).join("");
     $("blockPanel").innerHTML = `
       <div class="ptitle"><span class="tag">实时</span>
-        <span style="font-size:12px;color:var(--faint)">Sepolia 每约 12 秒出一个块</span></div>
+        <span style="font-size:12px;color:var(--faint)">BOT Chain 出块很快，这一栏的数字每次刷新都在涨</span></div>
       <div class="tblwrap"><table class="tbl"><thead><tr>
         <th>区块号</th><th>出块时间</th><th>交易数</th><th>基础费率</th><th>出块节点</th>
       </tr></thead><tbody>${rows}</tbody></table></div>`;

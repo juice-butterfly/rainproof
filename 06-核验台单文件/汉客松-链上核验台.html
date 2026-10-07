@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>汉客松 · Sepolia 链上核验台</title>
+<title>汉客松 · BOT Chain 链上核验台</title>
 <style>
   :root{
     --ink:#E9F0F8; --dim:#A9BACB; --faint:#7F93A9;
@@ -222,7 +222,7 @@
         <path d="M12.4 20.6h9.2" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </div>
-    <h1>Sepolia 链上核验台<span>汉客松 · 不依赖任何区块浏览器</span></h1>
+    <h1>BOT Chain 链上核验台<span>汉客松 · 不依赖任何区块浏览器</span></h1>
     <div class="chainbar">
       <span><span class="dot" id="dot"></span><span id="connText">连接中…</span></span>
       <span>区块 <b id="blkNum">—</b></span>
@@ -231,9 +231,9 @@
     </div>
   </div>
   <p class="subtitle">
-    这一页直接向公开节点提问，把链上的原始数据取回来显示。<b style="color:var(--dim)">它不经过 OtterScan，
-    也不经过 Etherscan。</b>请求的是
-    <code id="rpcShown">https://ethereum-sepolia-rpc.publicnode.com</code>
+    这一页直接向公开节点提问，把链上的原始数据取回来显示。<b style="color:var(--dim)">它不经过 scan.bohr.life，
+    也不经过任何后端索引服务。</b>请求的是
+    <code id="rpcShown">https://rpc.bohr.life</code>
   </p>
 </header>
 
@@ -251,8 +251,9 @@
   <div class="chips">
     <span>我这次的：</span>
     <button class="chip" data-q="0x89e7C942535930B61cB61631051E8b0bD670596a">合约 <b>0x89e7C9…596a</b></button>
-    <button class="chip" data-q="0x197ef6ca029dd59df77e28951ed6eb0cd18b26fc20463fb2d0b1bdf882eaaf03">部署交易 <b>0x197ef6…af03</b></button>
-    <button class="chip" data-q="0x867ad8250bc27f5188e3605cc0b68a68aeea1aa876acd1bda8d6378754c20ba0">判定交易 <b>0x867ad8…ba0</b>（保单 #0 · 不赔）</button>
+    <button class="chip" data-q="0xa294f0293ab391b0ff458964333bc23a9109f8b72d31a905211b1c30e9e53515">部署交易 <b>0xa294f0…e53515</b></button>
+    <button class="chip" data-q="0x25148f13742d89dce755cee28f72366ed89a6ef577ab7d13ebb36d893fcc2211">判定交易 <b>0x25148f…2211</b>（保单 #3 · 赔付 PAY）</button>
+    <button class="chip" data-q="0x07f7eff6d4daad8c1859c0a79e6496ed8f18c6709b5fc344dd693e7d7793286b">赔付交易 <b>0x07f7ef…3286b</b></button>
   </div>
 
   <div class="panel hidden" id="errPanel"></div>
@@ -279,9 +280,9 @@
 </section>
 
 <footer>
-  <b>为什么要有这一页：</b>Sepolia 的公共区块浏览器里，Etherscan / Blockscout 在国内连不上；
-  OtterScan 的页面能打开，但它取数据的后端节点（<code>sepolia-node.otterscan.io</code>）被 Cloudflare
-  拦成 403，所以永远转圈。<b>这一页绕开全部中间商，直接问节点要数据。</b>
+  <b>为什么要有这一页：</b>BOT Chain 自己的浏览器是 <code>scan.bohr.life</code>，但它显示的是「它认为的事实」；
+  这一页把 <code>eth_getLogs</code> 与 <code>eth_getTransactionByHash</code> 的原始返回直接摆出来，字段一个不改。
+  <b>这一页绕开全部中间商，直接问节点要数据 —— 浏览器打不开也能验。</b>
   <div class="note" style="--note-line:rgba(59,130,246,.26);--note-bg:rgba(59,130,246,.06)">
     <b>打不开怎么办：</b>双击本文件即可，无需安装任何东西（真正的单文件，不依赖 ethers）。
     若浏览器拦截本地文件发请求，在文件所在目录执行 <code>python -m http.server 8090</code>，然后访问
@@ -297,38 +298,43 @@
 
 /* ================= 配置 ================= */
 const NODES = [
-  "https://ethereum-sepolia-rpc.publicnode.com",
-  "https://sepolia.gateway.tenderly.co"
-  // 原来的 https://rpc.ankr.com/eth_sepolia 已失效：Ankr 现在要求 API key，
-  // 匿名调用返回 -32000 Unauthorized，还会让 ethers 无限重试探测网络。
+  "https://rpc.bohr.life"
+  // BOT Chain 测试网 968 的公共节点；主网 677 用 https://rpc.botchain.ai。
 ];
 const DEFAULT_QUERY = "0x89e7C942535930B61cB61631051E8b0bD670596a";
 
 // ★ 真链判据：chainId 可以被本地假链伪装（07-测试工具/prep_local_chain.js 就设成 11155111），
-//   但区块高度伪装不了——Sepolia 已经 1180 万+，本地假链从 0 开始。
+//   但区块高度伪装不了 —— BOT Chain 已经 2500 万+，本地假链从 0 开始。
 const MIN_REAL_BLOCK = 1000000;
 // 已知真链：chainId → 显示名。NODES / ?rpc= 指向哪条链都在这里登记。
-const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
+const KNOWN_CHAINS = { 968: "BOT Chain Testnet", 677: "BOT Chain Mainnet", 11155111: "Sepolia" };
+// 计价符号跟着链走：BOT Chain（968 / 677）是 BOT，Sepolia 只在本地联调时出现。
+const CHAIN_SYM = { 968: "BOT", 677: "BOT", 11155111: "SepETH" };
 
 // 事件 topics[0] → 事件名。这几个哈希是用 ethers 的 keccak256(签名) 实算出来的，不是手抄的。
 const EVENT_SIG = {
-  "0x9b2e243ab762d88c164da1da6c224863fbb2a21d1b42530b4fb739d20c4252af": "PolicyBought",
-  "0x23a0dbb5798c2746e4b438636e914157ceb7cccb38365cfff98df882ec05221e": "RainfallUpdated",
-  "0xaf3c8fdd75d667f71d36d7840b8ef9086c516c9b047ad6a83a5a66151342123a": "ClaimPaid",
-  "0xce66f10ae4269ec7bfd83e4659aed202bd4efb93d241bae453642969c2f079d3": "PoolFunded",
-  "0x6f07e6169c1653554eb707b6f6cd8f7ccf9cc29e54a0d8a71d9d5867d2057ac2": "PoolWithdrawn",
-  "0xd58299b712891143e76310d5e664c4203c940a67db37cf856bdaa3c5c76a802c": "OperatorChanged",
-  "0x40db37ff5c0bdc2c427fbb2078c8f24afea940abac0e3c23bb4ea3bf2da2b212": "PausedSet",
-  // ---- 赛期新增的 AI 判定层事件 ----
-  "0xa598d76536d6e82556f921f06a3722cf11ea82ba65cd995187aa29b841a501cd": "FeedRejected",
-  "0xe4db4e20fff779e01209dba451dcb4a14d0646fdaa8cd2f9d154d4799fc5cded": "JudgementSubmitted",
-  "0x74f9234f95765be42a98e6150968f81ddad109fcea08bce75c63148d10002b2b": "UnderwritingDecision",
-  "0xfa66ae93a8043aceae6463b400778fbde6fc189e5277519c39862c79f85b4565": "ReserveSet"
+  "0xdccc8dbc2a3e4dd0eae153285714d3bfad507041e9038fc622161223fafec77e": "ClaimPaid",    // ClaimPaid(uint256,address,uint256,uint8)
+  "0x7ae41b1684d17ed6eaf29cf472c814f6970099f0f9a30c7fb93e8a3d9485da03": "CoolingPeriodSet",    // CoolingPeriodSet(uint64)
+  "0xba5e4ed7c80eae9c2c260272d7411b12e0210599083e35e40749dad58dc719b4": "EligibleRequiredSet",    // EligibleRequiredSet(bool)
+  "0xea7cc9d56973c09921e839370160ec6a335e5aa82c59f46c86f19b7290b307fe": "EligibleSet",    // EligibleSet(address,bool,bytes32)
+  "0x8a8c02070b587d7224582d3b7667d447f6b8ca48b95cfd1213940f2e8910e237": "ExposureSettled",    // ExposureSettled(uint256,uint256)
+  "0xa598d76536d6e82556f921f06a3722cf11ea82ba65cd995187aa29b841a501cd": "FeedRejected",    // FeedRejected(uint8,uint8,uint8,bytes32,string)
+  "0x5eb70a67a1870444df9ac0085894d480824ffac2785b380ec6b6744f0473e906": "JudgementSubmitted",    // JudgementSubmitted(uint256,uint8,uint8,uint8,uint8,bytes32,bytes32,string)
+  "0xd58299b712891143e76310d5e664c4203c940a67db37cf856bdaa3c5c76a802c": "OperatorChanged",    // OperatorChanged(address,address)
+  "0x40db37ff5c0bdc2c427fbb2078c8f24afea940abac0e3c23bb4ea3bf2da2b212": "PausedSet",    // PausedSet(bool)
+  "0x08476b3283bd7027e33ec5c9b0b9ffe351a2ba22d416a146417cd0eedcd351a5": "PolicyBought",    // PolicyBought(uint256,address,uint8,uint256,uint256)
+  "0xce66f10ae4269ec7bfd83e4659aed202bd4efb93d241bae453642969c2f079d3": "PoolFunded",    // PoolFunded(address,uint256,uint256)
+  "0x6f07e6169c1653554eb707b6f6cd8f7ccf9cc29e54a0d8a71d9d5867d2057ac2": "PoolWithdrawn",    // PoolWithdrawn(address,uint256)
+  "0xe007c34ff6c0c12890a61488cc5b4cfd2ff99a6c1ef8b4d2d9dfa0e58625519e": "PremiumSet",    // PremiumSet(uint8,uint256,uint256,bytes32)
+  "0x23a0dbb5798c2746e4b438636e914157ceb7cccb38365cfff98df882ec05221e": "RainfallUpdated",    // RainfallUpdated(uint8,uint256,bytes32,uint8,address)
+  "0xfa66ae93a8043aceae6463b400778fbde6fc189e5277519c39862c79f85b4565": "ReserveSet",    // ReserveSet(uint256)
+  "0x74f9234f95765be42a98e6150968f81ddad109fcea08bce75c63148d10002b2b": "UnderwritingDecision"    // UnderwritingDecision(uint8,uint8,uint256,bytes32)
 };
 // ⚠️ RainfallUpdated 的 topic0 在赛期变了（事件加了 evidenceHash / confidence / sources 三个参数）。
 //    任何按 topic0 过滤这条事件的地方都必须用上面这个新值，别再用旧的 0x93238e87…。
 
-const S = { rpc: NODES[0], lat: null, lastAddr: null };
+const S = { rpc: NODES[0], lat: null, lastAddr: null, chainId: null };
+const SYM = () => CHAIN_SYM[S.chainId] || "BOT";
 
 /* 假链报警：红色横幅 + 顶部状态改为「本地假链」，避免演示时误把假链当真链 */
 function showFakeChainBar(bn) {
@@ -339,7 +345,7 @@ function showFakeChainBar(bn) {
     "font:700 14px/1.7 system-ui,'Microsoft YaHei',sans-serif;padding:8px 14px;text-align:center;" +
     "box-shadow:0 2px 10px rgba(0,0,0,.35)";
   bar.textContent = "⚠ 当前连的是本地假链（块高 " + Number(bn).toLocaleString("en-US") +
-    "，chainId 被伪装成 Sepolia）—— 这里查到的不是真链数据。去掉网址里的 ?rpc= 参数后刷新。";
+    "，chainId 被伪装成本地登记过的链）—— 这里查到的不是真链数据。去掉网址里的 ?rpc= 参数后刷新。";
   document.body.appendChild(bar);
   document.body.style.paddingTop = "44px";
 }
@@ -360,8 +366,9 @@ async function rpc(method, params, timeout = 20000, requireNonNull = false) {
     try {
       const res = await fetch(url, {
         method: "POST",
-        // 用 text/plain 走「简单请求」，不触发预检，最稳
-        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        // BOT Chain 的节点只认 application/json：发 text/plain 会被回 415 invalid content type（2026-10-07 实测），
+        // 而 publicnode 那种节点两个都收 —— 所以这条只有换到 BOT Chain 之后才会暴露。
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
         signal: ctl.signal
       });
@@ -454,6 +461,7 @@ async function chainStatus(silent) {
     const cid = parseInt(id, 16);
     const chainName = KNOWN_CHAINS[cid];
     if (!chainName) throw new Error("不是已知的真链（chainId=" + cid + "）");
+    S.chainId = cid;
     const bn = Number(BigInt(blkHex));
     $("blkNum").textContent = fmtNum(big(blkHex));
     $("gas").textContent = fmtGwei(gasHex) + " Gwei";
@@ -466,8 +474,8 @@ async function chainStatus(silent) {
     $("dot").className = "dot err";
     $("connText").textContent = "连不上节点";
     $("lat").textContent = "—";
-    if (!silent) showErr("连不上 Sepolia 节点：" + e.message,
-      "检查网络。这一页访问的是 <b>ethereum-sepolia-rpc.publicnode.com</b>，是公共节点，通常能直连。");
+    if (!silent) showErr("连不上 BOT Chain 节点：" + e.message,
+      "检查网络。这一页访问的是 <b>rpc.bohr.life</b>，是公共节点，通常能直连。");
     throw e;
   }
 }
@@ -490,7 +498,7 @@ async function lookupAddress(addr, isPrimary) {
   S.lastAddr = isContract ? addr : null;
 
   const rows = [
-    ["余额", fmtEth(bal) + " <span style='font-size:12px;color:var(--dim)'>SepETH</span>", "big"],
+    ["余额", fmtEth(bal) + " <span style='font-size:12px;color:var(--dim)'>" + SYM() + "</span>", "big"],
     ["发过多少笔交易（nonce）", fmtNum(nonce), ""],
     ["这是不是合约", isContract
       ? `<span style="color:var(--ok)">是合约 ✅</span>`
@@ -533,7 +541,7 @@ async function lookupTx(hash) {
     $("logSec").classList.add("hidden");
     $("resultBody").innerHTML = `<div class="panel">
       <div class="ptitle"><span class="tag red">查不到</span></div>
-      <div class="v">节点返回 null：这条哈希在 Sepolia 上不存在。</div>
+      <div class="v">节点返回 null：这条哈希在 BOT Chain 测试网上不存在。</div>
       <div class="v small" style="margin-top:12px">
         最常见的原因：<b>哈希复制少了/多了字符</b>（完整哈希是 66 个字符：<code>0x</code> + 64 位）、
         混进了空格或尖括号、或者这笔交易还在待打包。
@@ -558,7 +566,7 @@ async function lookupTx(hash) {
     ["区块号", tx.blockNumber ? fmtNum(big(tx.blockNumber)) : "待打包", tx.blockNumber ? "" : "small"],
     ["区块时间", ts ? ago(ts) : "—", "small"],
     ["这笔是什么", isDeploy ? "<span style='color:var(--gold-l)'>部署合约</span>" : "普通转账 / 调合约", isDeploy ? "gold" : ""],
-    ["转账金额", fmtEth(tx.value) + " SepETH", ""],
+    ["转账金额", fmtEth(tx.value) + " " + SYM(), ""],
     ["Gas 实际用了", rc ? fmtNum(big(rc.gasUsed)) : "—", ""],
     ["Gas 价格", fmtGwei(tx.gasPrice) + " Gwei", "small"],
     ["nonce", fmtNum(big(tx.nonce)) + "（这是该账户发的第几笔）", "small"],
@@ -652,7 +660,7 @@ async function loadBlocks(n = 8) {
       </tr>`).join("");
     $("blockPanel").innerHTML = `
       <div class="ptitle"><span class="tag">实时</span>
-        <span style="font-size:12px;color:var(--faint)">Sepolia 每约 12 秒出一个块</span></div>
+        <span style="font-size:12px;color:var(--faint)">BOT Chain 出块很快，这一栏的数字每次刷新都在涨</span></div>
       <div class="tblwrap"><table class="tbl"><thead><tr>
         <th>区块号</th><th>出块时间</th><th>交易数</th><th>基础费率</th><th>出块节点</th>
       </tr></thead><tbody>${rows}</tbody></table></div>`;

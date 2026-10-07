@@ -356,4 +356,11 @@ function selfCheck(report) {
   if (fail > 0) process.exitCode = 1;
 }
 
+// 供 `derive_metrics.js` 复用同一套口径（改这里必须同时想清楚那边）
+module.exports = {
+  DATA_START, DATA_END, DURATIONS, THRESHOLD, TIERS,
+  toDecimillimetres, loadCity, countHits, windowSums,
+  monthIndex, bootstrapCI, boundaryWindows, thresholdBasis10, tierStats,
+};
+
 if (require.main === module) main();

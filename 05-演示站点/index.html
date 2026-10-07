@@ -285,20 +285,6 @@
   </div>
 </div>
 
-<section class="sec">
-  <h2>演示动线<em>4 分钟怎么讲</em></h2>
-  <div class="panel plain">
-    <div class="steps">
-      <b>①</b> 指着「降雨看板」说：这五个数字不是前端编的，是链上读出来的，来源是链下的天气数据。再拨一下上面的「配送区域」——整页背景雨的雨量跟着选中那一行走，看板上标了「背景雨幕」的就是它。<br>
-      <b>②</b> 切到骑手账号 → 投保 → MetaMask 弹窗 → 指着「我的保单」说：这张保单现在在链上，谁都能查。<br>
-      <b>③</b> 跑一次喂价脚本 → 看板数字跳上去 → 保单状态从 <span class="mono">active</span> 变 <span class="mono">pending_judgement</span>（雨量够了，但还没判定）。<br>
-      <b>④</b> 跑一次 AI 判定脚本 → 状态变 <span class="mono">claimable</span>（判定赔 + 置信度达标）。<br>
-      <b>⑤</b> 点「申请赔付」→ 钱到账 → 状态变 <span class="mono">paid</span>，链上动态里多一条 <span class="mono">ClaimPaid</span>。<br>
-      <b>⑥</b> 收尾：整条链路没有一个环节需要人工定损 —— <strong>规则写死在合约里，AI 判定和触发条件全部公开可查、可复算。</strong>
-    </div>
-  </div>
-</section>
-
 <footer>
   <b>这一页不依赖任何区块浏览器。</b>合约地址、账户余额、降雨值、事件日志，全部直接向节点提问取得
   （<code>ethereum-sepolia-rpc.publicnode.com</code>）。

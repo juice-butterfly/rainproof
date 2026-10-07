@@ -84,6 +84,23 @@ console.log("\n[③ DOM 契约] 页面 JS 引用的 id / class 必须真实存�
   }
 }
 
+console.log('\n[④ 演讲提示] 演示界面里不许出现"讲给我们自己听"的话');
+{
+  // 页面上只放产品本身。讲稿、动作提示、分镜这类东西属于 提交材料/演示讲稿.md 与 02-作战与答辩/，
+  // 出现在界面里会显得像"照着念的脚本"，评委的目光应该落在数据上。
+  const CUES = ["演示动线", "给评委演示时", "怎么讲", "指着", "照念", "演示讲稿", "分镜"];
+  const pages = [
+    ["05-演示站点/index.html", path.join(DEMO, "index.html")],
+    ["05-演示站点/verifier.html", path.join(DEMO, "verifier.html")],
+    ["06-核验台单文件/汉客松-链上核验台.html", path.join(__dirname, "..", "06-核验台单文件", "汉客松-链上核验台.html")],
+  ];
+  for (const [name, p] of pages) {
+    const src = fs.readFileSync(p, "utf8");
+    const hit = CUES.filter(k => src.includes(k));
+    ok(`${name}：没有演讲提示`, hit.length === 0, hit.length ? "命中 " + hit.join(" / ") : "");
+  }
+}
+
 console.log("\n" + "=".repeat(56));
 console.log(`结果：${pass} 项通过 / ${fail} 项失败`);
 console.log(fail === 0 ? "前端契约没被改坏" : "契约破了，别提交");

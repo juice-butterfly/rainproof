@@ -261,9 +261,6 @@
   <b>为什么要有这一页：</b>Sepolia 的公共区块浏览器里，Etherscan / Blockscout 在国内连不上；
   OtterScan 的页面能打开，但它取数据的后端节点（<code>sepolia-node.otterscan.io</code>）被 Cloudflare
   拦成 403，所以永远转圈。<b>这一页绕开全部中间商，直接问节点要数据。</b>
-  <div class="note">
-    <b>给评委演示时的一句话：</b>「界面是记忆，链上才是事实。这一页显示的不是缓存，是节点此刻告诉我的。」
-  </div>
   <div class="note" style="border-left-color:var(--jade)">
     <b>打不开怎么办：</b>双击本文件即可，无需安装任何东西（真正的单文件，不依赖 ethers）。
     若浏览器拦截本地文件发请求，在文件所在目录执行 <code>python -m http.server 8090</code>，然后访问

@@ -139,36 +139,50 @@ function boundaryWindows(sums) {
   return exact;
 }
 
-// ── A7 强度分档（给 A 的合约 v2 用） ────────────────────────────────────────
-// 分档线直接取自国标 GB/T 28592-2012 的 24h 雨量等级，换算成"平均强度"后与窗口无关：
-//   暴雨 50mm/24h = 2.083 mm/h ... 但 A 的 v2 用的是"四色预警 + 国标"的 4/8/16/33 mm/h。
-// 实现上必须用整数十分位比较，否则 4.17mm/h 这类边界又会踩同一个浮点坑。
+// ── A7 分档（**与合约 v2 逐字对齐**，改这里必须同步改合约）────────────────────
+// 权威定义在 `03-合约/RainDeliveryInsuranceV2.sol:172-192`：
+//   thresholdOf(hours) = THRESHOLD_PER_24H(=50) * hours / 24
+//     → 24h=50mm  48h=100mm  72h=150mm
+//   tierOf(during, hours): during >= base*5 → 2（特大暴雨，100%）
+//                          during >= base*2 → 1（大暴雨，  75%）
+//                          during >= base   → 0（暴雨，    50%）
+//                          否则 TIER_NONE（不触发）
+//   tierBps: 0→5000  1→7500  2→10000；赔款 = PAYOUT_MAX * bps / 10000
+//
+// 比较一律走整数十分位（`sum10 >= basis10`），否则 50.0mm 这类边界又会踩浮点坑
+// （同一个坑已经让 72h 广州的命中数在 11105/11134/11140/11153 之间摇摆）。
 const TIERS = [
-  { tier: 0, minPerHour: 0, payoutPct: 0, note: '不触发（during < 50mm）' },
-  { tier: 1, minPerHour: 4.17, payoutPct: 25, note: '暴雨强度' },
-  { tier: 2, minPerHour: 8.33, payoutPct: 50, note: '大暴雨强度' },
-  { tier: 3, minPerHour: 16.7, payoutPct: 75, note: '特大暴雨强度' },
-  { tier: 4, minPerHour: 33.3, payoutPct: 100, note: '极端强度' },
+  { tier: 0, mult: 1, bps: 5000,  note: '暴雨（= 国标 50mm/24h）→ 赔 50%' },
+  { tier: 1, mult: 2, bps: 7500,  note: '大暴雨（= 国标 100mm/24h）→ 赔 75%' },
+  { tier: 2, mult: 5, bps: 10000, note: '特大暴雨（= 国标 250mm/24h）→ 赔 100%' },
 ];
 
+/** 按合约 v2 的 thresholdOf 算基准线（单位：十分之一毫米，整数） */
+const thresholdBasis10 = (windowHours) => Math.round((THRESHOLD * 10 * windowHours) / 24);
+
 function tierStats(sums, windowHours) {
-  const counts = new Array(TIERS.length).fill(0);
-  const lowerBound10 = (tier) => Math.round(tier.minPerHour * windowHours * 10); // 平均强度下限 → 累计下限
+  const basis10 = thresholdBasis10(windowHours);
+  const counts = new Array(TIERS.length + 1).fill(0); // 末位 = 未触发
+  const bounds = TIERS.map((t) => basis10 * t.mult);
   for (const sum of sums) {
-    let hit = 0;
-    for (const t of TIERS) if (t.tier > 0 && sum >= lowerBound10(t)) hit = t.tier;
+    let hit = TIERS.length; // 默认未触发
+    for (let i = 0; i < TIERS.length; i++) if (sum >= bounds[i]) hit = i;
     counts[hit]++;
   }
   const n = sums.length;
   const probs = counts.map((c) => c / n);
-  const expectedPayoutFraction = TIERS.reduce((a, t) => a + probs[t.tier] * (t.payoutPct / 100), 0);
-  const fairPremiumEth = expectedPayoutFraction * 0.01; // PAYOUT = 0.01 ETH
+  const expectedPayoutFraction = TIERS.reduce((a, t, i) => a + probs[i] * (t.bps / 10000), 0);
+  const fairPremiumEth = expectedPayoutFraction * 0.01; // PAYOUT_MAX = 0.01 ETH
   return {
+    windowHours,
+    thresholdMm: round(basis10 / 10, 4),
+    thresholdsMm: bounds.map((b) => round(b / 10, 4)),
     counts,
-    pctByTier: probs.map((x) => round(x * 100, 4)),
-    expectedPayoutFraction: round(expectedPayoutFraction, 6),
-    expectedLossEth: round(fairPremiumEth, 6),
-    premiumAt60pct: round(fairPremiumEth / 0.6, 6),
+    pctByTier: probs.map((x) => round(x * 100, 6)),
+    pctNotTriggered: round(probs[TIERS.length] * 100, 6),
+    expectedPayoutFraction: round(expectedPayoutFraction, 8),
+    expectedLossEth: round(fairPremiumEth, 8),
+    premiumAt60pct: round(fairPremiumEth / 0.6, 8),
   };
 }
 
@@ -189,7 +203,8 @@ function main() {
       cacheDir: path.relative(process.cwd(), CACHE_DIR).replace(/\\/g, '/'),
       source: 'Open-Meteo Archive (ERA5) hourly precipitation_sum, timezone Asia/Shanghai',
       a7Tiers: TIERS,
-      payoutEth: 0.01,
+      a7Source: '03-合约/RainDeliveryInsuranceV2.sol:172-192 (thresholdOf / tierOf / tierBps)',
+      payoutMaxEth: 0.01,
       targetLossRatio: 0.6,
     },
     cities: {},
@@ -243,14 +258,19 @@ function main() {
         `${(ci ? `[${ci.lo.toFixed(2)}, ${ci.hi.toFixed(2)}]` : '').padEnd(17)}  ${String(exact).padStart(4)}`
       );
     }
-    // A7 四档分布（只有 24/48/72h）
+    // A7 分档分布（只对合约 v2 会卖的窗口算：24/48/72h）
     for (const h of ['24', '48', '72']) {
       const t = entry.tiers?.[h];
       if (!t) continue;
-      const cells = t.pctByTier.map((x, i) => `${i}档${x}%`).join(' ');
+      // 注意 pctByTier 已经是百分数（0~100），不要再乘 100
+      const cells = t.pctByTier.map((x, i) =>
+        i < TIERS.length ? `${i}档${x.toFixed(4)}%` : `未触发${x.toFixed(4)}%`
+      ).join(' ');
       console.log(
-        `  A7 ${h.padStart(3)}h  ${cells}  →  期望赔付 ${(t.expectedPayoutFraction * 100).toFixed(3)}%` +
-        `  = ${t.expectedLossEth} ETH/份  →  R*=60% 保费 ${t.premiumAt60pct} ETH`
+        `  A7 ${h.padStart(3)}h  基准 ${String(t.thresholdMm).padStart(6)}mm  ` +
+        `线 ${t.thresholdsMm.join('/')}mm\n          ${cells}\n          → 期望赔付 ` +
+        `${(t.expectedPayoutFraction * 100).toFixed(5)}% = ${t.expectedLossEth} ETH/份` +
+        `  →  R*=60% 公平保费 ${t.premiumAt60pct} ETH`
       );
     }
     console.log('');
@@ -307,6 +327,30 @@ function selfCheck(report) {
   const okCi = ci && ci.lo < 10 && ci.hi > 10;
   console.log(`  ${okCi ? 'PASS' : 'FAIL'}  广州 72h 95% 区间跨越 10%：[${ci.lo}, ${ci.hi}]`);
   okCi ? pass++ : fail++;
+
+  // A7 分档（合约 v2）：档位计数与期望赔付必须逐格对得上
+  // 期望值于 2026-10-07 由一个**独立实现**（不复用 tierStats，显式三档 if-else）逐城复算，
+  // 15 格全部在 8 位小数内一致。任何一格不符 = 分档口径被改坏了。
+  const TIER_EXPECT = {
+    'wuhan|24': { counts: [622, 113, 0, 95674], exp: 0.00410491 },
+    'wuhan|72': { counts: [154, 50, 0, 96157], exp: 0.00118824 },
+    'shanghai|24': { counts: [642, 85, 0, 95682], exp: 0.00399081 },
+    'shanghai|48': { counts: [425, 6, 0, 95954], exp: 0.00225139 },
+    'beijing|24': { counts: [380, 42, 0, 95987], exp: 0.0022975 },
+    'beijing|72': { counts: [105, 0, 0, 96256], exp: 0.00054483 },
+    'guangzhou|24': { counts: [1247, 122, 0, 95040], exp: 0.00741632 },
+    'guangzhou|72': { counts: [542, 0, 0, 95819], exp: 0.00281234 },
+    'chengdu|24': { counts: [490, 83, 0, 95836], exp: 0.00318694 },
+    'chengdu|72': { counts: [219, 0, 0, 96142], exp: 0.00113635 },
+  };
+  for (const [k, want] of Object.entries(TIER_EXPECT)) {
+    const [key, h] = k.split('|');
+    const got = report.cities[key]?.tiers?.[h];
+    const okC = got && JSON.stringify(got.counts) === JSON.stringify(want.counts);
+    const okE = got && Math.abs(got.expectedPayoutFraction - want.exp) < 5e-9;
+    console.log(`  ${okC && okE ? 'PASS' : 'FAIL'}  A7 ${key} ${h}h 档位计数 ${JSON.stringify(got?.counts)}（期望 ${JSON.stringify(want.counts)}）期望赔付 ${got?.expectedPayoutFraction}`);
+    okC && okE ? pass++ : fail++;
+  }
 
   console.log(`\n自检结果：${pass} 项通过 / ${fail} 项失败`);
   if (fail > 0) process.exitCode = 1;

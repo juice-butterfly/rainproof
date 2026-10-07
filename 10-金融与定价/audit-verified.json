@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-07T03:26:16.853Z",
+    "generatedAt": "2026-10-07T03:34:41.811Z",
     "thresholdMm": 50,
     "durations": [
       6,
@@ -20,36 +20,25 @@
     "a7Tiers": [
       {
         "tier": 0,
-        "minPerHour": 0,
-        "payoutPct": 0,
-        "note": "不触发（during < 50mm）"
+        "mult": 1,
+        "bps": 5000,
+        "note": "暴雨（= 国标 50mm/24h）→ 赔 50%"
       },
       {
         "tier": 1,
-        "minPerHour": 4.17,
-        "payoutPct": 25,
-        "note": "暴雨强度"
+        "mult": 2,
+        "bps": 7500,
+        "note": "大暴雨（= 国标 100mm/24h）→ 赔 75%"
       },
       {
         "tier": 2,
-        "minPerHour": 8.33,
-        "payoutPct": 50,
-        "note": "大暴雨强度"
-      },
-      {
-        "tier": 3,
-        "minPerHour": 16.7,
-        "payoutPct": 75,
-        "note": "特大暴雨强度"
-      },
-      {
-        "tier": 4,
-        "minPerHour": 33.3,
-        "payoutPct": 100,
-        "note": "极端强度"
+        "mult": 5,
+        "bps": 10000,
+        "note": "特大暴雨（= 国标 250mm/24h）→ 赔 100%"
       }
     ],
-    "payoutEth": 0.01,
+    "a7Source": "03-合约/RainDeliveryInsuranceV2.sol:172-192 (thresholdOf / tierOf / tierBps)",
+    "payoutMaxEth": 0.01,
     "targetLossRatio": 0.6
   },
   "cities": {
@@ -125,61 +114,79 @@
       "lastHour": "2026-09-30T23:00",
       "tiers": {
         "24": {
+          "windowHours": 24,
+          "thresholdMm": 50,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
           "counts": [
-            96296,
-            111,
-            2,
+            622,
+            113,
             0,
-            0
+            95674
           ],
           "pctByTier": [
-            99.8828,
-            0.1151,
-            0.0021,
+            0.645168,
+            0.117209,
             0,
-            0
+            99.237623
           ],
-          "expectedPayoutFraction": 0.000298,
-          "expectedLossEth": 0.000003,
-          "premiumAt60pct": 0.000005
+          "pctNotTriggered": 99.237623,
+          "expectedPayoutFraction": 0.00410491,
+          "expectedLossEth": 0.00004105,
+          "premiumAt60pct": 0.00006842
         },
         "48": {
+          "windowHours": 48,
+          "thresholdMm": 100,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
           "counts": [
-            96313,
+            226,
             72,
             0,
-            0,
-            0
+            96087
           ],
           "pctByTier": [
-            99.9253,
+            0.234476,
             0.0747,
             0,
-            0,
-            0
+            99.690823
           ],
-          "expectedPayoutFraction": 0.000187,
-          "expectedLossEth": 0.000002,
-          "premiumAt60pct": 0.000003
+          "pctNotTriggered": 99.690823,
+          "expectedPayoutFraction": 0.00173263,
+          "expectedLossEth": 0.00001733,
+          "premiumAt60pct": 0.00002888
         },
         "72": {
+          "windowHours": 72,
+          "thresholdMm": 150,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
           "counts": [
-            96311,
+            154,
             50,
             0,
-            0,
-            0
+            96157
           ],
           "pctByTier": [
-            99.9481,
-            0.0519,
+            0.159816,
+            0.051888,
             0,
-            0,
-            0
+            99.788296
           ],
-          "expectedPayoutFraction": 0.00013,
-          "expectedLossEth": 0.000001,
-          "premiumAt60pct": 0.000002
+          "pctNotTriggered": 99.788296,
+          "expectedPayoutFraction": 0.00118824,
+          "expectedLossEth": 0.00001188,
+          "premiumAt60pct": 0.0000198
         }
       }
     },
@@ -255,61 +262,79 @@
       "lastHour": "2026-09-30T23:00",
       "tiers": {
         "24": {
+          "windowHours": 24,
+          "thresholdMm": 50,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
           "counts": [
-            96325,
-            84,
+            642,
+            85,
             0,
-            0,
-            0
+            95682
           ],
           "pctByTier": [
-            99.9129,
-            0.0871,
+            0.665913,
+            0.088166,
             0,
-            0,
-            0
+            99.245921
           ],
-          "expectedPayoutFraction": 0.000218,
-          "expectedLossEth": 0.000002,
-          "premiumAt60pct": 0.000004
+          "pctNotTriggered": 99.245921,
+          "expectedPayoutFraction": 0.00399081,
+          "expectedLossEth": 0.00003991,
+          "premiumAt60pct": 0.00006651
         },
         "48": {
+          "windowHours": 48,
+          "thresholdMm": 100,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
           "counts": [
-            96380,
-            5,
+            425,
+            6,
             0,
-            0,
-            0
+            95954
           ],
           "pctByTier": [
-            99.9948,
-            0.0052,
+            0.44094,
+            0.006225,
             0,
-            0,
-            0
+            99.552835
           ],
-          "expectedPayoutFraction": 0.000013,
-          "expectedLossEth": 0,
-          "premiumAt60pct": 0
+          "pctNotTriggered": 99.552835,
+          "expectedPayoutFraction": 0.00225139,
+          "expectedLossEth": 0.00002251,
+          "premiumAt60pct": 0.00003752
         },
         "72": {
+          "windowHours": 72,
+          "thresholdMm": 150,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
           "counts": [
-            96361,
+            207,
             0,
             0,
-            0,
-            0
+            96154
           ],
           "pctByTier": [
-            100,
+            0.214817,
             0,
             0,
-            0,
-            0
+            99.785183
           ],
-          "expectedPayoutFraction": 0,
-          "expectedLossEth": 0,
-          "premiumAt60pct": 0
+          "pctNotTriggered": 99.785183,
+          "expectedPayoutFraction": 0.00107409,
+          "expectedLossEth": 0.00001074,
+          "premiumAt60pct": 0.0000179
         }
       }
     },
@@ -385,61 +410,79 @@
       "lastHour": "2026-09-30T23:00",
       "tiers": {
         "24": {
+          "windowHours": 24,
+          "thresholdMm": 50,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
           "counts": [
-            96367,
+            380,
             42,
             0,
-            0,
-            0
+            95987
           ],
           "pctByTier": [
-            99.9564,
-            0.0436,
+            0.394154,
+            0.043564,
             0,
-            0,
-            0
+            99.562282
           ],
-          "expectedPayoutFraction": 0.000109,
-          "expectedLossEth": 0.000001,
-          "premiumAt60pct": 0.000002
+          "pctNotTriggered": 99.562282,
+          "expectedPayoutFraction": 0.0022975,
+          "expectedLossEth": 0.00002298,
+          "premiumAt60pct": 0.00003829
         },
         "48": {
+          "windowHours": 48,
+          "thresholdMm": 100,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
           "counts": [
-            96378,
-            7,
+            175,
+            8,
             0,
-            0,
-            0
+            96202
           ],
           "pctByTier": [
-            99.9927,
-            0.0073,
+            0.181564,
+            0.0083,
             0,
-            0,
-            0
+            99.810136
           ],
-          "expectedPayoutFraction": 0.000018,
-          "expectedLossEth": 0,
-          "premiumAt60pct": 0
+          "pctNotTriggered": 99.810136,
+          "expectedPayoutFraction": 0.00097007,
+          "expectedLossEth": 0.0000097,
+          "premiumAt60pct": 0.00001617
         },
         "72": {
+          "windowHours": 72,
+          "thresholdMm": 150,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
           "counts": [
-            96361,
+            105,
             0,
             0,
-            0,
-            0
+            96256
           ],
           "pctByTier": [
-            100,
+            0.108965,
             0,
             0,
-            0,
-            0
+            99.891035
           ],
-          "expectedPayoutFraction": 0,
-          "expectedLossEth": 0,
-          "premiumAt60pct": 0
+          "pctNotTriggered": 99.891035,
+          "expectedPayoutFraction": 0.00054483,
+          "expectedLossEth": 0.00000545,
+          "premiumAt60pct": 0.00000908
         }
       }
     },
@@ -515,61 +558,79 @@
       "lastHour": "2026-09-30T23:00",
       "tiers": {
         "24": {
+          "windowHours": 24,
+          "thresholdMm": 50,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
           "counts": [
-            96288,
-            121,
+            1247,
+            122,
             0,
-            0,
-            0
+            95040
           ],
           "pctByTier": [
-            99.8745,
-            0.1255,
+            1.293448,
+            0.126544,
             0,
-            0,
-            0
+            98.580008
           ],
-          "expectedPayoutFraction": 0.000314,
-          "expectedLossEth": 0.000003,
-          "premiumAt60pct": 0.000005
+          "pctNotTriggered": 98.580008,
+          "expectedPayoutFraction": 0.00741632,
+          "expectedLossEth": 0.00007416,
+          "premiumAt60pct": 0.00012361
         },
         "48": {
+          "windowHours": 48,
+          "thresholdMm": 100,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
           "counts": [
-            96355,
+            717,
             30,
             0,
-            0,
-            0
+            95638
           ],
           "pctByTier": [
-            99.9689,
-            0.0311,
+            0.743892,
+            0.031125,
             0,
-            0,
-            0
+            99.224983
           ],
-          "expectedPayoutFraction": 0.000078,
-          "expectedLossEth": 0.000001,
-          "premiumAt60pct": 0.000001
+          "pctNotTriggered": 99.224983,
+          "expectedPayoutFraction": 0.0039529,
+          "expectedLossEth": 0.00003953,
+          "premiumAt60pct": 0.00006588
         },
         "72": {
+          "windowHours": 72,
+          "thresholdMm": 150,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
           "counts": [
-            96361,
+            542,
             0,
             0,
-            0,
-            0
+            95819
           ],
           "pctByTier": [
-            100,
+            0.562468,
             0,
             0,
-            0,
-            0
+            99.437532
           ],
-          "expectedPayoutFraction": 0,
-          "expectedLossEth": 0,
-          "premiumAt60pct": 0
+          "pctNotTriggered": 99.437532,
+          "expectedPayoutFraction": 0.00281234,
+          "expectedLossEth": 0.00002812,
+          "premiumAt60pct": 0.00004687
         }
       }
     },
@@ -645,61 +706,79 @@
       "lastHour": "2026-09-30T23:00",
       "tiers": {
         "24": {
+          "windowHours": 24,
+          "thresholdMm": 50,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
           "counts": [
-            96327,
-            67,
-            15,
+            490,
+            83,
             0,
-            0
+            95836
           ],
           "pctByTier": [
-            99.9149,
-            0.0695,
-            0.0156,
+            0.508251,
+            0.086092,
             0,
-            0
+            99.405657
           ],
-          "expectedPayoutFraction": 0.000252,
-          "expectedLossEth": 0.000003,
-          "premiumAt60pct": 0.000004
+          "pctNotTriggered": 99.405657,
+          "expectedPayoutFraction": 0.00318694,
+          "expectedLossEth": 0.00003187,
+          "premiumAt60pct": 0.00005312
         },
         "48": {
+          "windowHours": 48,
+          "thresholdMm": 100,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
           "counts": [
-            96340,
+            247,
             45,
             0,
-            0,
-            0
+            96093
           ],
           "pctByTier": [
-            99.9533,
-            0.0467,
+            0.256264,
+            0.046688,
             0,
-            0,
-            0
+            99.697048
           ],
-          "expectedPayoutFraction": 0.000117,
-          "expectedLossEth": 0.000001,
-          "premiumAt60pct": 0.000002
+          "pctNotTriggered": 99.697048,
+          "expectedPayoutFraction": 0.00163148,
+          "expectedLossEth": 0.00001631,
+          "premiumAt60pct": 0.00002719
         },
         "72": {
+          "windowHours": 72,
+          "thresholdMm": 150,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
           "counts": [
-            96361,
+            219,
             0,
             0,
-            0,
-            0
+            96142
           ],
           "pctByTier": [
-            100,
+            0.22727,
             0,
             0,
-            0,
-            0
+            99.77273
           ],
-          "expectedPayoutFraction": 0,
-          "expectedLossEth": 0,
-          "premiumAt60pct": 0
+          "pctNotTriggered": 99.77273,
+          "expectedPayoutFraction": 0.00113635,
+          "expectedLossEth": 0.00001136,
+          "premiumAt60pct": 0.00001894
         }
       }
     }

@@ -518,6 +518,44 @@ async function lookupAddress(addr, isPrimary) {
   if (isContract) loadLogs(addr); else $("logSec").classList.add("hidden");
 }
 
+/* ================= 这条哈希是不是在别的链上 =================
+   2026-10-07 实测到的坑：手边的哈希可能来自**另一条链** —— 第一阶段 Sepolia 留痕（v1，区块 11,85x,xxx）、
+   主网 677、或者本机联调链。本页只读一条链，这种情况必然返回 null。
+   与其让人误判成「钱包/节点坏了」，不如代他去另外那两条已知链上问一次：命中就说明白的；
+   不命中 / 超时 / 对方拒跨域，一律静默 —— 绝不改变「查不到」这个结论，也不拖慢渲染（异步补写）。*/
+const OTHER_CHAINS = [
+  { url: "https://ethereum-sepolia-rpc.publicnode.com", name: "Sepolia（第一阶段 v1 留痕）" },
+  { url: "https://rpc.botchain.ai", name: "BOT Chain 主网 677" }
+];
+async function probeOtherChains(hash) {
+  const slot = document.getElementById("probeHint");
+  if (!slot) return;
+  for (const c of OTHER_CHAINS) {
+    if (c.url === S.rpc) continue;
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 6000);
+      const res = await fetch(c.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getTransactionByHash", params: [hash] }),
+        signal: ctl.signal
+      });
+      clearTimeout(timer);
+      const j = await res.json();
+      if (j && j.result) {
+        const bn = j.result.blockNumber
+          ? Number(BigInt(j.result.blockNumber)).toLocaleString("en-US") : "（还在待打包）";
+        slot.innerHTML = `<div class="v" style="margin-top:10px">✅ 不过它在 <b>${esc(c.name)}</b> 上是真交易：
+          区块 ${bn}，${j.result.to ? "收款方 <code>" + esc(j.result.to) + "</code>" : "这是一笔合约部署"}。
+          <br><span class="small">这条哈希来自另一条链，本页读的 ${esc(KNOWN_CHAINS[S.chainId] || "当前链")} 上查不到它 —— 这正是我们把「哈希/地址必须跟 chainId 一起说」写进口径的原因。</span>
+        </div>`;
+        return;
+      }
+    } catch (e) { /* 这条链不可达或拒了跨域：静默，不影响结论 */ }
+  }
+}
+
 /* ================= 查交易 ================= */
 async function lookupTx(hash) {
   clearErr();
@@ -533,9 +571,16 @@ async function lookupTx(hash) {
 
   if (!tx) {
     $("logSec").classList.add("hidden");
+    const cn = KNOWN_CHAINS[S.chainId] || "当前链";
     $("resultBody").innerHTML = `<div class="panel">
       <div class="ptitle"><span class="tag red">查不到</span></div>
-      <div class="v">节点返回 null：这条哈希在 BOT Chain 测试网上不存在。</div>
+      <div class="v">节点返回 null：这条哈希在 ${esc(cn)} 上不存在。</div>
+      <div id="probeHint"></div>
+      <div class="v small" style="margin-top:10px">
+        本页只读一条链（<code>${esc(S.rpc)}</code>）。若这条哈希来自<b>第一阶段 Sepolia 留痕</b>
+        （<code>08-截图存证/真链留痕-2026-10-06.md</code> 里区块 11,85x,xxx 那几张表）或本机联调链，
+        它在 968（本页读的 v2 演示基线）上本来就不存在 —— <b>哈希和地址必须跟链一起说</b>。
+      </div>
       <div class="v small" style="margin-top:12px">
         最常见的原因：<b>哈希复制少了/多了字符</b>（完整哈希是 66 个字符：<code>0x</code> + 64 位）、
         混进了空格或尖括号、或者这笔交易还在待打包。
@@ -543,6 +588,7 @@ async function lookupTx(hash) {
       <div class="addrline" style="margin-top:12px"><span class="a">${esc(hash)}</span>
         <span style="color:var(--faint);font-size:12px">长度 ${hash.length} / 应为 66</span></div>
     </div>`;
+    probeOtherChains(hash);
     $("resultSec").scrollIntoView({ behavior: "smooth", block: "nearest" });
     return;
   }

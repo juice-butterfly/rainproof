@@ -37,8 +37,11 @@ const MODELS = [
 const ROUND1 = (x) => Math.round(x * 10) / 10;
 const sum1 = (arr) => ROUND1(arr.reduce((a, b) => a + b, 0));
 
-/** unix 秒 → 亚洲/上海时区的 YYYY-MM-DD（窗口按自然日切，必须钉在同一个时区） */
-const shDate = (sec) => new Date((Number(sec) + 8 * 3600) * 1000).toISOString().slice(0, 10);
+/** unix 秒 → 亚洲/上海时区的 YYYY-MM-DD（窗口按自然日切，必须钉在同一个时区）
+ *  ★ 口径只有 ./shardate 一处实现（A11）：本文件与 ai-collect 原来各写了一份同样的 +8 切法，
+ *    而 push-rainfall 按主机本地时区切、hook-watch 按 UTC 切 —— 同一天在三个脚本里可能落在
+ *    三个不同的日期上，且每边的哈希各自自洽，谁也报不出错。 */
+const { shDate } = require("./shardate");
 
 /**
  * 拉一个区域的三个模型，返回 [{id,label,org,dates,dailyMm,_map,sum}]。

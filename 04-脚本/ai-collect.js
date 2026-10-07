@@ -67,16 +67,50 @@ const DEMO = ARGV.includes("--demo");
 // 差一天就可能把 R2（背离 > 60%）误触发。
 const UNTIL = (ARGV.find((a) => a.startsWith("--until=")) || "").split("=")[1] || null;
 
-/** unix 秒 → 亚洲/上海时区的 YYYY-MM-DD（判定窗口按自然日切，必须钉在同一个时区） */
-const shDate = (sec) => new Date((Number(sec) + 8 * 3600) * 1000).toISOString().slice(0, 10);
+/** unix 秒 → 亚洲/上海时区的 YYYY-MM-DD（判定窗口按自然日切，必须钉在同一个时区）
+ *  ★ 口径只有 ./shardate 一处实现（A11）：本文件原来自己写了一份 +8 的切法，
+ *    而 push-rainfall 按主机本地时区切、hook-watch 按 UTC 切 —— 同一天在三个脚本里
+ *    可能落在三个不同的日期上，而每边的哈希各自自洽，谁也报不出错。 */
+const { shDate } = require("./shardate");
 
 /** 逐日累加，返回 6 位小数 —— 和 canonical 的口径对齐，避免 0.30000000000000004 这种哈希漂移 */
 const sum6 = (arr) => Math.round(arr.reduce((x, y) => x + y, 0) * 1e6) / 1e6;
 
-/** 拉一个区域的三个模型，裁剪到 epoch 之后，返回 [{id,label,org,sinceEpochMm,inWindowMm,days}] */
+/**
+ * 把接口返回的逐日序列裁成判定要用的那一段（纯函数 —— `07-测试工具/check-ai.js` 直接断言它）。
+ * 三条纪律，缺一条就会算错雨量：
+ *   ① **缺测不许当 0**：`Number(null) === 0`，一句 `Number(v) || 0` 就把「这天没数」
+ *      写成「这天下 0mm」，而这个 0 还会被 canonical.js 哈希进去。与喂价层
+ *      `feed-verify.js:71-73` 同一条纪律：缺测那天不进序列，另记 missingDays 留痕。
+ *   ② **下界 = RAIN_EPOCH**：`past_days=14` 会带出赛事周之前的日子，不裁就凭空多一周的雨。
+ *   ③ **上界 = min(窗口结束日, 今天)**：`forecast_days=3` 会把**未来两天预报**也算进窗口，
+ *      而链上的官方增量只到「今天」—— 未来那两天会抬高模型侧中位数，把 R2（背离 > 60%）误触发。
+ */
+function sliceModelSeries(m, allDates, raw, { startDate, windowEnd, epoch = RAIN_EPOCH }) {
+  const rows = allDates.map((d, i) => {
+    const n = raw[i] == null ? NaN : Number(raw[i]);
+    return [d, Number.isFinite(n) ? n : null];
+  });
+  const sinceEpoch = rows.filter(([d, v]) => d >= epoch && v !== null);
+  const inWindow = sinceEpoch.filter(([d]) => d >= startDate && d <= windowEnd);
+  return {
+    id: m.id, label: m.label, org: m.org,
+    sinceEpochMm: sum6(sinceEpoch.map(([, mm]) => mm)),
+    inWindowMm: sum6(inWindow.map(([, mm]) => mm)),
+    days: sinceEpoch.map(([date, mm]) => ({ date, mm })),
+    missingDays: rows.filter(([d, v]) => d >= epoch && v === null).length,
+  };
+}
+
+/**
+ * 拉一个区域的三个模型，裁剪到 [RAIN_EPOCH, min(窗口结束日, 今天)]，
+ * 返回 `{ models: [{id,label,org,sinceEpochMm,inWindowMm,days,missingDays}], windowEnd }`
+ * —— windowEnd 一起返回，是为了让快照里写的 `weather.windowTo` 与实际求和的日子**同源**。
+ */
 async function fetchModels(region, startDate, endDate) {
   const today = shDate(Date.now() / 1000);
   const historical = !!endDate && endDate < today;
+  const windowEnd = historical ? endDate : today;   // 见 sliceModelSeries ③
   let url;
   if (historical) {
     // ★ 历史回放：保单窗口整个在过去。
@@ -100,23 +134,12 @@ async function fetchModels(region, startDate, endDate) {
   if (!j.daily || !j.daily.time) throw new Error("Open-Meteo 返回里没有 daily.time");
 
   const allDates = j.daily.time;
-  return MODELS.map((m) => {
+  const models = MODELS.map((m) => {
     const raw = j.daily[`precipitation_sum_${m.id}`];
     if (!raw) throw new Error(`Open-Meteo 没有返回模型 ${m.id} 的序列`);
-    const vals = raw.map((v) => Number(v) || 0);
-    // 和喂价脚本同一条纪律：只保留 epoch 当日及以后。
-    // forecast 接口的 past_days=14 会带出 epoch 之前的日子，不裁就会把
-    // 「赛事周之前下的雨」算进本期累计，凭空多出一周的雨。
-    const keep = allDates.map((d, i) => [d, vals[i]]).filter(([d]) => d >= RAIN_EPOCH);
-    const days = keep.map(([date, mm]) => ({ date, mm }));
-    const inWindow = keep.filter(([d]) => d >= startDate).map(([, mm]) => mm);
-    return {
-      id: m.id, label: m.label, org: m.org,
-      sinceEpochMm: sum6(keep.map(([, mm]) => mm)),
-      inWindowMm: sum6(inWindow),
-      days,
-    };
+    return sliceModelSeries(m, allDates, raw, { startDate, windowEnd });
   });
+  return { models, windowEnd };
 }
 
 /**
@@ -148,11 +171,54 @@ function synthModels(region, startDate, targetMm, onchainValue) {
       sinceEpochMm: onchainValue,
       inWindowMm: mm,
       days: days.map((d) => ({ ...d, mm: Math.round(d.mm * (1 + offsets[i]) * 1e6) / 1e6 })),
+      // 合成序列没有缺测；带上这个字段是为了与真实路径的快照形状一致，
+      // 免得「有 missingDays 才是真数据」这种形状差异被当成区分真假的暗号。
+      missingDays: 0,
     };
   });
 }
 
-(async () => {
+/* --------------------------------------------- 自检（--self-check，不联网不写盘）
+ * sliceModelSeries 的三条纪律逐条钉住 —— 这三条错了，判定结果就会错，
+ * 而且错得「看起来很正常」（少算雨量、多算未来预报）。
+ *   node ai-collect.js --self-check
+ * 放在主流程【之前】：主流程是 IIFE，进来就发请求，不能让自检和它赛跑。
+ */
+if (require.main === module && process.argv.includes("--self-check")) {
+  let pass = 0, fail = 0;
+  const ok = (n, c, extra = "") => { c ? pass++ : fail++; console.log(`${c ? "✅" : "❌"} ${n}${extra ? "  " + extra : ""}`); };
+  const M = { id: "test-model", label: "T", org: "Test" };
+  const S = (dates, raw, o) => sliceModelSeries(M, dates, raw, o);
+  const O = (startDate, windowEnd) => ({ startDate, windowEnd, epoch: "2026-10-01" });
+
+  // ① 缺测不许当 0
+  let r = S(["2026-10-01", "2026-10-02", "2026-10-03"], [1, null, 2], O("2026-10-01", "2026-10-03"));
+  ok("缺测那天不进序列（天数 2/3、missingDays 1）", r.days.length === 2 && r.missingDays === 1, `days=${r.days.length} missing=${r.missingDays}`);
+  r = S(["2026-10-01", "2026-10-02"], [null, null], O("2026-10-01", "2026-10-02"));
+  ok("整段缺测 → 0mm 但 days 为空、missingDays=2（不是「晴朗无雨」）", r.inWindowMm === 0 && r.days.length === 0 && r.missingDays === 2, `missing=${r.missingDays}`);
+  r = S(["2026-10-01", "2026-10-02"], [1, NaN], O("2026-10-01", "2026-10-02"));
+  ok("NaN 视同缺测", r.missingDays === 1 && r.inWindowMm === 1);
+  r = S(["2026-10-01", "2026-10-02"], [1, "abc"], O("2026-10-01", "2026-10-02"));
+  ok("非数值字符串视同缺测（不是 0）", r.missingDays === 1 && r.inWindowMm === 1);
+
+  // ② 下界 = epoch：赛事周之前的日子不进累计
+  r = S(["2026-09-30", "2026-10-01", "2026-10-02"], [9, 1, 1], O("2026-10-01", "2026-10-02"));
+  ok("epoch 之前的日子不计入（sinceEpoch = 1+1）", r.sinceEpochMm === 2 && r.days.length === 2, `sinceEpoch=${r.sinceEpochMm}`);
+
+  // ③ 上界 = min(窗口结束日, 今天)：未来预报不进窗口
+  r = S(["2026-10-01", "2026-10-02", "2026-10-03"], [1, 50, 50], O("2026-10-01", "2026-10-01"));
+  ok("未来两天预报不进窗口（inWindow = 1，不把 100mm 的预报算进来）", r.inWindowMm === 1 && r.sinceEpochMm === 101);
+  r = S(["2026-10-01", "2026-10-02"], [3, 4], O("2026-10-01", "2026-10-02"));
+  ok("窗口内正常求和", r.inWindowMm === 7);
+
+  console.log(`\n${fail ? "❌" : "✅"} ai-collect 自检：${pass} 项通过 / ${fail} 项失败`);
+  process.exit(fail ? 1 : 0);
+}
+
+// 只有「直接运行」才走主流程。被 require 时必须保持静默 ——
+// 07-测试工具/check-ai.js 要断言 sliceModelSeries（窗口上界/缺测口径），
+// 一 require 就发网络请求的话，门禁会变成一条依赖外网的测试。
+if (require.main === module) (async () => {
   if (!Number.isInteger(POLICY_ID)) {
     console.error("用法：node ai-collect.js <policyId> [--demo]");
     process.exit(2);
@@ -199,11 +265,14 @@ function synthModels(region, startDate, targetMm, onchainValue) {
         : await c.THRESHOLD());
   const minConfidence = Number(await c.MIN_CONFIDENCE());
 
+  // 证据窗口的上界：窗口结束日与今天取小（见 sliceModelSeries ③）。
+  // 演示模式的合成序列本来就只铺到「今天」，两条路保证同一个上界。
+  let windowEnd = shDate(Date.now() / 1000);
   let models;
   if (DEMO) {
     models = synthModels(region, startDate, incrementMm, onchainCum);
   } else {
-    models = await fetchModels(region, startDate, endDate);
+    ({ models, windowEnd } = await fetchModels(region, startDate, endDate));
   }
 
   const snapshot = {
@@ -234,7 +303,9 @@ function synthModels(region, startDate, targetMm, onchainValue) {
       source: DEMO ? "synthetic" : "open-meteo:ecmwf_ifs025+gfs_seamless+icon_seamless",
       api: DEMO ? "synthetic" : (endDate < shDate(Date.now() / 1000) ? "open-meteo:historical-forecast-api" : "open-meteo:forecast-api"),
       windowFrom: startDate,
-      windowTo: endDate,
+      // 与 sliceModelSeries 实际求和的日子【同源】：窗口结束日与今天取小。
+      // 写成 endDate 会撒谎 —— 未来两天的预报确实进了求和，但快照声称窗口还没结束。
+      windowTo: windowEnd,
       models,
     },
     thresholds: { thresholdMm, minConfidence },
@@ -260,3 +331,6 @@ function synthModels(region, startDate, targetMm, onchainValue) {
   console.error("💥 采集失败：" + (e.shortMessage || e.message || e));
   process.exit(1);
 });
+
+// 导出纯函数供门禁断言（07-测试工具/check-ai.js）。
+module.exports = { sliceModelSeries, synthModels, MODELS, shDate };

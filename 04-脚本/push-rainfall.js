@@ -68,16 +68,21 @@ const ABI = [
   "function MIN_CONFIDENCE() external view returns (uint8)",
   "function reserve() external view returns (uint256)",
   "function aiPremium(uint8 regionId) external view returns (uint256)",
-  "function judgements(uint256 policyId) external view returns (uint8 kind, uint8 decision, uint8 confidence, uint8 sources, uint64 judgedAt, bool exists, bytes32 inputHash, bytes32 outputHash, string modelVersion)",
-  "function policiesOf(address rider) external view returns (uint256[])",
+  // ⚠️ 这里原来挂着 "judgements(uint256)" 与 "policiesOf(address)" —— 已删，理由见下方统一说明。
   "function rainfallDuring(uint256 policyId) external view returns (uint256)",
   "function premiumOf(uint8 regionId) external view returns (uint256)",
   "function riskLevel(uint8 regionId) external view returns (uint8)",
   "function regionName(uint8 regionId) external pure returns (string)",
   "function REGION_COUNT() external view returns (uint8)",
   "function feedJudgements(uint8 regionId) external view returns (uint8 kind, uint8 decision, uint8 confidence, uint8 sources, uint64 judgedAt, bool exists, bytes32 inputHash, bytes32 outputHash, string modelVersion)",
-  "function policies(uint256 policyId) external view returns (address rider, uint8 regionId, uint256 startTime, uint256 endTime, uint256 rainfallAtBuy, bool paid, bool exists)",
-  "function policyStatus(uint256 policyId) external view returns (string)",
+  // ⚠️ 手抄的「读结构体」签名一律不留 —— 本文件已删四条，统一说明：
+  //      "policies(uint256)"     v1 的 7 字段老结构体；v2 是 15 个返回值、v3 是 16 个
+  //      "judgements(uint256)"   9 个返回值；v3 是 10 个（多了 rainfallAtJudgement，
+  //                              见 03-合约/RainDeliveryInsuranceV3.sol:113-124）
+  //      "policiesOf(address)" / "policyStatus(uint256)"   本文件不读保单状态
+  //    理由：`readEither` 是按签名名去探的（探针表 = 本数组）。表上摆一版字段错位的元组，
+  //    谁照着它写一句 `c.policies(id)` 就静默解错，而且不会在这里报错，要等现场投保才炸。
+  //    要读保单/判定请用 03-合约/RainDeliveryInsuranceV2.abi.json / V3.abi.json，别手抄。
   "function nextPolicyId() external view returns (uint256)",
   "event RainfallUpdated(uint8 indexed regionId, uint256 cumulativeMm, bytes32 evidenceHash, uint8 confidence, address indexed reporter)",
 ];
@@ -125,10 +130,10 @@ const ONLY_REGION = (() => {
 
 /* ------------------------------------------------------------- 天气数据源 */
 
-function ymd(d) {
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
+/* ★ 日期口径统一走 ./shardate（东八区，A11）。原来这里是**主机本地时区**切法
+   （`d.getFullYear()/getMonth()/getDate()`）—— 本机在 +8 看着没问题，但 CI/Docker 默认 UTC，
+   同一份喂价脚本在不同机器上会取到不同的日期区间（前一天/后一天），而链上值与哈希都看不出来。 */
+const { shDate: ymd } = require("./shardate");
 
 /**
  * 采集一个区域「自 RAIN_EPOCH 到今天的累计降雨」，并做**多源交叉核验**。
@@ -173,22 +178,20 @@ async function collectRegion(region) {
     const r = await fetch(url, { headers: { "User-Agent": "rain-insurance-oracle/1.0" } });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const j = await r.json();
-    const allDates = j?.daily?.time || [];
-    const allVals = (j?.daily?.precipitation_sum || []).map((v) => Number(v) || 0);
 
-    // ★ 必须裁到 RAIN_EPOCH 之后。
-    //   archive 接口由 start_date 天然限定；但 forecast 接口用的是 past_days=14，
-    //   它会返回【从 14 天前开始】的序列 —— 其中 8 天在 RAIN_EPOCH 之前。
-    //   不裁掉就等于把「赛事周之前下的雨」也算进累计值：判定口径从
-    //   「自 epoch 起累计」悄悄变成「最近 14 天累计」，凭空多出一周的雨，
-    //   会直接造成不该赔的保单被判定为达标。ISO 日期串可以直接比大小。
-    const keep = allDates.map((d, i) => [d, allVals[i]]).filter(([d]) => d >= RAIN_EPOCH);
-    const dates = keep.map(([d]) => d);
-    const dailyMm = keep.map(([, v]) => v);
+    // ★ 缺测 ≠ 0mm、以及「必须裁到 RAIN_EPOCH 之后」两件事都在 dailyRows 里做，
+    //   见该函数的注释（archive 接口由 start_date 天然限定；但 forecast 用的是
+    //   past_days=14，会返回【从 14 天前开始】的序列，其中 8 天在 RAIN_EPOCH 之前 ——
+    //   不裁掉就等于把「赛事周之前下的雨」也算进累计值：判定口径从「自 epoch 起累计」
+    //   悄悄变成「最近 14 天累计」，凭空多出一周的雨，会直接造成不该赔的保单被判定为达标）。
+    //   缺测被剔出序列后，`days` 的含义从「序列长度」变成「真有数据的天数」——
+    //   下面挑 archive / forecast「谁覆盖更完整」时不再把缺测算成覆盖。
+    const { dates, dailyMm, missingDays } =
+      dailyRows(j?.daily?.time || [], j?.daily?.precipitation_sum || [], RAIN_EPOCH);
 
     return {
       sum: Math.round(dailyMm.reduce((x, y) => x + y, 0) * 10) / 10,
-      days: dates.length, dates, dailyMm,
+      days: dates.length, dates, dailyMm, missingDays,
       first: dates[0], last: dates[dates.length - 1],
     };
   };
@@ -201,6 +204,8 @@ async function collectRegion(region) {
   // 交付值取「覆盖区间更完整」的那条 —— archive 有滞后时 forecast 反而更长
   const longer = (a && b) ? (b.days > a.days ? b : a) : (a || b);
   const longerName = longer === a ? "archive" : "forecast(past_days=14)";
+  // 缺测天数：缺的那天按 0mm 计入，和数因此只会偏低。一路带到调用方去喊出来。
+  const missingDays = longer.missingDays || 0;
   const snapBase = {
     schema: "rainproof/feed-snapshot@1",
     regionId: region.id, regionKey: region.key, epoch: RAIN_EPOCH,
@@ -236,7 +241,7 @@ async function collectRegion(region) {
       //   （历史回放窗口下必然发生：forecast 的 past_days 只会回看"现在"的 14 天。）
       //   宁可降级成单一来源的 72，也不虚报 88。
       return {
-        mm: snapBase.cumulativeMm, confidence: 72, sources: 1, agree: true,
+        mm: snapBase.cumulativeMm, confidence: 72, sources: 1, agree: true, missingDays,
         snapshot: Object.assign({}, snapBase, { overlapDays: 0, overlapEmpty: true }),
         note: "两条数据路径没有重合日期，交叉核验为空 —— 按单一来源计，置信度 72",
       };
@@ -244,20 +249,20 @@ async function collectRegion(region) {
 
     if (diff > tol) {
       return {
-        mm: null, confidence: 40, sources: 2, agree: false, snapshot,
+        mm: null, confidence: 40, sources: 2, agree: false, snapshot, missingDays,
         note: `重合 ${common.length} 天：archive ${sa}mm vs forecast ${sb}mm，` +
               `差 ${diff.toFixed(1)}mm > 容差 ${tol.toFixed(1)}mm —— 拒收，不喂价`,
       };
     }
     return {
-      mm: snapshot.cumulativeMm, confidence: 88, sources: 2, agree: true, snapshot,
+      mm: snapshot.cumulativeMm, confidence: 88, sources: 2, agree: true, snapshot, missingDays,
       note: `重合 ${common.length} 天：archive ${sa}mm vs forecast ${sb}mm（差 ${diff.toFixed(1)}mm ≤ 容差 ${tol.toFixed(1)}mm）；` +
             `交付取更完整区间 ${longerName} = ${snapshot.cumulativeMm}mm`,
     };
   }
 
   return {
-    mm: snapBase.cumulativeMm, confidence: 72, sources: 1, agree: true, snapshot: snapBase,
+    mm: snapBase.cumulativeMm, confidence: 72, sources: 1, agree: true, snapshot: snapBase, missingDays,
     note: `只有一个数据源可用（${longerName}），置信度按中等计 72`,
   };
 }
@@ -279,8 +284,42 @@ const { canonicalize, evidenceHashOf } = require("./canonical");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * 把 Open-Meteo 的 daily 序列压成「自 epoch 起、真有数据」的那一份。纯函数，可自检。
+ * **缺测 ≠ 0mm**：null / undefined / "" / 非数值串记为缺测 —— 不计入 `dates`/`dailyMm`，
+ * 只计入 `missingDays`。原写法 `Number(v) || 0` 把缺测一律变成 0：累计值里看不出
+ * 「少了一天雨」，operator 也不知道自己喂的是一张残表（缺测那天在哈希覆盖的 snapshot 里
+ * 冒充成「晴朗无雨」）。和数不变（缺测本来就贡献 0），变的是「能不能看出来」。
+ * 同一条纪律见 04-脚本/feed-verify.js:71-73。
+ * @param {string[]} allDates  ISO 日期串（可直接比大小）
+ * @param {Array} rawPrecip    同长度的降水量数组（允许 null）
+ * @param {string} epoch       只保留 >= epoch 的日子（RAIN_EPOCH）
+ */
+function dailyRows(allDates, rawPrecip, epoch) {
+  const num = (v) =>
+    (v === null || v === undefined || String(v).trim() === "" || !Number.isFinite(Number(v))
+      ? null : Number(v));
+  const sinceEpoch = allDates.map((d, i) => [d, num(rawPrecip[i])]).filter(([d]) => d >= epoch);
+  const keep = sinceEpoch.filter(([, v]) => v !== null);
+  return {
+    dates: keep.map(([d]) => d),
+    dailyMm: keep.map(([, v]) => v),
+    missingDays: sinceEpoch.length - keep.length,
+  };
+}
+
+/**
+ * 画进度条。**阈值读不到时不画满格，而是明说「阈值未知」。**
+ * 原来写的是 `Math.min(1, cur / Math.max(1, threshold))`：readEither 一路全挂返回 null，
+ * `Number(null) === 0` → `Math.max(1, 0) === 1` → 任何 `cur >= 1` 的读数都画成满格 ██████。
+ * 满格是这块仪表盘上最容易被误读的一格（看起来像「水漫金山」），而阈值缺失恰恰说明
+ * 「读链那一层出问题了」，这种时候最不该给出一张看起来很确定的图。
+ * 同理 cur 也不是有限数时按 0 处理（显示为全空），不参与除法。
+ */
 function bar(cur, threshold, width = 30) {
-  const ratio = Math.min(1, cur / Math.max(1, threshold));
+  if (!Number.isFinite(Number(threshold)) || Number(threshold) <= 0) return C.dim("阈值未知".padEnd(width));
+  const c0 = Number.isFinite(Number(cur)) ? Number(cur) : 0;
+  const ratio = Math.min(1, Math.max(0, c0 / Number(threshold)));
   const filled = Math.round(ratio * width);
   return "█".repeat(filled) + "░".repeat(width - filled);
 }
@@ -292,12 +331,31 @@ const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet", 968: "BOT 
 
 /* v1 与 v2 的常量名不一样：v2 把 PAYOUT / THRESHOLD 拆成「上限」与「每 24h 阈值」，
    premiumOf 也多了时长参数（同名不同参）。同一份脚本要同时伺候两条链，
-   所以按「函数签名」依次试，取第一个读得到的；一个都读不到就返回 null（调用方自己兜底）。 */
+   所以按「函数签名」依次试，取第一个读得到的；一个都读不到就返回 null（调用方自己兜底）。
+   ★ 但「一个都读不到」不能换来回一个静默的 null —— 到底是没有这个函数、还是 RPC 挂了，
+     外在表现一模一样。所以失败原因记进 readFailures，由 whyNotRead() 在显示层说出来。 */
+const THRESHOLD_SIGS = [["THRESHOLD()"], ["THRESHOLD_PER_24H()"], ["entryThresholdOf(uint256)", [24]]];
+const MAX_FEED_AGE_SIGS = [["MAX_FEED_AGE()"]];
+const readFailures = [];   // 只用于「为什么读不到」，不参与任何判断
 async function readEither(c, sigs) {
+  const reasons = [];
   for (const [sig, args] of sigs) {
-    try { return await c.getFunction(sig)(...(args || [])); } catch (e) { /* 这条链上没有这个签名，换下一个 */ }
+    try { return await c.getFunction(sig)(...(args || [])); }
+    catch (e) {
+      reasons.push(`${sig} → ${String(e.shortMessage || e.message || e).split("\n")[0].slice(0, 100)}`);
+    }
   }
+  readFailures.push({ key: sigs.map((s) => s[0]).join(" | "), reasons });
   return null;
+}
+
+/** 把某个探针组「为什么全挂」的原因拼成一行（读不到时才用） */
+function whyNotRead(sigs) {
+  const key = sigs.map((s) => s[0]).join(" | ");
+  const hit = [...readFailures].reverse().find((f) => f.key === key);
+  if (!hit) return "";
+  const uniq = [...new Set(hit.reasons.map((r) => r.replace(/^.*? → /, "")))];
+  return C.dim(` 原因：${uniq.join("；")}`);
 }
 
 async function main() {
@@ -346,7 +404,7 @@ async function main() {
   const [onchainOperator, paused, pool, payout, threshold, regionCount, minConfidence, balance] = await Promise.all([
     readC.operator(), readC.paused(), readC.poolBalance(),
     readEither(readC, [["PAYOUT()"], ["PAYOUT_MAX()"]]),
-    readEither(readC, [["THRESHOLD()"], ["THRESHOLD_PER_24H()"], ["entryThresholdOf(uint256)", [24]]]),
+    readEither(readC, THRESHOLD_SIGS),
     readC.REGION_COUNT(), readC.MIN_CONFIDENCE(),
     provider.getBalance(wallet.address),
   ]);
@@ -450,6 +508,11 @@ async function main() {
       sources = got.sources;
       snapshot = got.snapshot;
       srcNote = got.note;
+      // 缺测要喊出来：缺的那天按 0mm 计入 ⇒ 累计值只会偏低，别让 operator 当成「这几天没下雨」
+      if (got.missingDays) {
+        srcNote += `\n     ⚠️ Open-Meteo 有 ${got.missingDays} 天缺测（按 0mm 计入累计，值只会偏低）` +
+                   `—— 不是「没下雨」，是「没数据」`;
+      }
 
       /* ---- 第二层：三个独立模型的交叉核验（不认时把 mm 置空，下面走 rejectFeed 留证） ---- */
       if (mm !== null) {
@@ -612,7 +675,7 @@ const FEED_KIND = { 0: "喂价", 1: "损失判定" };
 async function printStatus(readC, chainInfo) {
   const sym = chainInfo ? chainInfo.sym : "SepETH";
   const [threshold, payout, pool, paused, operator, regionCount, reserve, minConf] = await Promise.all([
-    readEither(readC, [["THRESHOLD()"], ["THRESHOLD_PER_24H()"], ["entryThresholdOf(uint256)", [24]]]),
+    readEither(readC, THRESHOLD_SIGS),
     readEither(readC, [["PAYOUT()"], ["PAYOUT_MAX()"]]),
     readC.poolBalance(),
     readC.paused(), readC.operator(), readC.REGION_COUNT(),
@@ -628,8 +691,12 @@ async function printStatus(readC, chainInfo) {
   }
   console.log(C.dim("─".repeat(74)));
   // v2 的「喂价新鲜度」：lastFeedAt + MAX_FEED_AGE。超了 24h 就只能先喂价，否则 buyPolicy 会 revert。
-  const maxFeedAge = Number((await readEither(readC, [["MAX_FEED_AGE()"]])) || 0);
+  // 读不到 MAX_FEED_AGE()（v1 没有这道闸门、或读链整层挂了）时不再**静默**少一整列 ——
+  // 少一列比多一行「这列为什么空」更容易被当成「一切正常」。
+  const maxFeedAge = Number((await readEither(readC, MAX_FEED_AGE_SIGS)) || 0);
+  if (!maxFeedAge) console.log(C.dim(`⚠️ 喂价新鲜度：本链读不到 MAX_FEED_AGE()（v1 没有这道闸门），下面每行不含「基线 剩 Xh」${whyNotRead(MAX_FEED_AGE_SIGS)}\n`));
   const nowSec = Math.floor(Date.now() / 1000);
+  if (threshold === null) console.log(C.y(`⚠️ 读不到触发阈值（三种签名都试过，下面的条子会显示「阈值未知」）${whyNotRead(THRESHOLD_SIGS)}\n`));
   console.log(`区域状态（阈值 ${threshold === null ? "—" : threshold}mm · 验收门槛置信度 ${minConf} · 累计自 ${RAIN_EPOCH} 起算）\n`);
   for (let id = 1; id <= Number(regionCount); id++) {
     const r = REGIONS.find((x) => x.id === id);
@@ -660,9 +727,63 @@ async function printStatus(readC, chainInfo) {
   console.log("");
 }
 
+/* ------------------------------------------------- 自检（--self-check，不联网不写盘）
+ * bar() 是这块仪表盘上唯一会被「读不到数」影响的显示逻辑，钉住它的退化行为：
+ *   node push-rainfall.js --self-check
+ */
+if (process.argv.includes("--self-check")) (async () => {
+  let pass = 0, fail = 0;
+  const ok = (n, c, extra = "") => { c ? pass++ : fail++; console.log(`${c ? "✅" : "❌"} ${n}${extra ? "  " + extra : ""}`); };
+  const plain = (s) => s.replace(/\u001b\[[0-9;]*m/g, "");   // 去掉 C.dim 的着色码再断言
+  ok("阈值 null → 不画满格，明说阈值未知", plain(bar(300, null, 12)).includes("阈值未知"));
+  ok("阈值 0（readEither 全挂的返回值）→ 不画满格", plain(bar(300, Number(null), 12)).includes("阈值未知"));
+  ok("阈值 NaN → 不画满格", plain(bar(300, NaN, 12)).includes("阈值未知"));
+  ok("阈值正常 → 300/50 满格", plain(bar(300, 50, 10)) === "█".repeat(10));
+  ok("阈值正常 → 25/50 半格", plain(bar(25, 50, 10)) === "█".repeat(5) + "░".repeat(5));
+  ok("读数 NaN → 全空（不参与除法）", plain(bar(NaN, 50, 10)) === "░".repeat(10));
+  ok("超阈值封顶不越界", plain(bar(999, 50, 10)) === "█".repeat(10));
+
+  // 采集层：缺测不许冒充 0mm（A6）。这两个数直接上链（累计值）与进哈希（snapshot）。
+  const d = (vals, dates) => dailyRows(dates || ["2026-10-01", "2026-10-02", "2026-10-03"], vals, "2026-10-01");
+  const r1 = d([1, null, 3]);
+  ok("缺测那天不进序列、单独的 missingDays 记账",
+    JSON.stringify(r1.dailyMm) === "[1,3]" && r1.missingDays === 1, JSON.stringify(r1));
+  ok("缺测 ≠ 0mm：和数只算有数据的天（不会多一条 0mm 的假观测）",
+    r1.dailyMm.includes(0) === false && r1.dailyMm.reduce((a, b) => a + b, 0) === 4);
+  ok("空串 / 非数值串 / NaN 都算缺测（原写法 Number(v) || 0 会变成 0）",
+    d(["", "abc", "1.5"]).missingDays === 2 && JSON.stringify(d(["", "abc", "1.5"]).dailyMm) === "[1.5]");
+  ok("epoch 之前的日子既不进序列、也不算缺测",
+    d([null, 2, 3], ["2026-09-30", "2026-10-01", "2026-10-02"]).missingDays === 0);
+  ok("整段缺测 → 序列为空但 missingDays 记满（不是「晴朗无雨」）",
+    d([null, null, null]).dailyMm.length === 0 && d([null, null, null]).missingDays === 3);
+
+  // 读不到数时口径要说得出「为什么」（A12）。原来 catch 是空的，RPC 挂掉与「这链没这个函数」
+  // 在屏幕上长得一模一样 —— 都是安静地少一列/一条「阈值未知」。
+  const throwC = { getFunction: (sig) => () => { throw new Error("boom: " + sig); } };
+  readFailures.length = 0;
+  const gotNull = await readEither(throwC, [["THRESHOLD()"], ["THRESHOLD_PER_24H()"]]);
+  ok("全挂仍返回 null（调用点契约不变）", gotNull === null);
+  const why = plain(whyNotRead([["THRESHOLD()"], ["THRESHOLD_PER_24H()"]]));
+  ok("但原因被记下来：说得出试过哪个签名、错在哪", why.includes("THRESHOLD()") && why.includes("boom"), why.trim());
+  ok("认不出的探针组不会张冠李戴（返回空串）", plain(whyNotRead([["NOPE()"]])).trim() === "");
+  readFailures.length = 0;
+  const okC = { getFunction: () => () => 42n };
+  ok("读得到时不记失败", (await readEither(okC, [["THRESHOLD()"]])) === 42n && readFailures.length === 0);
+
+  console.log(`\n${fail ? "❌" : "✅"} push-rainfall 自检：${pass} 项通过 / ${fail} 项失败`);
+  process.exit(fail ? 1 : 0);
+})();
+
 /* ---------------------------------------------------------------- 入口 */
 
-main().catch((e) => {
-  console.error("\n" + C.r("❌ 失败：") + (e.shortMessage || e.message || e));
-  process.exit(1);
-});
+// 只有直接运行才发交易。**这一点是硬要求**：本文件 require 进来会走 main()，
+// 而 main() 会往链上写喂价（要私钥、要花 gas）—— 被别的脚本 require 一次就发一笔交易，
+// 这是最不该有的副作用。要复用里面的函数请 require 后取 module.exports。
+if (require.main === module && !process.argv.includes("--self-check")) {
+  main().catch((e) => {
+    console.error("\n" + C.r("❌ 失败：") + (e.shortMessage || e.message || e));
+    process.exit(1);
+  });
+}
+
+module.exports = { bar, readEither, whyNotRead, dailyRows };

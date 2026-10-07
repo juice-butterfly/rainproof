@@ -159,7 +159,10 @@ function planGrid(act) {
   eq("operator", await ro.operator(), process.env.V2_OPERATOR || (await ro.operator()));
   eq("PAYOUT_MAX", eth(await ro.PAYOUT_MAX()), "0.01");
   eq("MIN_PREMIUM", eth(await ro.MIN_PREMIUM()), "0.0002");
-  eq("thresholdOf(24/48/72)", [24, 48, 72].map((h) => String((50 * h) / 24)).join("/"), "50/100/150");
+  // 真读链：这一行原来两边都是脚本自拼的 —— `[24,48,72].map(h => String((50*h)/24)).join("/")`
+  // 对 "50/100/150"，等于断言「脚本里的公式 = 脚本里的常数」，链上换成 60/110/160 也照样绿。
+  eq("thresholdOf(24/48/72)（真读链）",
+    (await Promise.all([24, 48, 72].map((h) => ro.thresholdOf(h)))).map(String).join("/"), "50/100/150");
   eq("tierBps(0/1/2)", `${await ro.tierBps(0)}/${await ro.tierBps(1)}/${await ro.tierBps(2)}`, "5000/7500/10000");
   eq("MAX_FEED_AGE（秒）", await ro.MAX_FEED_AGE(), 86400);
   eq("MAX_POLICIES_PER_RIDER", await ro.MAX_POLICIES_PER_RIDER(), 3);

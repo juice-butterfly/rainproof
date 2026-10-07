@@ -84,4 +84,44 @@ for (const rel of FILES) {
 
 console.log(`\n共扫描 ${checked} 个价格字面量，${bad === 0 ? '全部通过' : `${bad} 个取值不在合法集合内`}`);
 console.log(`（合法集合 = payload.retail 的 ${retailVals.length} 个 + payload.bands 的 ${bandVals.length} 个 + 明确允许的旧口径/gas/上限值）`);
-process.exit(bad ? 1 : 0);
+
+// ── 二、正文里的"整表标量"也必须由 JSON 复算得出 ────────────────────────────
+// 上一节的教训是"数不能手抄"；这一节把同样的要求施加到"极差 / 折扣带 / 不卖格数"上 ——
+// 本仓真错过一次：把"成都 72h 那一格内的极差 5.139x"写成了"五维合起来 5.139x"。
+const sell = eng.payload.retail.filter((r) => r.premiumWei !== '0').map((r) => Number(r.premiumEth));
+const allSpread = Math.max(...sell) / Math.min(...sell);
+const cellSpreads = [];
+for (const r of [...new Set(eng.payload.retail.map((x) => x.regionId + '/' + x.hours))]) {
+  const g = eng.payload.retail.filter((x) => x.regionId + '/' + x.hours === r && x.premiumWei !== '0').map((x) => Number(x.premiumEth));
+  if (g.length > 1) cellSpreads.push(Math.max(...g) / Math.min(...g));
+}
+const bandBps = eng.payload.bands.flatMap((b) => (b.nMax === 1 ? [] : [Number(((1 - Number(b.premiumEth) / Number(eng.payload.retail.find((r) => r.regionId === b.regionId && r.hours === b.hours && r.segId === b.segId).premiumEth)) * 10000).toFixed(0))]));
+const unsellable = eng.payload.retail.filter((r) => r.premiumWei === '0').length;
+
+const scalars = {
+  '全表极差': { value: allSpread, dp: 3, expect: '6.607' },
+  '格内极差下界': { value: Math.min(...cellSpreads), dp: 2, expect: '2.19' },
+  '格内极差上界': { value: Math.max(...cellSpreads), dp: 2, expect: '5.14' },
+  '最深批量折扣(bps)': { value: Math.max(...bandBps), dp: 0, expect: '7586' },
+  '不卖格数': { value: unsellable, dp: 0, expect: '3' },
+};
+console.log('\n整表标量（由 JSON 现算，文档里的数必须等于它）：');
+let sbad = 0;
+for (const [k, s] of Object.entries(scalars)) {
+  const got = s.value.toFixed(s.dp);
+  const okk = got === s.expect;
+  if (!okk) sbad++;
+  console.log(`  ${okk ? '✓' : '✗'} ${k} = ${got}（文档里写的是 ${s.expect}）`);
+}
+// 这三个标量至少在下列文件里各出现过一次
+const MUST = { '6.607': ['提交材料/产品说明与商业模式.md', '提交材料/项目介绍.md', '提交材料/评委问答.md', 'README.md', '10-金融与定价/定价体系-v3.md'], '2.19': ['10-金融与定价/定价体系-v3.md'], '3': [] };
+for (const [needle, files] of Object.entries(MUST)) {
+  for (const rel of files) {
+    const p = path.join(ROOT, rel);
+    if (!fs.existsSync(p)) continue;
+    if (!fs.readFileSync(p, 'utf8').includes(needle)) { sbad++; console.log(`  ✗ ${rel} 里找不到「${needle}」`); }
+  }
+}
+
+console.log(`\n整表标量：${sbad === 0 ? '全部一致' : `${sbad} 处不一致`}`);
+process.exit(bad || sbad ? 1 : 0);

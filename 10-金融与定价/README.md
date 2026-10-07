@@ -29,6 +29,7 @@
 ```bash
 node actuary.js            # 权威口径（首次联网拉数并缓存到 cache/，缓存不入库）
 node actuary.js --refresh  # 强制重新拉取
+node reserve_mc.js         # §6.4 准备金的亏损分布（离线，读 cache/）
 node backtest_rain.js      # A 的独立实现（交叉验证）
 ```
 

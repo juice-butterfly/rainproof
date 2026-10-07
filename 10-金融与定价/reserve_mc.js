@@ -31,9 +31,16 @@
  *   方向明确，不改变结论（24h 有巨大余量、广州 72h 不可承保），
  *   但答辩被追问「准备金够不够」时应答「这是下界」。
  *
+ * 【可复现性】
+ *   随机数用固定种子的 mulberry32（默认 seed 42），因此
+ *   **同数据 + 同脚本 + 同参数 → 逐位一致的 `reserve-mc-output.json`**。
+ *   这和我们要求别人做到的事一致（`check-ai.js` 在验「同一输入 → 同一 outputHash」），
+ *   自己的蒙特卡洛也必须可复现，否则对外只能讲区间、不能讲点值。
+ *
  * 用法：
- *   node reserve_mc.js              # 用 cache/ 里的缓存（首次需先跑 actuary.js）
+ *   node reserve_mc.js              # 用 cache/ 里的缓存（首次需先跑 actuary.js），种子 42
  *   node reserve_mc.js --sim 10000  # 增加模拟次数
+ *   node reserve_mc.js --seed 7     # 换种子（默认 42；换种子可当"抽样不确定性"的敏感性检验）
  */
 
 const fs = require("fs");
@@ -52,6 +59,20 @@ const POLICY_COUNTS = [50, 100, 200, 400];
 
 const argv = process.argv.slice(2);
 const SIMS = Number((argv[argv.indexOf("--sim") + 1] || "").trim()) || 3000;
+
+// 固定种子的 PRNG（mulberry32）。未固定种子之前，同数据两次运行的「最坏月」
+// 能差 0.1–0.2 ETH，第三方无法复核 —— 与我们主打的「可复算」自相矛盾。
+const SEED = Number((argv[argv.indexOf("--seed") + 1] || "").trim()) || 42;
+function mulberry32(a) {
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rnd = mulberry32(SEED);
 
 /** 读取 actuary.js 落下的逐小时缓存。返回 {time:[], precip:[]} */
 function loadHourly(region) {
@@ -118,10 +139,10 @@ function simulate(sim, hoursPerDay) {
   let triggerTotal = 0;
 
   for (let s = 0; s < SIMS; s++) {
-    const base = Math.floor(Math.random() * maxStart);
+    const base = Math.floor(rnd() * maxStart);
     let hits = 0;
     for (let p = 0; p < sim.nPolicies; p++) {
-      const idx = base + Math.floor(Math.random() * blockHours);
+      const idx = base + Math.floor(rnd() * blockHours);
       const v = rolling[idx];
       if (v !== null && v >= THRESHOLD) hits++;
     }
@@ -221,9 +242,9 @@ function main() {
         let hits = 0;
         for (const r of REGIONS) {
           const { rolling } = perRegion[r.key];
-          const base = Math.floor(Math.random() * maxStarts[r.key]);
+          const base = Math.floor(rnd() * maxStarts[r.key]);
           for (let p = 0; p < sub; p++) {
-            const idx = base + Math.floor(Math.random() * BLOCK_DAYS * 24);
+            const idx = base + Math.floor(rnd() * BLOCK_DAYS * 24);
             const v = rolling[idx];
             if (v !== null && v >= THRESHOLD) hits++;
           }

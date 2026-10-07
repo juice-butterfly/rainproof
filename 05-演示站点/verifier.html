@@ -546,9 +546,15 @@ async function probeOtherChains(hash) {
       if (j && j.result) {
         const bn = j.result.blockNumber
           ? Number(BigInt(j.result.blockNumber)).toLocaleString("en-US") : "（还在待打包）";
+        const who = (j.result.from ? "发送方 <code>" + esc(j.result.from) + "</code>，" : "")
+                  + (j.result.to ? "收款方 <code>" + esc(j.result.to) + "</code>" : "是一笔合约部署");
+        // 不止说一句"它在别的链上" —— 给一条真能走的路：带上那条链的 ?rpc= 重开本页，
+        // 页面会用那个节点把这条交易完整读出来（?rpc= 与 ?q= 都是本页本来就支持的传参）。
         slot.innerHTML = `<div class="v" style="margin-top:10px">✅ 不过它在 <b>${esc(c.name)}</b> 上是真交易：
-          区块 ${bn}，${j.result.to ? "收款方 <code>" + esc(j.result.to) + "</code>" : "这是一笔合约部署"}。
+          区块 ${bn}，${who}。
           <br><span class="small">这条哈希来自另一条链，本页读的 ${esc(KNOWN_CHAINS[S.chainId] || "当前链")} 上查不到它 —— 这正是我们把「哈希/地址必须跟 chainId 一起说」写进口径的原因。</span>
+          <div style="margin-top:10px"><a class="btn sm" style="display:inline-block;text-decoration:none"
+            href="?rpc=${encodeURIComponent(c.url)}&amp;q=${encodeURIComponent(hash)}">在这条链上打开这条哈希 →</a></div>
         </div>`;
         return;
       }

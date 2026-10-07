@@ -6,9 +6,9 @@
  *    AGENTS.md §3：任何链上写操作 = A 独占。B 不执行 --apply。
  *
  * 用法（在 10-金融与定价/ 下）：
- *   node ref/apply-pricing-v3.js --addr=0x...              # 干跑：打印 60 笔调用 + gas 估算，不发交易
- *   node ref/apply-pricing-v3.js --addr=0x... --apply      # 真发 60 笔 setPremiumRow（A 执行）
- *   node ref/apply-pricing-v3.js --addr=0x... --verify     # 只读：把 60 零售 + 180 band 读回来比对
+ *   node ref/apply-pricing-v3.js --addr=0x...              # 干跑：打印 40 笔调用 + gas 估算，不发交易
+ *   node ref/apply-pricing-v3.js --addr=0x... --apply      # 真发 40 笔 setPremiumRow（A 执行）
+ *   node ref/apply-pricing-v3.js --addr=0x... --verify     # 只读：把 40 零售 + 120 band 读回来比对
  *
  * 为什么不自己写 ABI：ABI 从 PricingV3.sol 现编译出来，不手抄 —— 手抄的 ABI 与
  * 合约不同步，是最经典的一种"看起来在验、其实在验自己"。
@@ -45,7 +45,7 @@ function compileAbi() {
   return out.contracts['PricingV3.sol'].PricingV3.abi;
 }
 
-/** 把 payload 整理成 60 条 {regionId, hours, segId, retailWei, bandWei[6]} */
+/** 把 payload 整理成 40 条 {regionId, hours, segId, retailWei, bandWei[6]} */
 function buildRows(p) {
   const bandsOf = new Map();
   for (const b of p.payload.bands) {
@@ -79,7 +79,7 @@ async function main() {
   const rows = buildRows(p);
   const abi = compileAbi();
 
-  // 本地先自证：60 行、每行 6 band、band0==retail、单调不增
+  // 本地先自证：40 行、每行 6 band、band0==retail、单调不增
   let bad = 0;
   for (const r of rows) {
     if (r.bandWei.length !== 6) { console.error('band 数不是 6:', r.key); bad++; continue; }
@@ -92,17 +92,13 @@ async function main() {
 
   const addr = arg('addr', process.env.PRICING_V3_ADDR);
   if (!addr) {
-    console.log('\n未给 --addr，只做离线自证。60 条调用清单（前 8 条）：');
+    console.log('\n未给 --addr，只做离线自证。40 条调用清单（前 8 条）：');
     for (const r of rows.slice(0, 8)) console.log(`  setPremiumRow(${r.regionId}, ${r.hours}, ${r.segId}, ${r.retailWei}, [${r.bandWei.join(', ')}])  // ${r.key}`);
     return;
   }
 
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || 'http://127.0.0.1:8545');
-  // 真链（BOT Chain 968 等公共 RPC）没有解锁账户，`eth_sendTransaction` 会被拒 ——
-  // 有 PRIVATE_KEY 就自己签名；本地 ganache 有解锁账户，走原来的 getSigner。
-  const signer = process.env.PRIVATE_KEY
-    ? new ethers.Wallet(process.env.PRIVATE_KEY, provider)
-    : await provider.getSigner(Number(arg('signer', '0')));
+  const signer = await provider.getSigner(Number(arg('signer', '0')));
   const c = new ethers.Contract(addr, abi, signer);
   // reasonHash：与 04-脚本/set-premium.js 同一套纪律 —— 依据串可复算
   const reasonHash = ethers.id(
@@ -133,12 +129,12 @@ async function main() {
       const g = await c.setPremiumRow.estimateGas(r.regionId, r.hours, r.segId, r.retailWei, r.bandWei, reasonHash);
       gas += g;
     }
-    console.log(`\n干跑：60 笔 setPremiumRow，估算总 gas ${gas}（加 3 成余量 ${(gas * 13n) / 10n}）。`);
+    console.log(`\n干跑：40 笔 setPremiumRow，估算总 gas ${gas}（加 3 成余量 ${(gas * 13n) / 10n}）。`);
     console.log('确认无误后由 A 加 --apply 执行。');
     return;
   }
 
-  console.log('\n--apply：开始发 60 笔 setPremiumRow');
+  console.log('\n--apply：开始发 40 笔 setPremiumRow');
   let done = 0;
   for (const r of rows) {
     const tx = await c.setPremiumRow(r.regionId, r.hours, r.segId, r.retailWei, r.bandWei, reasonHash, {
@@ -146,9 +142,9 @@ async function main() {
     });
     await tx.wait();
     done++;
-    if (done % 10 === 0) console.log(`  ${done}/60`);
+    if (done % 10 === 0) console.log(`  ${done}/40`);
   }
-  console.log('60 格写完。请再跑一次 --verify 读回比对。');
+  console.log('40 格写完。请再跑一次 --verify 读回比对。');
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

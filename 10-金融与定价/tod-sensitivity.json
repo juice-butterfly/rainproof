@@ -1,26 +1,18 @@
 {
   "definition": {
     "thresholds": {
+      "12": [
+        30,
+        70
+      ],
       "24": [
         50,
-        100,
-        130
-      ],
-      "48": [
-        75,
-        125,
-        175
-      ],
-      "72": [
-        100,
-        150,
-        190
+        100
       ]
     },
     "tiersBps": [
       5000,
-      7500,
-      10000
+      7500
     ],
     "shiftMain": "10:00-19:59（10h/24h）",
     "shiftPeak": "11-13,17-19（4h/24h）",
@@ -30,19 +22,74 @@
     "wuhan": {
       "name": "武汉",
       "byHours": {
+        "12": {
+          "all": {
+            "n": 96421,
+            "shiftHours": 12,
+            "proratedBounds": [
+              300,
+              700
+            ],
+            "pAllPct": 0.850437145435123,
+            "expAllPct": 0.44492382364837535,
+            "pShiftPct": 0.850437145435123,
+            "expShiftPct": 0.44492382364837535,
+            "paidWindows": 820,
+            "shareMedianPct": 100,
+            "shareP10Pct": 100,
+            "shareP90Pct": 100,
+            "shareLt25Pct": 0,
+            "shareGe50Pct": 100
+          },
+          "main": {
+            "n": 96421,
+            "shiftHours": 5,
+            "proratedBounds": [
+              125,
+              292
+            ],
+            "pAllPct": 0.850437145435123,
+            "expAllPct": 0.44492382364837535,
+            "pShiftPct": 1.260098941102042,
+            "expShiftPct": 0.6551995934495597,
+            "paidWindows": 820,
+            "shareMedianPct": 23.410404624277458,
+            "shareP10Pct": 0,
+            "shareP90Pct": 74.48680351906158,
+            "shareLt25Pct": 52.073170731707314,
+            "shareGe50Pct": 25.73170731707317
+          },
+          "peak": {
+            "n": 96421,
+            "shiftHours": 2,
+            "proratedBounds": [
+              50,
+              117
+            ],
+            "pAllPct": 0.850437145435123,
+            "expAllPct": 0.44492382364837535,
+            "pShiftPct": 1.4291492517190238,
+            "expShiftPct": 0.7773202932971033,
+            "paidWindows": 820,
+            "shareMedianPct": 7.818930041152264,
+            "shareP10Pct": 0,
+            "shareP90Pct": 34.06940063091483,
+            "shareLt25Pct": 82.6829268292683,
+            "shareGe50Pct": 2.4390243902439024
+          }
+        },
         "24": {
           "all": {
             "n": 96409,
             "shiftHours": 24,
             "proratedBounds": [
               500,
-              1000,
-              1300
+              1000
             ],
             "pAllPct": 0.7623769565082098,
-            "expAllPct": 0.4257901233287349,
+            "expAllPct": 0.41049072182057694,
             "pShiftPct": 0.7623769565082098,
-            "expShiftPct": 0.4257901233287349,
+            "expShiftPct": 0.41049072182057694,
             "paidWindows": 735,
             "shareMedianPct": 100,
             "shareP10Pct": 100,
@@ -55,13 +102,12 @@
             "shiftHours": 10,
             "proratedBounds": [
               208,
-              417,
-              542
+              417
             ],
             "pAllPct": 0.7623769565082098,
-            "expAllPct": 0.4257901233287349,
+            "expAllPct": 0.41049072182057694,
             "pShiftPct": 1.0030183903992367,
-            "expShiftPct": 0.5466294640541858,
+            "expShiftPct": 0.525365889076746,
             "paidWindows": 735,
             "shareMedianPct": 28.782894736842106,
             "shareP10Pct": 7.339449541284404,
@@ -74,13 +120,12 @@
             "shiftHours": 4,
             "proratedBounds": [
               83,
-              167,
-              217
+              167
             ],
             "pAllPct": 0.7623769565082098,
-            "expAllPct": 0.4257901233287349,
+            "expAllPct": 0.41049072182057694,
             "pShiftPct": 1.3380493522388988,
-            "expShiftPct": 0.7385202626310822,
+            "expShiftPct": 0.715182192533892,
             "paidWindows": 735,
             "shareMedianPct": 10.80074487895717,
             "shareP10Pct": 1.3513513513513513,
@@ -88,143 +133,80 @@
             "shareLt25Pct": 86.53061224489795,
             "shareGe50Pct": 0.272108843537415
           }
-        },
-        "48": {
-          "all": {
-            "n": 96385,
-            "shiftHours": 48,
-            "proratedBounds": [
-              750,
-              1250,
-              1750
-            ],
-            "pAllPct": 0.9493178399128495,
-            "expAllPct": 0.5374280230326296,
-            "pShiftPct": 0.9493178399128495,
-            "expShiftPct": 0.5374280230326296,
-            "paidWindows": 915,
-            "shareMedianPct": 100,
-            "shareP10Pct": 100,
-            "shareP90Pct": 100,
-            "shareLt25Pct": 0,
-            "shareGe50Pct": 100
-          },
-          "main": {
-            "n": 96385,
-            "shiftHours": 20,
-            "proratedBounds": [
-              313,
-              521,
-              729
-            ],
-            "pAllPct": 0.9493178399128495,
-            "expAllPct": 0.5374280230326296,
-            "pShiftPct": 0.8455672563158168,
-            "expShiftPct": 0.5091559890024382,
-            "paidWindows": 915,
-            "shareMedianPct": 30.812641083521445,
-            "shareP10Pct": 19.010416666666668,
-            "shareP90Pct": 59.21325051759835,
-            "shareLt25Pct": 30.05464480874317,
-            "shareGe50Pct": 21.202185792349727
-          },
-          "peak": {
-            "n": 96385,
-            "shiftHours": 8,
-            "proratedBounds": [
-              125,
-              208,
-              292
-            ],
-            "pAllPct": 0.9493178399128495,
-            "expAllPct": 0.5374280230326296,
-            "pShiftPct": 1.3062198474866422,
-            "expShiftPct": 0.7646418011101312,
-            "paidWindows": 915,
-            "shareMedianPct": 12.545235223160434,
-            "shareP10Pct": 5.158730158730159,
-            "shareP90Pct": 26.29582806573957,
-            "shareLt25Pct": 88.08743169398907,
-            "shareGe50Pct": 0
-          }
-        },
-        "72": {
-          "all": {
-            "n": 96361,
-            "shiftHours": 72,
-            "proratedBounds": [
-              1000,
-              1500,
-              1900
-            ],
-            "pAllPct": 0.8104938720021585,
-            "expAllPct": 0.49423521964280154,
-            "pShiftPct": 0.8104938720021585,
-            "expShiftPct": 0.49423521964280154,
-            "paidWindows": 781,
-            "shareMedianPct": 100,
-            "shareP10Pct": 100,
-            "shareP90Pct": 100,
-            "shareLt25Pct": 0,
-            "shareGe50Pct": 100
-          },
-          "main": {
-            "n": 96361,
-            "shiftHours": 30,
-            "proratedBounds": [
-              417,
-              625,
-              792
-            ],
-            "pAllPct": 0.8104938720021585,
-            "expAllPct": 0.49423521964280154,
-            "pShiftPct": 0.8136071647243179,
-            "expShiftPct": 0.5225142952024159,
-            "paidWindows": 781,
-            "shareMedianPct": 30.21632937892533,
-            "shareP10Pct": 23.969072164948454,
-            "shareP90Pct": 57.32546705998033,
-            "shareLt25Pct": 16.77336747759283,
-            "shareGe50Pct": 16.13316261203585
-          },
-          "peak": {
-            "n": 96361,
-            "shiftHours": 12,
-            "proratedBounds": [
-              167,
-              250,
-              317
-            ],
-            "pAllPct": 0.8104938720021585,
-            "expAllPct": 0.49423521964280154,
-            "pShiftPct": 1.2255995682900758,
-            "expShiftPct": 0.7287699380454749,
-            "paidWindows": 781,
-            "shareMedianPct": 13.174182139699381,
-            "shareP10Pct": 5.9655596555965555,
-            "shareP90Pct": 21.832460732984295,
-            "shareLt25Pct": 97.0550576184379,
-            "shareGe50Pct": 0
-          }
         }
       }
     },
     "shanghai": {
       "name": "上海",
       "byHours": {
+        "12": {
+          "all": {
+            "n": 96421,
+            "shiftHours": 12,
+            "proratedBounds": [
+              300,
+              700
+            ],
+            "pAllPct": 0.7716161417118678,
+            "expAllPct": 0.3992906109664907,
+            "pShiftPct": 0.7716161417118678,
+            "expShiftPct": 0.3992906109664907,
+            "paidWindows": 744,
+            "shareMedianPct": 100,
+            "shareP10Pct": 100,
+            "shareP90Pct": 100,
+            "shareLt25Pct": 0,
+            "shareGe50Pct": 100
+          },
+          "main": {
+            "n": 96421,
+            "shiftHours": 5,
+            "proratedBounds": [
+              125,
+              292
+            ],
+            "pAllPct": 0.7716161417118678,
+            "expAllPct": 0.3992906109664907,
+            "pShiftPct": 1.2922496136733699,
+            "expShiftPct": 0.6863131475508447,
+            "paidWindows": 744,
+            "shareMedianPct": 28.641975308641975,
+            "shareP10Pct": 0,
+            "shareP90Pct": 84.87584650112866,
+            "shareLt25Pct": 46.505376344086024,
+            "shareGe50Pct": 35.215053763440864
+          },
+          "peak": {
+            "n": 96421,
+            "shiftHours": 2,
+            "proratedBounds": [
+              50,
+              117
+            ],
+            "pAllPct": 0.7716161417118678,
+            "expAllPct": 0.3992906109664907,
+            "pShiftPct": 1.3669221435164538,
+            "expShiftPct": 0.7371319525829435,
+            "paidWindows": 744,
+            "shareMedianPct": 10.297482837528603,
+            "shareP10Pct": 0,
+            "shareP90Pct": 36.17886178861789,
+            "shareLt25Pct": 78.2258064516129,
+            "shareGe50Pct": 1.881720430107527
+          }
+        },
         "24": {
           "all": {
             "n": 96409,
             "shiftHours": 24,
             "proratedBounds": [
               500,
-              1000,
-              1300
+              1000
             ],
             "pAllPct": 0.7540789760292089,
-            "expAllPct": 0.40063687000176335,
+            "expAllPct": 0.3990809986619506,
             "pShiftPct": 0.7540789760292089,
-            "expShiftPct": 0.40063687000176335,
+            "expShiftPct": 0.3990809986619506,
             "paidWindows": 727,
             "shareMedianPct": 100,
             "shareP10Pct": 100,
@@ -237,11 +219,10 @@
             "shiftHours": 10,
             "proratedBounds": [
               208,
-              417,
-              542
+              417
             ],
             "pAllPct": 0.7540789760292089,
-            "expAllPct": 0.40063687000176335,
+            "expAllPct": 0.3990809986619506,
             "pShiftPct": 1.069402234231244,
             "expShiftPct": 0.5621881774523125,
             "paidWindows": 727,
@@ -256,136 +237,17 @@
             "shiftHours": 4,
             "proratedBounds": [
               83,
-              167,
-              217
+              167
             ],
             "pAllPct": 0.7540789760292089,
-            "expAllPct": 0.40063687000176335,
+            "expAllPct": 0.3990809986619506,
             "pShiftPct": 1.186611208497132,
-            "expShiftPct": 0.6736922901388874,
+            "expShiftPct": 0.6586522005206983,
             "paidWindows": 727,
             "shareMedianPct": 11.897106109324758,
             "shareP10Pct": 2.097902097902098,
             "shareP90Pct": 22.87917737789203,
             "shareLt25Pct": 93.8101788170564,
-            "shareGe50Pct": 0
-          }
-        },
-        "48": {
-          "all": {
-            "n": 96385,
-            "shiftHours": 48,
-            "proratedBounds": [
-              750,
-              1250,
-              1750
-            ],
-            "pAllPct": 0.9814805208279297,
-            "expAllPct": 0.5548062457851325,
-            "pShiftPct": 0.9814805208279297,
-            "expShiftPct": 0.5548062457851325,
-            "paidWindows": 946,
-            "shareMedianPct": 100,
-            "shareP10Pct": 100,
-            "shareP90Pct": 100,
-            "shareLt25Pct": 0,
-            "shareGe50Pct": 100
-          },
-          "main": {
-            "n": 96385,
-            "shiftHours": 20,
-            "proratedBounds": [
-              313,
-              521,
-              729
-            ],
-            "pAllPct": 0.9814805208279297,
-            "expAllPct": 0.5548062457851325,
-            "pShiftPct": 1.0675935052134669,
-            "expShiftPct": 0.5797063858484204,
-            "paidWindows": 946,
-            "shareMedianPct": 36.39344262295082,
-            "shareP10Pct": 16.090425531914892,
-            "shareP90Pct": 49.66313763233879,
-            "shareLt25Pct": 24.947145877378436,
-            "shareGe50Pct": 9.725158562367865
-          },
-          "peak": {
-            "n": 96385,
-            "shiftHours": 8,
-            "proratedBounds": [
-              125,
-              208,
-              292
-            ],
-            "pAllPct": 0.9814805208279297,
-            "expAllPct": 0.5548062457851325,
-            "pShiftPct": 1.293769777454998,
-            "expShiftPct": 0.741816672718784,
-            "paidWindows": 946,
-            "shareMedianPct": 14.99302649930265,
-            "shareP10Pct": 6.243386243386244,
-            "shareP90Pct": 21.12676056338028,
-            "shareLt25Pct": 97.04016913319239,
-            "shareGe50Pct": 0
-          }
-        },
-        "72": {
-          "all": {
-            "n": 96361,
-            "shiftHours": 72,
-            "proratedBounds": [
-              1000,
-              1500,
-              1900
-            ],
-            "pAllPct": 0.9101192391112587,
-            "expAllPct": 0.5404157283548323,
-            "pShiftPct": 0.9101192391112587,
-            "expShiftPct": 0.5404157283548323,
-            "paidWindows": 877,
-            "shareMedianPct": 100,
-            "shareP10Pct": 100,
-            "shareP90Pct": 100,
-            "shareLt25Pct": 0,
-            "shareGe50Pct": 100
-          },
-          "main": {
-            "n": 96361,
-            "shiftHours": 30,
-            "proratedBounds": [
-              417,
-              625,
-              792
-            ],
-            "pAllPct": 0.9101192391112587,
-            "expAllPct": 0.5404157283548323,
-            "pShiftPct": 1.0408775334419527,
-            "expShiftPct": 0.5806290926827243,
-            "paidWindows": 877,
-            "shareMedianPct": 37.74625689519306,
-            "shareP10Pct": 22.678571428571427,
-            "shareP90Pct": 48.39924670433145,
-            "shareLt25Pct": 12.086659064994299,
-            "shareGe50Pct": 6.727480045610034
-          },
-          "peak": {
-            "n": 96361,
-            "shiftHours": 12,
-            "proratedBounds": [
-              167,
-              250,
-              317
-            ],
-            "pAllPct": 0.9101192391112587,
-            "expAllPct": 0.5404157283548323,
-            "pShiftPct": 1.3324892850842145,
-            "expShiftPct": 0.7793609447805647,
-            "paidWindows": 877,
-            "shareMedianPct": 15.172137710168135,
-            "shareP10Pct": 7.706592386258125,
-            "shareP90Pct": 20.159362549800797,
-            "shareLt25Pct": 99.08779931584948,
             "shareGe50Pct": 0
           }
         }
@@ -394,19 +256,74 @@
     "beijing": {
       "name": "北京",
       "byHours": {
+        "12": {
+          "all": {
+            "n": 96421,
+            "shiftHours": 12,
+            "proratedBounds": [
+              300,
+              700
+            ],
+            "pAllPct": 0.4272928096576472,
+            "expAllPct": 0.22479542838178404,
+            "pShiftPct": 0.4272928096576472,
+            "expShiftPct": 0.22479542838178404,
+            "paidWindows": 412,
+            "shareMedianPct": 100,
+            "shareP10Pct": 100,
+            "shareP90Pct": 100,
+            "shareLt25Pct": 0,
+            "shareGe50Pct": 100
+          },
+          "main": {
+            "n": 96421,
+            "shiftHours": 5,
+            "proratedBounds": [
+              125,
+              292
+            ],
+            "pAllPct": 0.4272928096576472,
+            "expAllPct": 0.22479542838178404,
+            "pShiftPct": 0.5247819458416735,
+            "expShiftPct": 0.2805405461465863,
+            "paidWindows": 412,
+            "shareMedianPct": 15.888689407540395,
+            "shareP10Pct": 0,
+            "shareP90Pct": 83.76288659793815,
+            "shareLt25Pct": 57.76699029126213,
+            "shareGe50Pct": 28.640776699029125
+          },
+          "peak": {
+            "n": 96421,
+            "shiftHours": 2,
+            "proratedBounds": [
+              50,
+              117
+            ],
+            "pAllPct": 0.4272928096576472,
+            "expAllPct": 0.22479542838178404,
+            "pShiftPct": 0.6440505698965993,
+            "expShiftPct": 0.349249644786924,
+            "paidWindows": 412,
+            "shareMedianPct": 4.643962848297214,
+            "shareP10Pct": 0,
+            "shareP90Pct": 34.263959390862944,
+            "shareLt25Pct": 77.9126213592233,
+            "shareGe50Pct": 0.24271844660194175
+          }
+        },
         "24": {
           "all": {
             "n": 96409,
             "shiftHours": 24,
             "proratedBounds": [
               500,
-              1000,
-              1300
+              1000
             ],
             "pAllPct": 0.4377184702672987,
-            "expAllPct": 0.23493657231171364,
+            "expAllPct": 0.22975033451233806,
             "pShiftPct": 0.4377184702672987,
-            "expShiftPct": 0.23493657231171364,
+            "expShiftPct": 0.22975033451233806,
             "paidWindows": 422,
             "shareMedianPct": 100,
             "shareP10Pct": 100,
@@ -419,13 +336,12 @@
             "shiftHours": 10,
             "proratedBounds": [
               208,
-              417,
-              542
+              417
             ],
             "pAllPct": 0.4377184702672987,
-            "expAllPct": 0.23493657231171364,
+            "expAllPct": 0.22975033451233806,
             "pShiftPct": 0.4532771836654254,
-            "expShiftPct": 0.24064143389102677,
+            "expShiftPct": 0.23389932475183853,
             "paidWindows": 422,
             "shareMedianPct": 27.586206896551722,
             "shareP10Pct": 1.4423076923076923,
@@ -438,136 +354,17 @@
             "shiftHours": 4,
             "proratedBounds": [
               83,
-              167,
-              217
+              167
             ],
             "pAllPct": 0.4377184702672987,
-            "expAllPct": 0.23493657231171364,
+            "expAllPct": 0.22975033451233806,
             "pShiftPct": 0.5891566140090655,
-            "expShiftPct": 0.32906678837038034,
+            "expShiftPct": 0.32154674356128576,
             "paidWindows": 422,
             "shareMedianPct": 10.673443456162643,
             "shareP10Pct": 0,
             "shareP90Pct": 27.77777777777778,
             "shareLt25Pct": 86.49289099526067,
-            "shareGe50Pct": 0
-          }
-        },
-        "48": {
-          "all": {
-            "n": 96385,
-            "shiftHours": 48,
-            "proratedBounds": [
-              750,
-              1250,
-              1750
-            ],
-            "pAllPct": 0.43886496861544844,
-            "expAllPct": 0.2557451885666857,
-            "pShiftPct": 0.43886496861544844,
-            "expShiftPct": 0.2557451885666857,
-            "paidWindows": 423,
-            "shareMedianPct": 100,
-            "shareP10Pct": 100,
-            "shareP90Pct": 100,
-            "shareLt25Pct": 0,
-            "shareGe50Pct": 100
-          },
-          "main": {
-            "n": 96385,
-            "shiftHours": 20,
-            "proratedBounds": [
-              313,
-              521,
-              729
-            ],
-            "pAllPct": 0.43886496861544844,
-            "expAllPct": 0.2557451885666857,
-            "pShiftPct": 0.4253773927478342,
-            "expShiftPct": 0.24511075374798982,
-            "paidWindows": 423,
-            "shareMedianPct": 24.553571428571427,
-            "shareP10Pct": 6.426735218508997,
-            "shareP90Pct": 66.51090342679127,
-            "shareLt25Pct": 50.354609929078016,
-            "shareGe50Pct": 14.657210401891254
-          },
-          "peak": {
-            "n": 96385,
-            "shiftHours": 8,
-            "proratedBounds": [
-              125,
-              208,
-              292
-            ],
-            "pAllPct": 0.43886496861544844,
-            "expAllPct": 0.2557451885666857,
-            "pShiftPct": 0.5934533381750272,
-            "expShiftPct": 0.3229236914457644,
-            "paidWindows": 423,
-            "shareMedianPct": 10.67853170189099,
-            "shareP10Pct": 1.519213583556747,
-            "shareP90Pct": 26.186830015313937,
-            "shareLt25Pct": 83.451536643026,
-            "shareGe50Pct": 0
-          }
-        },
-        "72": {
-          "all": {
-            "n": 96361,
-            "shiftHours": 72,
-            "proratedBounds": [
-              1000,
-              1500,
-              1900
-            ],
-            "pAllPct": 0.34972654912257034,
-            "expAllPct": 0.215854962069717,
-            "pShiftPct": 0.34972654912257034,
-            "expShiftPct": 0.215854962069717,
-            "paidWindows": 337,
-            "shareMedianPct": 100,
-            "shareP10Pct": 100,
-            "shareP90Pct": 100,
-            "shareLt25Pct": 0,
-            "shareGe50Pct": 100
-          },
-          "main": {
-            "n": 96361,
-            "shiftHours": 30,
-            "proratedBounds": [
-              417,
-              625,
-              792
-            ],
-            "pAllPct": 0.34972654912257034,
-            "expAllPct": 0.215854962069717,
-            "pShiftPct": 0.20443955542179928,
-            "expShiftPct": 0.15099469702472992,
-            "paidWindows": 337,
-            "shareMedianPct": 34.93621197252208,
-            "shareP10Pct": 8.577712609970675,
-            "shareP90Pct": 67.2915638875185,
-            "shareLt25Pct": 39.46587537091988,
-            "shareGe50Pct": 21.661721068249257
-          },
-          "peak": {
-            "n": 96361,
-            "shiftHours": 12,
-            "proratedBounds": [
-              167,
-              250,
-              317
-            ],
-            "pAllPct": 0.34972654912257034,
-            "expAllPct": 0.215854962069717,
-            "pShiftPct": 0.50227789250838,
-            "expShiftPct": 0.2884984589201025,
-            "paidWindows": 337,
-            "shareMedianPct": 12.43808475509081,
-            "shareP10Pct": 2.4146544546211492,
-            "shareP90Pct": 26.630963972736126,
-            "shareLt25Pct": 79.82195845697329,
             "shareGe50Pct": 0
           }
         }
@@ -576,19 +373,74 @@
     "guangzhou": {
       "name": "广州",
       "byHours": {
+        "12": {
+          "all": {
+            "n": 96421,
+            "shiftHours": 12,
+            "proratedBounds": [
+              300,
+              700
+            ],
+            "pAllPct": 1.2953609690834984,
+            "expAllPct": 0.6720527685877558,
+            "pShiftPct": 1.2953609690834984,
+            "expShiftPct": 0.6720527685877558,
+            "paidWindows": 1249,
+            "shareMedianPct": 100,
+            "shareP10Pct": 100,
+            "shareP90Pct": 100,
+            "shareLt25Pct": 0,
+            "shareGe50Pct": 100
+          },
+          "main": {
+            "n": 96421,
+            "shiftHours": 5,
+            "proratedBounds": [
+              125,
+              292
+            ],
+            "pAllPct": 1.2953609690834984,
+            "expAllPct": 0.6720527685877558,
+            "pShiftPct": 3.141431845759741,
+            "expShiftPct": 1.6723535329440682,
+            "paidWindows": 1249,
+            "shareMedianPct": 43.329253365973074,
+            "shareP10Pct": 0,
+            "shareP90Pct": 96.43312101910828,
+            "shareLt25Pct": 40.51240992794235,
+            "shareGe50Pct": 46.75740592473979
+          },
+          "peak": {
+            "n": 96421,
+            "shiftHours": 2,
+            "proratedBounds": [
+              50,
+              117
+            ],
+            "pAllPct": 1.2953609690834984,
+            "expAllPct": 0.6720527685877558,
+            "pShiftPct": 3.1621742151605976,
+            "expShiftPct": 1.7467667831696414,
+            "paidWindows": 1249,
+            "shareMedianPct": 11.948051948051948,
+            "shareP10Pct": 0,
+            "shareP90Pct": 43.18936877076412,
+            "shareLt25Pct": 67.57405924739791,
+            "shareGe50Pct": 6.965572457966373
+          }
+        },
         "24": {
           "all": {
             "n": 96409,
             "shiftHours": 24,
             "proratedBounds": [
               500,
-              1000,
-              1300
+              1000
             ],
             "pAllPct": 1.419991909469033,
-            "expAllPct": 0.7538196641392401,
+            "expAllPct": 0.7416320053107075,
             "pShiftPct": 1.419991909469033,
-            "expShiftPct": 0.7538196641392401,
+            "expShiftPct": 0.7416320053107075,
             "paidWindows": 1369,
             "shareMedianPct": 100,
             "shareP10Pct": 100,
@@ -601,13 +453,12 @@
             "shiftHours": 10,
             "proratedBounds": [
               208,
-              417,
-              542
+              417
             ],
             "pAllPct": 1.419991909469033,
-            "expAllPct": 0.7538196641392401,
+            "expAllPct": 0.7416320053107075,
             "pShiftPct": 2.733147320270929,
-            "expShiftPct": 1.545498864213922,
+            "expShiftPct": 1.4931178624402286,
             "paidWindows": 1369,
             "shareMedianPct": 46.11344537815126,
             "shareP10Pct": 12.84796573875803,
@@ -620,13 +471,12 @@
             "shiftHours": 4,
             "proratedBounds": [
               83,
-              167,
-              217
+              167
             ],
             "pAllPct": 1.419991909469033,
-            "expAllPct": 0.7538196641392401,
+            "expAllPct": 0.7416320053107075,
             "pShiftPct": 3.32334118183987,
-            "expShiftPct": 1.8810484498335218,
+            "expShiftPct": 1.8128494227717329,
             "paidWindows": 1369,
             "shareMedianPct": 15.432873274780427,
             "shareP10Pct": 3.342245989304813,
@@ -634,143 +484,80 @@
             "shareLt25Pct": 74.65303140978817,
             "shareGe50Pct": 3.1409788166544925
           }
-        },
-        "48": {
-          "all": {
-            "n": 96385,
-            "shiftHours": 48,
-            "proratedBounds": [
-              750,
-              1250,
-              1750
-            ],
-            "pAllPct": 2.2389375940239664,
-            "expAllPct": 1.2367069564766302,
-            "pShiftPct": 2.2389375940239664,
-            "expShiftPct": 1.2367069564766302,
-            "paidWindows": 2158,
-            "shareMedianPct": 100,
-            "shareP10Pct": 100,
-            "shareP90Pct": 100,
-            "shareLt25Pct": 0,
-            "shareGe50Pct": 100
-          },
-          "main": {
-            "n": 96385,
-            "shiftHours": 20,
-            "proratedBounds": [
-              313,
-              521,
-              729
-            ],
-            "pAllPct": 2.2389375940239664,
-            "expAllPct": 1.2367069564766302,
-            "pShiftPct": 3.787933807127665,
-            "expShiftPct": 2.218706230222545,
-            "paidWindows": 2158,
-            "shareMedianPct": 44.50127877237852,
-            "shareP10Pct": 24.08256880733945,
-            "shareP90Pct": 75.09386733416771,
-            "shareLt25Pct": 11.353104726598703,
-            "shareGe50Pct": 38.368860055607044
-          },
-          "peak": {
-            "n": 96385,
-            "shiftHours": 8,
-            "proratedBounds": [
-              125,
-              208,
-              292
-            ],
-            "pAllPct": 2.2389375940239664,
-            "expAllPct": 1.2367069564766302,
-            "pShiftPct": 4.1126731337863776,
-            "expShiftPct": 2.4632982310525495,
-            "paidWindows": 2158,
-            "shareMedianPct": 16.3659793814433,
-            "shareP10Pct": 6.884480746791132,
-            "shareP90Pct": 30.64327485380117,
-            "shareLt25Pct": 80.02780352177942,
-            "shareGe50Pct": 0.7414272474513438
-          }
-        },
-        "72": {
-          "all": {
-            "n": 96361,
-            "shiftHours": 72,
-            "proratedBounds": [
-              1000,
-              1500,
-              1900
-            ],
-            "pAllPct": 2.1855314909558845,
-            "expAllPct": 1.2761905750251659,
-            "pShiftPct": 2.1855314909558845,
-            "expShiftPct": 1.2761905750251659,
-            "paidWindows": 2106,
-            "shareMedianPct": 100,
-            "shareP10Pct": 100,
-            "shareP90Pct": 100,
-            "shareLt25Pct": 0,
-            "shareGe50Pct": 100
-          },
-          "main": {
-            "n": 96361,
-            "shiftHours": 30,
-            "proratedBounds": [
-              417,
-              625,
-              792
-            ],
-            "pAllPct": 2.1855314909558845,
-            "expAllPct": 1.2761905750251659,
-            "pShiftPct": 4.450970828447193,
-            "expShiftPct": 2.725428337190357,
-            "paidWindows": 2106,
-            "shareMedianPct": 45.99018003273322,
-            "shareP10Pct": 27.876923076923077,
-            "shareP90Pct": 67.1018276762402,
-            "shareLt25Pct": 3.89363722697056,
-            "shareGe50Pct": 35.8974358974359
-          },
-          "peak": {
-            "n": 96361,
-            "shiftHours": 12,
-            "proratedBounds": [
-              167,
-              250,
-              317
-            ],
-            "pAllPct": 2.1855314909558845,
-            "expAllPct": 1.2761905750251659,
-            "pShiftPct": 4.510123390168221,
-            "expShiftPct": 2.7832836936104854,
-            "paidWindows": 2106,
-            "shareMedianPct": 16.45367412140575,
-            "shareP10Pct": 9.020817270624518,
-            "shareP90Pct": 25.444340505144996,
-            "shareLt25Pct": 88.31908831908832,
-            "shareGe50Pct": 0.42735042735042733
-          }
         }
       }
     },
     "chengdu": {
       "name": "成都",
       "byHours": {
+        "12": {
+          "all": {
+            "n": 96421,
+            "shiftHours": 12,
+            "proratedBounds": [
+              300,
+              700
+            ],
+            "pAllPct": 0.6264195559058712,
+            "expAllPct": 0.3266923180634924,
+            "pShiftPct": 0.6264195559058712,
+            "expShiftPct": 0.3266923180634924,
+            "paidWindows": 604,
+            "shareMedianPct": 100,
+            "shareP10Pct": 100,
+            "shareP90Pct": 100,
+            "shareLt25Pct": 0,
+            "shareGe50Pct": 100
+          },
+          "main": {
+            "n": 96421,
+            "shiftHours": 5,
+            "proratedBounds": [
+              125,
+              292
+            ],
+            "pAllPct": 0.6264195559058712,
+            "expAllPct": 0.3266923180634924,
+            "pShiftPct": 0.5880461725142863,
+            "expShiftPct": 0.3176175314506176,
+            "paidWindows": 604,
+            "shareMedianPct": 12.571428571428571,
+            "shareP10Pct": 0,
+            "shareP90Pct": 81.0958904109589,
+            "shareLt25Pct": 59.437086092715234,
+            "shareGe50Pct": 25.496688741721854
+          },
+          "peak": {
+            "n": 96421,
+            "shiftHours": 2,
+            "proratedBounds": [
+              50,
+              117
+            ],
+            "pAllPct": 0.6264195559058712,
+            "expAllPct": 0.3266923180634924,
+            "pShiftPct": 0.6938322564586553,
+            "expShiftPct": 0.3899565447361052,
+            "paidWindows": 604,
+            "shareMedianPct": 4.3478260869565215,
+            "shareP10Pct": 0,
+            "shareP90Pct": 36.02150537634409,
+            "shareLt25Pct": 74.83443708609272,
+            "shareGe50Pct": 3.9735099337748343
+          }
+        },
         "24": {
           "all": {
             "n": 96409,
             "shiftHours": 24,
             "proratedBounds": [
               500,
-              1000,
-              1300
+              1000
             ],
             "pAllPct": 0.5943428518084412,
-            "expAllPct": 0.32543642191081745,
+            "expAllPct": 0.3186943127716292,
             "pShiftPct": 0.5943428518084412,
-            "expShiftPct": 0.32543642191081745,
+            "expShiftPct": 0.3186943127716292,
             "paidWindows": 573,
             "shareMedianPct": 100,
             "shareP10Pct": 100,
@@ -783,13 +570,12 @@
             "shiftHours": 10,
             "proratedBounds": [
               208,
-              417,
-              542
+              417
             ],
             "pAllPct": 0.5943428518084412,
-            "expAllPct": 0.32543642191081745,
+            "expAllPct": 0.3186943127716292,
             "pShiftPct": 0.5310707506560591,
-            "expShiftPct": 0.2917258762148762,
+            "expShiftPct": 0.28991069298509475,
             "paidWindows": 573,
             "shareMedianPct": 26.27669452181987,
             "shareP10Pct": 4.240282685512367,
@@ -802,13 +588,12 @@
             "shiftHours": 4,
             "proratedBounds": [
               83,
-              167,
-              217
+              167
             ],
             "pAllPct": 0.5943428518084412,
-            "expAllPct": 0.32543642191081745,
+            "expAllPct": 0.3186943127716292,
             "pShiftPct": 0.8443195137383439,
-            "expShiftPct": 0.46650209005383314,
+            "expShiftPct": 0.4600192928046137,
             "paidWindows": 573,
             "shareMedianPct": 10.696920583468396,
             "shareP10Pct": 1.1152416356877324,
@@ -816,127 +601,9 @@
             "shareLt25Pct": 83.94415357766142,
             "shareGe50Pct": 0.5235602094240838
           }
-        },
-        "48": {
-          "all": {
-            "n": 96385,
-            "shiftHours": 48,
-            "proratedBounds": [
-              750,
-              1250,
-              1750
-            ],
-            "pAllPct": 0.7304041085231104,
-            "expAllPct": 0.4173367225190642,
-            "pShiftPct": 0.7304041085231104,
-            "expShiftPct": 0.4173367225190642,
-            "paidWindows": 704,
-            "shareMedianPct": 100,
-            "shareP10Pct": 100,
-            "shareP90Pct": 100,
-            "shareLt25Pct": 0,
-            "shareGe50Pct": 100
-          },
-          "main": {
-            "n": 96385,
-            "shiftHours": 20,
-            "proratedBounds": [
-              313,
-              521,
-              729
-            ],
-            "pAllPct": 0.7304041085231104,
-            "expAllPct": 0.4173367225190642,
-            "pShiftPct": 0.6204284899102558,
-            "expShiftPct": 0.334336255641438,
-            "paidWindows": 704,
-            "shareMedianPct": 25,
-            "shareP10Pct": 8.796680497925312,
-            "shareP90Pct": 42.11136890951276,
-            "shareLt25Pct": 50,
-            "shareGe50Pct": 4.545454545454546
-          },
-          "peak": {
-            "n": 96385,
-            "shiftHours": 8,
-            "proratedBounds": [
-              125,
-              208,
-              292
-            ],
-            "pAllPct": 0.7304041085231104,
-            "expAllPct": 0.4173367225190642,
-            "pShiftPct": 0.9804430149919593,
-            "expShiftPct": 0.5431343051304663,
-            "paidWindows": 704,
-            "shareMedianPct": 10.828025477707007,
-            "shareP10Pct": 2.8795811518324608,
-            "shareP90Pct": 17.28034998177178,
-            "shareLt25Pct": 98.29545454545455,
-            "shareGe50Pct": 0
-          }
-        },
-        "72": {
-          "all": {
-            "n": 96361,
-            "shiftHours": 72,
-            "proratedBounds": [
-              1000,
-              1500,
-              1900
-            ],
-            "pAllPct": 0.5811479748030842,
-            "expAllPct": 0.38189724058488395,
-            "pShiftPct": 0.5811479748030842,
-            "expShiftPct": 0.38189724058488395,
-            "paidWindows": 560,
-            "shareMedianPct": 100,
-            "shareP10Pct": 100,
-            "shareP90Pct": 100,
-            "shareLt25Pct": 0,
-            "shareGe50Pct": 100
-          },
-          "main": {
-            "n": 96361,
-            "shiftHours": 30,
-            "proratedBounds": [
-              417,
-              625,
-              792
-            ],
-            "pAllPct": 0.5811479748030842,
-            "expAllPct": 0.38189724058488395,
-            "pShiftPct": 0.5095422421934185,
-            "expShiftPct": 0.28097466817488403,
-            "paidWindows": 560,
-            "shareMedianPct": 27.53176742395071,
-            "shareP10Pct": 14.642582628747117,
-            "shareP90Pct": 42.327586206896555,
-            "shareLt25Pct": 46.07142857142857,
-            "shareGe50Pct": 0.7142857142857143
-          },
-          "peak": {
-            "n": 96361,
-            "shiftHours": 12,
-            "proratedBounds": [
-              167,
-              250,
-              317
-            ],
-            "pAllPct": 0.5811479748030842,
-            "expAllPct": 0.38189724058488395,
-            "pShiftPct": 0.7907763514284825,
-            "expShiftPct": 0.4452008592687913,
-            "paidWindows": 560,
-            "shareMedianPct": 11.724137931034482,
-            "shareP10Pct": 6.189710610932476,
-            "shareP90Pct": 17.635583300819352,
-            "shareLt25Pct": 99.10714285714286,
-            "shareGe50Pct": 0
-          }
         }
       }
     }
   },
-  "generatedAt": "2026-10-07T07:08:49.797Z"
+  "generatedAt": "2026-10-07T09:30:11.019Z"
 }

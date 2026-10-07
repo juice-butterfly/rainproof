@@ -17,7 +17,7 @@
  *
  * 【五个维度】
  *   1. 地区 region        气候风险（广州 vs 北京差 5 倍以上）
- *   2. 时长 hours         暴露时长（24/48/72）
+ *   2. 时长 hours         暴露时长（12/24 —— 国标 GB/T 28592-2012 唯二的两个时段）
  *   3. 用户类型 riderTier  众包自助 / 认证骑手 / 平台团体
  *   4. 使用场景 channel    自助投保 / 平台代付 / 预警增保
  *   5. 购买量 batch N      一次判定覆盖多少份
@@ -33,13 +33,15 @@
  *   ⚠️ 早期草稿里还有第二条机制 "临灾加保"（投保发生在预警窗口内，期望赔付改用
  *   P(触发 | 投保前 24h 已累计 ≥25mm)）。**v3 明确删掉了它**，三条理由：
  *     ① 合约 effectiveFrom = startTime + coolingPeriod
- *        （RainDeliveryInsuranceV2.sol:228），冷静期只要 ≥ 最长保障期 72h，
+ *        （RainDeliveryInsuranceV2.sol:228），冷静期只要 ≥ 最长保障期 24h，
  *        投保当天买的保单整个保障窗都还没开始 —— "看到橙色预警再买"在结构上
  *        盖不住这场雨，**不是靠加价挡的**。
  *     ② "我是在预警期内买的"是买方自述，合约无法核验；能自述的参数一定会被
  *        选成最便宜的那个 → 给不可核验的维度定价等于没定价。
- *     ③ 实测加载倍数：按临灾条件定价只有 5.4~12.3×，而"只买雨季"这个**零预报
- *        能力**的策略能到 37.5×（成都 72h）。真正的对手是季节择时。
+ *     ③ 实测加载倍数（国标 12h/24h 口径）：临灾 5.5~17.2×，季节 4.1~12.5×，两者同量级。
+ *        而在旧的 72h 口径下是"季节 37.5× 碾压临灾 5.4~12.3×"—— 谁更强的结论会随时段
+ *        口径翻转，这恰恰说明"按哪种择时更强去挑加价对象"不可靠。这张倍数表只用来
+ *        证明择时能力真实存在（κ 分档不是摆设），不作为加价依据。
  *   临灾条件率仍逐格算出，但**只作为诊断量**出现在报告 §7 与 JSON 里，不参与定价。
  *
  * 【核心公式】
@@ -75,7 +77,24 @@ const { REGIONS } = require('../04-脚本/regions.js');
 // 1. 定价维度
 // ══════════════════════════════════════════════════════════════════════════════
 
-const HOURS = [24, 48, 72];                    // = 合约 hoursAllowed()
+/**
+ * 保障时长：**只卖 12h 和 24h** —— 这两个是 GB/T 28592-2012《降水量等级》
+ * §3「降雨量按 12 h，24 h 两个时间段进行划分」里**唯二存在**的时段。
+ *
+ * 为什么删掉 48h / 72h（本轮改造的核心）：
+ *   ① 国标没有 48h / 72h 档。v2 的 `thresholdOf(h) = 50 × h / 24` 是**线性外推**，
+ *      把 72h 的暴雨线推到 150mm、特大暴雨线推到 750mm —— 后者在五城 11 年
+ *      逐小时历史里**一次都没触发过**（写在合约里、永远赔不到的条款）。
+ *   ② 线性外推被国标**自己的两列**证伪：24h/12h 的比值是
+ *      暴雨 50/30 = 1.667、大暴雨 100/70 = 1.429、特大暴雨 250/140 = 1.786，
+ *      **都不是 2**。所以哪怕只在 12h↔24h 之间插值，线性也是错的。
+ *   ③ 实测（`_audit_stat/gbt_probe.js`）：72h 档 0 的触发率 **低于** 24h
+ *      （武汉 0.762% → 0.212%，广州 1.420% → 0.563%）。也就是说 v2 的
+ *      "72h" 是**更贵、更难赔**的一档（武汉保费 4 倍、概率 1/3.6），
+ *      对骑手单向不利 —— 删掉它同时修掉了"期限套利"的伪命题：
+ *      买更久**并不**更容易赔。
+ */
+const HOURS = [12, 24];                        // = 合约 hoursAllowed()
 
 const RIDER_TIERS = [
   { id: 0, key: 'open',     name: '众包自助' },
@@ -96,7 +115,7 @@ const CHANNELS = [
  * **为什么没有"临灾加保"这一档**（v3 相对早期草稿的主要删减，理由见 §7）：
  *   ① 合约 `effectiveFrom = startTime + coolingPeriod`（RainDeliveryInsuranceV2.sol:228），
  *      合约**默认** coolingPeriod = 3 days（`RainDeliveryInsuranceV2.sol:68`，operator 可改），
- *      冷静期只要 ≥ 最长保障期(72h)，投保当天买的保单整个保障窗都还没开始 ——
+ *      冷静期只要 ≥ 最长保障期(24h)，投保当天买的保单整个保障窗都还没开始 ——
  *      "看到橙色预警再买"在生产口径下结构上盖不住这场雨，不是靠加价挡的。
  *      ⚠️ **968 演示链上 `coolingPeriod` 被设成了 0**（`04-脚本/rehearse-v2.js:228`），
  *      所以这一条是"生产默认值"的性质，不是那条演示链的性质 —— 真正让这一档不值得做的
@@ -157,8 +176,31 @@ const LUT_N = 4096;
 
 // v3 档线：DDF 次线性。v2 的 50×h/24 是线性缩放（隐含 depth ∝ duration^1），
 // 真实降雨深度对历时是次线性的（k ≈ 0.5~0.7）→ v2 的档2 在 15 格里 11 年零触发。
-const THRESHOLDS = { 24: [50, 100, 130], 48: [75, 125, 175], 72: [100, 150, 190] };
-const TIER_BPS   = [5000, 7500, 10000];      // 50% / 75% / 100%
+/**
+ * 档线 = GB/T 28592-2012 表 1「不同时段的降雨量等级划分表」**原件**（单位 mm）。
+ * 只取前两档：暴雨 / 大暴雨。
+ *
+ *   等级        12h 降雨量      24h 降雨量
+ *   暴雨        30.0~69.9      50.0~99.9
+ *   大暴雨      70.0~139.9     100.0~249.9
+ *   （特大暴雨  ≥140.0         ≥250.0）← 我们不卖，理由见下
+ *
+ * **为什么"特大暴雨"这一档没有落进产品**（这是本轮唯一一处主动少做的地方）：
+ *   实测五城 11 年逐小时滚动窗口（`_audit_stat/gbt_probe.js`）——
+ *     · 24h ≥250mm：武汉 0 / 上海 0 / 北京 0 / 广州 0 / 成都 0 次  ← **零命中**
+ *     · 12h ≥140mm：武汉 4 / 北京 2 / 广州 2 / 成都 7 / 上海 0 次  ← 0.002~0.007%
+ *   我们刚刚用「档 2 在 11 年里零触发 = 写在合约里却永远赔不到的条款」批评了 v2 的
+ *   750mm；国标的 24h 特大暴雨线在同一个样本上**同样零命中**。保留它就是把刚骂过的
+ *   毛病换个出处再犯一次，而且那部分风险保费在 97.5% 上界里几乎为 0 —— 赔付比例
+ *   写成 100% 只是话术。所以产品只承诺**两档**：
+ *     档 0 = 暴雨   → 赔 50%
+ *     档 1 = 大暴雨 → 赔 75%
+ *   两档在五城、两个时长上都真实命中过（见 selfCheck 4.5 的五城可达性断言）。
+ *   ⚠️ 若要保留 100% 那一档的演示冲击力，见 `v3-合约规格.md` §「三档变体」——
+ *      代价是把一条 11 年零命中的条款写进对外承诺。
+ */
+const THRESHOLDS = { 12: [30, 70], 24: [50, 100] };   // GB/T 28592-2012 表 1 原件
+const TIER_BPS   = [5000, 7500];                      // 50% / 75%
 
 const ceilTick = (v) => Math.ceil(v / (1 / CEIL_TICK) - 1e-9) / CEIL_TICK;
 const round = (v, n) => Math.round(v * 10 ** n) / 10 ** n;
@@ -216,12 +258,12 @@ function main() {
       const immin = imminentFlags(c.mm10, h);
       const paySum = new Float64Array(nM), win = new Int32Array(nM);          // 全样本
       const paySumI = new Float64Array(nM), winI = new Int32Array(nM);        // 仅临灾样本
-      const nHitByTier = [0, 0, 0];
+      const nHitByTier = new Array(TIER_BPS.length).fill(0);
       let nHit = 0, nImm = 0;
       for (let j = 0; j < sums.length; j++) {
         const v = sums[j];
         let f = 0;
-        // 三档阈值递增 → 逐个比较即可；同时累计各档的"达到"次数（cumulative）
+        // 档线递增 → 逐个比较即可；同时累计各档的"达到"次数（cumulative，含更高档）
         for (let k = 0; k < bounds.length; k++) {
           if (v >= bounds[k]) { f = TIER_BPS[k] / 10000; nHitByTier[k]++; }
         }
@@ -418,12 +460,13 @@ function main() {
   }
   ratios.hours = [];
   for (const r of rows) {
-    if (r.hours !== 24 || !r.sellable) continue;
+    if (r.hours !== 12 || !r.sellable) continue;
     const rs = rows.filter((x) => x.regionId === r.regionId && x.segId === r.segId);
     if (rs.some((x) => !x.sellable)) continue;
     const get = (hh) => rs.find((x) => x.hours === hh).premiumRetailEth;
+    // 时长比以 12h 为 1（12h = 一个班次，24h = 一整天）
     ratios.hours.push({ region: r.regionName, segKey: r.segKey, segName: r.segName,
-      r24: 1, r48: round(get(48) / get(24), 3), r72: round(get(72) / get(24), 3) });
+      r12: 1, r24: round(get(24) / get(12), 3) });
   }
   ratios.segment = sell.filter((r) => r.hours === 24).map((r) => ({
     region: r.regionName, segKey: r.segKey, segName: r.segName,
@@ -441,10 +484,11 @@ function main() {
   });
 
   // ── 3.9 上链入参（B 给值 → A 执行）────────────────────────────────────────
-  // 两张表就是 setPremiumGrid / setPremiumBands 的入参。不可售格写 0，
-  // 合约见到 0 必须 revert（"这一格我们不卖"），而不是回退到别的价。
+  // 两张表就是 setPremiumGrid / setPremiumBands 的入参。本批（12h/24h）**0 格不可售**；
+  // 若将来出现不可售格，那一格写 0，合约见到 0 必须 revert（"这一格我们不卖"），
+  // 而不是回退到别的价 —— 回退会把"不卖"变成"悄悄卖了个别价"。
   const payload = {
-    note: 'B 定值、A 执行。单位 wei。不可售格 premiumWei="0"，合约必须 revert 而不是回退。',
+    note: 'B 定值、A 执行。单位 wei。本批 40 格全部可售；若出现不可售格，premiumWei="0" 且合约必须 revert 而不是回退。',
     contract: 'RainDeliveryInsuranceV3.sol',
     segmentOrder: SEGMENTS.map((s) => `${s.id}=${s.key} ${s.name}`),
     bandN: BATCH_N,
@@ -486,9 +530,9 @@ function main() {
         'κ 与临灾条件率都是**历史频率**，不含预报技能；真实投保时点能拿到的信息比这更多，是最保守的一侧。',
         '月聚类块自举的块长固定为 1 个日历月；真实风险记忆尺度与月长不同，本表只做参数不确定性的一阶修正。',
         '批量折扣只覆盖 AI 判定 gas 的摊薄；赔付 gas 仍按期望出险次数计费。',
-        'sellable=false 的格不是"价格算错了"，而是**产品政策**：无身份绑定 + 雨季城市 + 最长时长，报出来的价已经高于尊严上限，宁愿不卖。',
+        'sellable=false 的格不是"价格算错了"，而是**产品政策**：无身份绑定 + 雨季城市 + 最长时长，报出来的价已经高于尊严上限，宁愿不卖。⚠️ **本批（12h/24h）0 格触发** —— 原来那 3 格全是 72h 众包自助，随 72h 一起消失。',
         '临灾条件率（imminentRatePct / t2c1 行）是**诊断量**，不进入任何报价；见文件头"为什么删掉临灾档"。',
-        '本表未含冷静期(coolingPeriod)造成的生效延迟 —— 合约**默认** 3 天 ≥ 最长保障期 72h，意味着任何"临时追保"都盖不住当次天气，方向上是本表的进一步保守。⚠️ 但 **968 演示链上该值被设成 0**（演示动线需要），别把"生产默认"说成"链上现状"。',
+        '本表未含冷静期(coolingPeriod)造成的生效延迟 —— 合约**默认** 3 天 ≥ 最长保障期 24h，意味着任何"临时追保"都盖不住当次天气，方向上是本表的进一步保守。⚠️ 但 **968 演示链上该值被设成 0**（演示动线需要），别把"生产默认"说成"链上现状"。',
       ],
     },
     cells: rows, batchBands: bands, reserve, ratios, payload,
@@ -520,7 +564,8 @@ function selfCheck(rep) {
   ok('segment 顺序 = 风险升序（κ 单调不减）',
     SEGMENTS.every((s, i) => i === 0 || s.selectivity >= SEGMENTS[i - 1].selectivity),
     SEGMENTS.map((s) => s.selectivity).join(','));
-  ok('格数 = 5 区域 × 3 时长 × 4 segment = 60', rep.cells.length === 60, `${rep.cells.length}`);
+  ok('格数 = 5 区域 × 2 时长(12/24h) × 4 segment = 40',
+    rep.cells.length === 40, `${rep.cells.length}`);
   ok('每个 (region,hours) 恰好 4 个 segment',
     REGIONS.every((r) => HOURS.every((h) => rep.cells.filter((c) => c.regionId === r.id && c.hours === h).length === 4)));
 
@@ -529,10 +574,10 @@ function selfCheck(rep) {
     const tag = `[${r.regionName} ${r.hours}h ${r.segKey}]`;
     ok(`${tag} 上界 ≥ 点估计`, r.upperRatePct >= r.pointRatePct - 1e-9);
     ok(`${tag} VaR99 ≥ 上界`, r.var99RatePct >= r.upperRatePct - 1e-9, `${r.var99RatePct}/${r.upperRatePct}`);
-    ok(`${tag} 三档阈值严格递增`,
-      r.thresholdsMm[0] < r.thresholdsMm[1] && r.thresholdsMm[1] < r.thresholdsMm[2]);
+    ok(`${tag} 档线严格递增（国标表1 原件）`,
+      r.thresholdsMm.every((t, i) => i === 0 || t > r.thresholdsMm[i - 1]));
     ok(`${tag} 档位命中数单调不增`,
-      r.nHitByTier[0] >= r.nHitByTier[1] && r.nHitByTier[1] >= r.nHitByTier[2], JSON.stringify(r.nHitByTier));
+      r.nHitByTier.every((n, i) => i === 0 || n <= r.nHitByTier[i - 1]), JSON.stringify(r.nHitByTier));
     ok(`${tag} 批量价单调不增`,
       r.batch.filter((b) => b.premiumEth !== null)
         .every((b, i, a) => i === 0 || b.premiumEth <= a[i - 1].premiumEth + 1e-12));
@@ -558,11 +603,15 @@ function selfCheck(rep) {
     ok(`[${c.regionName} ${c.hours}h] 临灾条件率 ≥ 无条件率`,
       c.imminentRatePct >= c.uncondPointRatePct - 1e-9, `${c.imminentRatePct} vs ${c.uncondPointRatePct}`);
   }
-  // (a2) 两条择时策略谁加载更高？数据说：**季节择时完胜**，这才是删掉临灾定价的定量依据。
-  //      季节择时（买雨季，零预报能力）最高 37.5x（成都 72h）；
-  //      临灾择时（前 24h 已下雨）只有 5.4~12.3x。
-  //      直觉解释：气象预警窗口是小时级、保障窗是 24~72h，且过去 24h 对"未来 72h"
-  //      的信息量本来就弱。而"雨季"是一个 3 个月的、任何人都能查到的公开信号。
+  // (a2) 两条择时策略谁加载更高？—— 结论在 12h/24h 口径下**与 72h 口径反了过来**：
+  //      72h 时代季节择时（成都 72h 37.5x）碾压临灾择时（5.4~12.3x）；
+  //      换到国标的 12h/24h 后，两者同量级，临灾反而更高（成都 24h 临灾 17.2x vs 季节 12.5x）。
+  //      这个反转本身就是"不给**时点**定价"的最强论据 —— 没有一个时点维度稳定占优，
+  //      按"哪种择时更强"去挑加价对象就是不可靠的。真正稳定的是两条：
+  //        ① 冷静期 ≥ 保障期（删掉 72h 后这个要求从 ≥72h 降到 ≥24h，好落地多了）；
+  //        ② 时点不可自证 —— 能自述的参数一定被选成最便宜那个。
+  //      而 κ 之所以仍然可以定价，是因为它挂在**可观测的销售渠道**上（平台整批 vs 自助），
+  //      不是买方自述的时点。这张表是"择时能力真实存在"的定量证据，不是加价依据。
   {
     const load = [];
     for (const c of immCells) {
@@ -571,16 +620,18 @@ function selfCheck(rep) {
       load.push({ tag: `${c.regionName} ${c.hours}h`, s: last.pointRatePct / un, i: c.imminentRatePct / un });
     }
     const maxSeas = Math.max(...load.map((l) => l.s));
+    const minSeas = Math.min(...load.map((l) => l.s));
     const maxImm = Math.max(...load.map((l) => l.i));
     const minImm = Math.min(...load.map((l) => l.i));
-    ok('临灾择时的加载倍数落在 4~15× 区间（与文档 §7 一致）',
-      minImm >= 4 && maxImm <= 15, `${minImm.toFixed(2)}~${maxImm.toFixed(2)}x`);
-    ok('季节择时的最强加载 ≥ 25×（零预报能力却更强）',
-      maxSeas >= 25, `最强 ${maxSeas.toFixed(2)}x`);
-    ok('季节择时的最强加载 > 临灾择时的最强加载（故冷静期/身份比预警定价更重要）',
-      maxSeas > maxImm, `季节 ${maxSeas.toFixed(2)}x vs 临灾 ${maxImm.toFixed(2)}x`);
-    ok('任何非干净渠道的期望赔付都是干净渠道(t2c1)的 ≥5×',
-      Math.min(...load.map((l) => l.s)) >= 5, `最小季节加载 ${Math.min(...load.map((l) => l.s)).toFixed(2)}x`);
+    ok('临灾择时的加载倍数落在 4~20× 区间（与文档 §7 一致）',
+      minImm >= 4 && maxImm <= 20, `${minImm.toFixed(2)}~${maxImm.toFixed(2)}x`);
+    ok('季节择时的加载倍数落在 4~20× 区间',
+      minSeas >= 4 && maxSeas <= 20, `${minSeas.toFixed(2)}~${maxSeas.toFixed(2)}x`);
+    ok('两种择时同量级（没有一个碾压另一个，差距 ≤2×）—— 故不按"谁更强"挑加价对象',
+      Math.max(maxSeas, maxImm) / Math.min(maxSeas, maxImm) <= 2.0,
+      `季节 ${maxSeas.toFixed(2)}x vs 临灾 ${maxImm.toFixed(2)}x`);
+    ok('最弱的非干净渠道加载 ≥4×（κ 分档确有经济意义，不是摆设）',
+      minSeas >= 4, `最小季节加载 ${minSeas.toFixed(2)}x`);
   }
   // (b) 风险随 κ 单调不减；不可售只能出现在 κ 更大的后缀上
   for (const reg of REGIONS) for (const h of HOURS) {
@@ -611,42 +662,56 @@ function selfCheck(rep) {
   for (const reg of REGIONS) for (const seg of SEGMENTS) {
     const rs = rows3(rep, reg.id, seg.id);
     if (!rs || rs.some((r) => !r.sellable)) continue;
-    ok(`[${reg.name} ${seg.key}] 72h ≥ 24h`,
-      rs.find((r) => r.hours === 72).premiumRetailEth >= rs.find((r) => r.hours === 24).premiumRetailEth - 1e-12);
+    ok(`[${reg.name} ${seg.key}] 24h ≥ 12h`,
+      rs.find((r) => r.hours === 24).premiumRetailEth >= rs.find((r) => r.hours === 12).premiumRetailEth - 1e-12);
   }
-  ok('不可售格只允许出现在 κ=1.00 的众包自助渠道（"没有身份就报不出价"）',
+  ok('若有不可售格，只允许出现在 κ=1.00 的众包自助渠道（"没有身份就报不出价"）',
     rep.cells.filter((r) => !r.sellable).every((r) => r.segKey === 't0c0'),
     [...new Set(rep.cells.filter((r) => !r.sellable).map((r) => `${r.regionName}${r.hours}h ${r.segKey}`))].join(' '));
-  ok('不可售格数量恰为 3（武汉/广州/成都 72h t0c0）',
-    rep.cells.filter((r) => !r.sellable).length === 3,
-    `${rep.cells.filter((r) => !r.sellable).length}`);
+  // 删掉 72h 的副作用之一：原来那 3 个不可售格（武汉/广州/成都 72h t0c0）全部消失 ——
+  // 12h/24h 的最贵格（成都 24h t0c0 0.00099）离尊严上限 0.002 还有一倍余量。
+  // 这削弱了"没有身份就报不出价"的极端故事，但换来的是**每一格都卖得出去**。
+  ok('本设计没有不可售格（原 3 格全是 72h t0c0，随 72h 一起消失）',
+    rep.cells.filter((r) => !r.sellable).length === 0,
+    `不可售 ${rep.cells.filter((r) => !r.sellable).length} 格`);
+  ok('全部 40 格都落在 [合约硬地板, 尊严上限] 内',
+    rep.cells.every((r) => r.premiumRetailEth !== null
+      && r.premiumRetailEth >= MIN_PREMIUM_ABS - 1e-12 && r.premiumRetailEth <= PREMIUM_CAP + 1e-12));
+  ok('最贵的格与尊严上限至少留 1.5 倍余量（证明上面那条不是刚好擦线）',
+    PREMIUM_CAP / Math.max(...rep.cells.map((r) => r.premiumRetailEth)) >= 1.5,
+    `${PREMIUM_CAP} / ${Math.max(...rep.cells.map((r) => r.premiumRetailEth))} = ${(PREMIUM_CAP / Math.max(...rep.cells.map((r) => r.premiumRetailEth))).toFixed(2)}x`);
   ok('批量折扣带单调不减',
     rep.batchBands.every((b, i) => i === 0 || b.discountBps >= rep.batchBands[i - 1].discountBps),
     rep.batchBands.map((b) => b.discountBps).join(','));
 
-  // ── 4.5 v3 档线必须修掉 v2 的"不可达档" ──
-  for (const h of HOURS) for (let k = 0; k < 3; k++) {
+  // ── 4.5 档档必须可达（v3 对 v2 的核心修正；国标表 1 原件自带这个性质） ──
+  for (const h of HOURS) for (let k = 0; k < TIER_BPS.length; k++) {
     const n = rep.cells.filter((r) => r.hours === h && r.segId === 0).filter((r) => r.nHitByTier[k] > 0).length;
     ok(`[${h}h 档${k}] 五城全可达`, n === 5, `${n}/5 城可达`);
   }
-  // 对照：v2 的线性档线在 72h 档2 是全不可达的（已知事实，必须仍成立才算对照有效）
+  // 对照必须仍成立才算对照有效：v2 的线性外推在 72h 档2 全不可达；
+  // 而国标**第三档**（24h ≥250mm）在同一批数据上也零命中 —— 这正是我们不卖它的实测依据。
   {
-    const lin = { 24: [50, 100, 250], 48: [100, 200, 500], 72: [150, 300, 750] };
-    let reach = 0;
+    const lin72c = Math.round((150 * 5) * 10);   // v2 的 72h 档2 = 750mm
+    let reach72 = 0, reach24c = 0, reach12c = 0;
     for (const r of REGIONS) {
       const { mm10 } = A.loadCity(r);
-      const sums = A.windowSums(mm10, 72);
-      const b = Math.round(lin[72][2] * 10);
-      if (sums.some((v) => v >= b)) reach++;
+      if (A.windowSums(mm10, 72).some((v) => v >= lin72c)) reach72++;
+      if (A.windowSums(mm10, 24).some((v) => v >= 2500)) reach24c++;   // 国标 24h 特大暴雨 ≥250mm
+      if (A.windowSums(mm10, 12).some((v) => v >= 1400)) reach12c++;   // 国标 12h 特大暴雨 ≥140mm
     }
-    ok('对照：v2 线性档线在 72h 档2 不可达（五城全不可达）', reach === 0, `${reach}/5 城`);
+    ok('对照：v2 线性外推的 72h 档2(750mm) 五城全不可达', reach72 === 0, `${reach72}/5 城`);
+    ok('证据：国标 24h 特大暴雨(≥250mm) 五城全零命中 —— 因此产品不卖这一档', reach24c === 0, `${reach24c}/5 城`);
+    ok('对照：国标 12h 特大暴雨(≥140mm) 有命中（零命中是 24h 那一列的性质，不是样本里没有极值）',
+      reach12c > 0, `${reach12c}/5 城`);
   }
 
   // ── 4.6 固定成本论断（"成本主导"的前提）──
   const anyCell = rep.cells[0];
   const c1 = anyCell.batch[0].costPerPolicyEth, c1000 = anyCell.batch.find((b) => b.N === 1000).costPerPolicyEth;
-  // N→∞ 时"赔付 gas × 出险率"这一项不摊薄，所以摊薄有上界，实测 204×，不是 1000×
-  ok('批量把每份固定成本摊薄 ≥200 倍', c1 / c1000 >= 200, `${(c1 / c1000).toFixed(0)}x`);
+  // N→∞ 时"赔付 gas × 出险率"这一项不摊薄，所以摊薄有上界，实测 198×，不是 1000×
+  // （72h 时代是 204×；换 12h/24h 后出险率量级变了，上界跟着变，这是数据的性质不是回归）
+  ok('批量把每份固定成本摊薄 ≥180 倍', c1 / c1000 >= 180, `${(c1 / c1000).toFixed(0)}x`);
   const g = rep.cells.filter((r) => r.segKey === 't2c1');
   const upSorted = g.map((r) => r.upperPayoutEth).sort((a, b) => a - b);
   const upMed = upSorted[(upSorted.length - 1) >> 1];
@@ -671,10 +736,10 @@ function selfCheck(rep) {
   return fails;
 }
 
-/** 取某区域某 segment 的三个时长行 */
+/** 取某区域某 segment 的各时长行（12h / 24h） */
 function rows3(rep, regionId, segId) {
-  const rs = ['24', '48', '72'].map((_, i) => rep.cells.find(
-    (r) => r.regionId === regionId && r.segId === segId && r.hours === HOURS[i]));
+  const rs = HOURS.map((h) => rep.cells.find(
+    (r) => r.regionId === regionId && r.segId === segId && r.hours === h));
   return rs.every(Boolean) ? rs : null;
 }
 
@@ -714,13 +779,17 @@ function printReport(rep) {
   console.log('批量 N≤    折扣bps   中位价/N=1');
   rep.batchBands.forEach((b, i) => console.log(`${pad(b.NMax, 8)}  ${pad(b.discountBps, 8)}  ${pad(rep.ratios.batch[i].medianRatio, 10)}`));
 
-  console.log('\n── §4 时长比（24h = 1）' + '─'.repeat(84));
-  console.log('区域    seg     24h   48h   72h');
-  for (const x of rep.ratios.hours) console.log(`${x.region.padEnd(6)}  ${x.segKey.padEnd(6)}  ${pad(x.r24, 5)} ${pad(x.r48, 5)} ${pad(x.r72, 5)}`);
+  console.log('\n── §4 时长比（12h = 1）' + '─'.repeat(84));
+  console.log('区域    seg     12h   24h');
+  for (const x of rep.ratios.hours) console.log(`${x.region.padEnd(6)}  ${x.segKey.padEnd(6)}  ${pad(x.r12, 5)} ${pad(x.r24, 5)}`);
 
   console.log('\n── §5 不可售清单（这是结论，不是缺陷）' + '─'.repeat(70));
   const bad = rep.cells.filter((r) => !r.sellable);
   console.log(`共 ${bad.length}/${rep.cells.length} 格不可售`);
+  if (!bad.length) {
+    const mx = Math.max(...rep.cells.map((r) => r.premiumRetailEth));
+    console.log(`  （本批 0 格 —— 删掉 72h 后每一格都在尊严上限 ${PREMIUM_CAP} 内，最贵 ${mx} 还有 ${(PREMIUM_CAP / mx).toFixed(2)} 倍余量）`);
+  }
   for (const r of bad) console.log(`  ${r.regionName} ${r.hours}h ${r.segKey.padEnd(5)} ${r.segName.padEnd(20)} 公平价 ${pad(r.fairRetailEth, 9)}  ${r.unsellableReason}`);
 
   console.log('\n── §6 成本 vs 风险（为什么"购买量"是第一类定价维度）' + '─'.repeat(50));
@@ -753,11 +822,12 @@ function printReport(rep) {
     allS.push(last.pointRatePct / r.uncondPointRatePct);
   }
   console.log(`→ 临灾加载 ${Math.min(...allI).toFixed(2)}~${Math.max(...allI).toFixed(2)}x，季节加载 ${Math.min(...allS).toFixed(2)}~${Math.max(...allS).toFixed(2)}x`);
-  console.log('→ 「买雨季」是零预报能力、人人可查的公开信号，却比「看到预警再买」更值钱；');
-  console.log('  所以真正的锁不是给临灾加价，而是 冷静期 ≥ 保障期（买在预警期也覆盖不到这场雨）。');
+  console.log('→ 两者同量级，"谁更强"随时段口径翻转（72h 口径下是季节碾压，12/24h 口径下是临灾略高）；');
+  console.log('  所以真正的锁不是给某一种择时加价，而是 ① 冷静期 ≥ 保障期（买在预警期也覆盖不到这场雨）');
+  console.log('  ② 只给可观测的销售渠道定价（κ），不给买方自述的时点定价。');
 }
 
-// ── 数表导出（--md）：把 JSON 里的 60 格零售 + 180 格批量带打成 Markdown ──────────
+// ── 数表导出（--md）：把 JSON 里的 40 格零售 + 120 格批量带打成 Markdown ──────────
 // 存在的理由：数表不许手抄。文档 `定价体系-v3.md` 引用本文件产物，
 // 任何一次重跑都会让数字与代码同步，避免"文档与代码冲突"（AGENTS.md §5）。
 function emitMarkdown(rep, outPath) {
@@ -779,7 +849,7 @@ function emitMarkdown(rep, outPath) {
   }
   L.push('');
 
-  L.push('## 二、平台代付批量价（仅 `channel=1`，共 30 格 × 6 档 = 180 行）', '');
+  L.push('## 二、平台代付批量价（仅 `channel=1`，共 20 格 × 6 档 = 120 行）', '');
   L.push('| 区域 | 时长 | seg | 用户类型 | ' + rep.meta.dimensions.batch.map((n) => `N≤${n}`).join(' | ') + ' |');
   L.push('|---|---|---|' + '---|'.repeat(1 + rep.meta.dimensions.batch.length));
   for (const r of rep.cells.filter((c) => c.channel === 1)) {
@@ -800,12 +870,22 @@ function emitMarkdown(rep, outPath) {
   L.push('## 四、不可售清单', '');
   const bad = rep.cells.filter((r) => !r.sellable);
   L.push(`共 ${bad.length}/${rep.cells.length} 格。`, '');
-  L.push('| 区域 | 时长 | seg | 若开卖的公平价 | 理由 |', '|---|---|---|---|---|');
-  for (const r of bad) L.push(`| ${r.regionName} | ${r.hours}h | \`${r.segKey}\` | ${eth(r.fairRetailEth)} | ${r.unsellableReason} |`);
-  L.push('');
+  if (!bad.length) {
+    const mx = Math.max(...rep.cells.map((r) => r.premiumRetailEth));
+    L.push(`**本批 0 格** —— 删掉 72h/48h 之后每一格都在尊严上限 \`PREMIUM_CAP=${PREMIUM_CAP}\` 内，`
+      + `最贵的格为 \`${mx}\`（${(PREMIUM_CAP / mx).toFixed(2)} 倍余量）。`
+      + '原来那 3 格不可售（武汉/广州/成都 72h 众包自助）随 72h 一起消失。', '');
+  } else {
+    L.push('| 区域 | 时长 | seg | 若开卖的公平价 | 理由 |', '|---|---|---|---|---|');
+    for (const r of bad) L.push(`| ${r.regionName} | ${r.hours}h | \`${r.segKey}\` | ${eth(r.fairRetailEth)} | ${r.unsellableReason} |`);
+    L.push('');
+  }
 
   L.push('## 五、诊断：临灾择时 vs 季节择时（临灾率不参与定价）', '');
-  L.push('| 区域 | 时长 | 无条件 p | 临灾条件 p | 临灾加载 | 季节 κ=1.0 p | 季节加载 | 更强 |');
+  L.push('> 「更强」列随时段口径翻转：72h 口径下季节碾压（37.5× vs 5.4~12.3×），'
+    + '本表（国标 12h/24h）下两者同量级、临灾略高。**没有哪个时点维度稳定占优**，'
+    + '所以不按"谁更强"挑加价对象 —— 见文件头「为什么删掉临灾档」。', '');
+  L.push('| 区域 | 时长 | 无条件 p | 临灾条件 p | 临灾加载 | 季节 κ=1.0 p | 季节加载 | 本口径更强 |');
   L.push('|---|---|---|---|---|---|---|---|');
   for (const r of rep.cells.filter((r) => r.segKey === 't2c1')) {
     const last = rep.cells.find((x) => x.regionId === r.regionId && x.hours === r.hours && x.segKey === 't0c0');

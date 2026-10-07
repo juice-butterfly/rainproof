@@ -21,10 +21,10 @@
 const A = require('./audit_numbers.js');
 const { REGIONS } = require('../04-脚本/regions.js');
 
-const HOURS = [24, 48, 72];
-// v3 档线（与 pricing_engine.js 的 THRESHOLDS 同值；自检里拿 pricing-engine.json 反证）
-const THRESHOLDS = { 24: [50, 100, 130], 48: [75, 125, 175], 72: [100, 150, 190] };
-const TIER_BPS = [5000, 7500, 10000];
+const HOURS = [12, 24];
+// v3 档线（与 pricing_engine.js 的 THRESHOLDS 同值，即 GB/T 28592-2012 表 1；自检里拿 pricing-engine.json 反证）
+const THRESHOLDS = { 12: [30, 70], 24: [50, 100] };
+const TIER_BPS = [5000, 7500];
 // 班次定义（本地时）：长班 10:00-19:59（外卖骑手最常见）；高峰 11-13 + 17-19
 const SHIFT_MAIN = (h) => h >= 10 && h < 20;
 const SHIFT_PEAK = (h) => (h >= 11 && h < 13) || (h >= 17 && h < 19);
@@ -156,10 +156,12 @@ function selfCheck(rep) {
     checked++;
     ok(d < 0.02, `复现引擎 pointRate 区域${c.regionId} ${c.hours}h：本脚本 ${g.all.expAllPct.toFixed(4)}% vs 引擎 ${c.pointRatePct.toFixed(4)}%（差 ${d.toFixed(4)}）`);
   }
-  ok(checked === 15, `复现了 15 格（实际 ${checked}）`);
-  console.log(`  全天口径 vs 引擎 pointRate：最大偏差 ${worst.toFixed(4)} 个百分点（15 格）`);
+  ok(checked === 5 * HOURS.length, `复现了 5 城 × ${HOURS.length} 档 = ${5 * HOURS.length} 格（实际 ${checked}）`);
+  console.log(`  全天口径 vs 引擎 pointRate：最大偏差 ${worst.toFixed(4)} 个百分点（${checked} 格）`);
 
-  // ⑥ 关键交叉校验乙：72h / 恒定 50mm 的触发概率必须复现《精算口径》§0 公布的那组数
+  // ⑥ 关键交叉校验乙：**历史口径**的 72h / 恒定 50mm 触发概率必须复现《精算口径》§0 公布的那组数。
+  //    这一条**不是本设计的口径**（本设计只有国标的 12h/24h），它的唯一用途是证明本脚本的
+  //    窗口扫描器与《精算口径》那套独立实现算得一样 —— 参考系不变，换口径时才能信任新数字。
   const PUB = { wuhan: 4.77, shanghai: 4.56, beijing: 2.28, chengdu: 3.72, guangzhou: 11.57 };
   for (const k of keys) {
     const r = REGIONS.find((x) => x.key === k);
@@ -168,7 +170,7 @@ function selfCheck(rep) {
     const n = mm10.length - 72 + 1;
     for (let i = 0; i < n; i++) { let s = 0; for (let j = i; j < i + 72; j++) s += mm10[j]; if (s >= 500) hit++; }
     const p = (100 * hit) / n;
-    ok(Math.abs(p - PUB[k]) < 0.02, `复现《精算口径》72h/50mm ${k}：本脚本 ${p.toFixed(2)}% vs 公布 ${PUB[k]}%`);
+    ok(Math.abs(p - PUB[k]) < 0.02, `（历史口径）复现《精算口径》72h/50mm ${k}：本脚本 ${p.toFixed(2)}% vs 公布 ${PUB[k]}%`);
   }
 
   console.log(`\n自检结果：${total} 项断言，${fails === 0 ? '全部通过' : `${fails} 项失败`}`);

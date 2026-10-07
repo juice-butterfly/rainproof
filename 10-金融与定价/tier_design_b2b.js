@@ -25,7 +25,8 @@ const path = require('path');
 const A = require('./audit_numbers.js');
 const { REGIONS } = require('../04-脚本/regions.js');
 
-const WINDOWS = [24, 48, 72];              // = 合约 v2 hoursAllowed()
+// 国标 GB/T 28592-2012 §3：降雨量只按 12h、24h 两个时段划分。48h/72h 是 v2 的线性外推，已删。
+const WINDOWS = [12, 24];                  // 合约 v3 的 hoursAllowed() 目标集合
 const PAYOUT_MAX = 0.01;                   // RainDeliveryInsuranceV2.sol:30
 const MIN_PREMIUM = 0.0002;                // :32
 const R_TARGET = 0.6;                      // 目标赔付率（口径见 指标推导-变量表.md §2.1）
@@ -52,20 +53,24 @@ function mulberry32(a) {
 const SCHEMES = {
   A: {
     key: 'A',
-    name: '现行 v2：阈值线性缩放 50×h/24，档位 ×1/×2/×5',
-    source: '03-合约/RainDeliveryInsuranceV2.sol:172-192',
-    contractChange: false,
-    // [档0, 档1, 档2] 的绝对阈值（mm）
-    thresholdsMm: (h) => [50 * h / 24, 100 * h / 24, 250 * h / 24],
+    name: '纯照抄国标三档：12h 30/70/140，24h 50/100/250，档位 ×1/×2/×5',
+    source: 'GB/T 28592-2012 表 1 暴雨 / 大暴雨 / 特大暴雨 三档下限',
+    contractChange: true,
+    // [档0, 档1, 档2] 的绝对阈值（mm）—— 国标原件，不外推
+    thresholdsMm: (h) => ({ 12: [30, 70, 140], 24: [50, 100, 250] }[h]),
     bps: [5000, 7500, 10000],
+    why: '国标给的三个等级全用上。24h 的特大暴雨线 ≥250mm 在五城 11 年里零命中（见 gbt_probe.js），'
+       + '所以这一档是写进合约也赔不到的死条款 —— 正是 v2 那样的问题。',
   },
   B: {
     key: 'B',
-    name: '建议：阈值按 DDF 次线性（50×(h/24)^0.63 ≈ 50/75/100），档位降到 1/2.5/3.5',
-    source: '本脚本 §档位 4 的实测可达性推导',
-    contractChange: true,   // 需要改 THRESHOLD_PER_24H 的缩放方式与 tierOf 的倍数
-    thresholdsMm: (h) => ({ 24: [50, 100, 130], 48: [75, 125, 175], 72: [100, 150, 190] }[h]),
-    bps: [5000, 7500, 10000],
+    name: '建议：只卖国标前两档，12h 30/70，24h 50/100，赔付 50%/75%',
+    source: 'GB/T 28592-2012 表 1 前两档 + gbt_probe.js 的 11 年可达性实测',
+    contractChange: true,   // 需要把 hoursAllowed 收成 {12,24}、tierBps 收成两档、thresholdOf 改查表
+    thresholdsMm: (h) => ({ 12: [30, 70], 24: [50, 100] }[h]),
+    bps: [5000, 7500],
+    why: '卖出即可能赔到的两档。第三档不卖的理由是它 11 年零命中（24h）/ 命中率 0.002~0.007%（12h），'
+       + '"最高赔 100%"会变成对客户不诚实的表述。',
   },
 };
 
@@ -271,14 +276,14 @@ function main() {
           thresholdsMm: thr,
           pByTierPct: pByTier,
           maxObservedMm: round(maxSum / 10, 1),
-          // 档2 是否够得着（reachable = 11 年至少命中一次）
-          tier2Reachable: pByTier[2] > 0,
+          // 最高档是否够得着（reachable = 11 年至少命中一次）
+          topTierReachable: pByTier[pByTier.length - 1] > 0,
         });
       }
     }
 
     report.schemes[sc.key] = {
-      name: sc.name, source: sc.source, contractChange: sc.contractChange,
+      name: sc.name, source: sc.source, contractChange: sc.contractChange, why: sc.why,
       bps: sc.bps, grid, batch, concentration, reserve, reachability: reach,
     };
   }
@@ -303,9 +308,13 @@ function selfCheck(rep) {
       // 硬约束 3：97.5% 上界 ≥ 点估计
       ok(`${tag} 上界 ≥ 点估计`, g.p975RatePct >= g.pointRatePct - 1e-9);
       // 硬约束 4：阈值严格递增
-      ok(`${tag} 三档阈值严格递增`,
-        g.thresholdsMm[0] < g.thresholdsMm[1] && g.thresholdsMm[1] < g.thresholdsMm[2],
-        JSON.stringify(g.thresholdsMm));
+      for (let k = 1; k < g.thresholdsMm.length; k++) {
+        ok(`${tag} 阈值严格递增`,
+          g.thresholdsMm[k - 1] < g.thresholdsMm[k], JSON.stringify(g.thresholdsMm));
+      }
+      // 硬约束 5：档数与赔付比例数一致
+      ok(`${tag} 档数与 bps 一致`, g.thresholdsMm.length === s.bps.length,
+        `${g.thresholdsMm.length} vs ${s.bps.length}`);
     }
     // 批量越大，判定 gas 摊薄后单价单调不增
     const bs = s.batch;
@@ -326,20 +335,26 @@ function selfCheck(rep) {
       `${s.reserve.var99PerPolicyEth}/${s.reserve.var975PerPolicyEth}/${s.reserve.meanPerPolicyEth}`);
     // 可达性：档位概率单调不增
     for (const r of s.reachability) {
-      ok(`[${key}] ${r.regionName} ${r.hours}h 档位概率单调不增`,
-        r.pByTierPct[0] >= r.pByTierPct[1] - 1e-9 && r.pByTierPct[1] >= r.pByTierPct[2] - 1e-9,
-        JSON.stringify(r.pByTierPct));
+      let mono = true;
+      for (let k = 1; k < r.pByTierPct.length; k++) if (r.pByTierPct[k] > r.pByTierPct[k - 1] + 1e-9) mono = false;
+      ok(`[${key}] ${r.regionName} ${r.hours}h 档位概率单调不增`, mono, JSON.stringify(r.pByTierPct));
     }
   }
 
-  // 已知事实回填：方案 A 的档2 在 11 年里五城全不可达；方案 B 的档2 至少部分可达
-  const a = rep.schemes.A.reachability.filter((r) => r.hours === 72);
-  ok('A 方案 72h 档2 全不可达', a.every((r) => r.pByTierPct[2] === 0));
-  const b = rep.schemes.B.reachability.filter((r) => r.hours === 72);
-  ok('B 方案 72h 档2 至少一城可达', b.some((r) => r.pByTierPct[2] > 0));
-  // 方案 B 的档2 在 24h 五城全可达
-  const b24 = rep.schemes.B.reachability.filter((r) => r.hours === 24);
-  ok('B 方案 24h 档2 五城全可达', b24.every((r) => r.pByTierPct[2] > 0), JSON.stringify(b24.map((r) => r.pByTierPct[2])));
+  // 已知事实回填（GB/T 28592-2012 + gbt_probe.js 的 11 年逐小时窗口实测）：
+  // ① 国标 24h 特大暴雨线 ≥250mm 五城零命中 → 方案 A 的 24h 档2 必须全为 0
+  const a24 = rep.schemes.A.reachability.filter((r) => r.hours === 24);
+  ok('A 方案 24h 档2（≥250mm）五城全不可达', a24.every((r) => r.pByTierPct[2] === 0),
+    JSON.stringify(a24.map((r) => r.pByTierPct[2])));
+  // ② 国标 12h 特大暴雨线 ≥140mm 有命中（5 城合计 15 次）→ 至少一城可达
+  const a12 = rep.schemes.A.reachability.filter((r) => r.hours === 12);
+  ok('A 方案 12h 档2（≥140mm）至少一城可达', a12.some((r) => r.pByTierPct[2] > 0),
+    JSON.stringify(a12.map((r) => r.pByTierPct[2])));
+  // ③ 方案 B 只卖两档，且这两档在 10 格里全部可达 —— 这是"卖给客户的话都兑得现"的形式化
+  ok('B 方案只有两档', rep.schemes.B.bps.length === 2, JSON.stringify(rep.schemes.B.bps));
+  ok('B 方案两档在 10 格里全部可达',
+    rep.schemes.B.reachability.every((r) => r.pByTierPct[0] > 0 && r.pByTierPct[1] > 0),
+    JSON.stringify(rep.schemes.B.reachability.map((r) => r.pByTierPct.slice(0, 2))));
   return fails;
 }
 
@@ -353,7 +368,7 @@ function printReport(rep) {
     console.log(`  ${s.source}${s.contractChange ? '   ← 需要改合约' : '   ← 无需改合约'}`);
     console.log(`${'═'.repeat(96)}`);
 
-    console.log('\n档位 1 · 费率表（区域 × 时长 = 15 格）');
+    console.log(`\n档位 1 · 费率表（区域 × 时长 = ${s.grid.length} 格）`);
     console.log('区域   时长  档线mm         命中/窗口   点估计p   97.5%上界  上界倍数  上界赔付    成本     建议保费  上界赔付率  每份毛利');
     for (const g of s.grid) {
       console.log(
@@ -372,7 +387,7 @@ function printReport(rep) {
 
     console.log('\n档位 3 · 风险集中度');
     const c = s.concentration;
-    console.log(`组合（15 格等权）点估计 ${c.portfolioPointRatePct}%  →  97.5% 上界 ${c.portfolioP975RatePct}%`);
+    console.log(`组合（${s.grid.length} 格等权）点估计 ${c.portfolioPointRatePct}%  →  97.5% 上界 ${c.portfolioP975RatePct}%`);
     console.log(`最差单格（${c.worstCellKey}）97.5% 上界 ${c.worstCellP975RatePct}%，上界倍数 ${c.worstCellLoadFactor}x`);
     console.log(`全押一格要多收 ${c.concentrationPenalty} 倍；分散后参数不确定性只剩 ${c.diversificationCredit} 倍`);
 
@@ -380,13 +395,14 @@ function printReport(rep) {
     console.log(`每份期望赔付 ${s.reserve.meanPerPolicyEth}  VaR97.5 ${s.reserve.var975PerPolicyEth}  VaR99 ${s.reserve.var99PerPolicyEth}` +
       `  VaR99/保费 ${s.reserve.var99OverPremium}  99% 缺口 ${s.reserve.shortfall99PerPolicyEth}`);
 
-    console.log('\n档位 5 · 三档可达性（%）');
-    console.log('区域   时长  档线mm         档0       档1       档2     11年最大mm  档2可达');
+    console.log(`\n档位 5 · 各档可达性（%，共 ${s.bps.length} 档）`);
+    const nT = s.bps.length;
+    console.log('区域   时长  档线mm          ' + Array.from({ length: nT }, (_, k) => pad('档' + k, 8)).join('  ') + '  11年最大mm  最高档可达');
     for (const r of s.reachability) {
       console.log(
         `${r.regionName}  ${pad(r.hours + 'h', 4)}  ${pad(r.thresholdsMm.join('/'), 14)}  ` +
-        `${pad(r.pByTierPct[0], 8)}  ${pad(r.pByTierPct[1], 8)}  ${pad(r.pByTierPct[2], 8)}  ` +
-        `${pad(r.maxObservedMm, 10)}  ${r.tier2Reachable ? 'YES' : 'no '}`
+        r.pByTierPct.slice(0, nT).map((v) => pad(v, 8)).join('  ') + '  ' +
+        `${pad(r.maxObservedMm, 10)}  ${r.topTierReachable ? 'YES' : 'no '}`
       );
     }
   }

@@ -8,7 +8,7 @@
  * "五维合起来 5.139x"，真值是全表 6.607x）。所以这张表不许手抄，也不许只靠肉眼复核。
  *
  * 做法：不解析 Markdown 表格（格式易变），而是**在正文里找形如 0.000XX 的数字，
- * 逐个断言它出现在 JSON 的合法值集合里**。合法值集合 = 60 格零售价 ∪ 180 格批量价，
+ * 逐个断言它出现在 JSON 的合法值集合里**。合法值集合 = 40 格零售价 ∪ 120 格批量价，
  * 再加上各文档明确允许引用的旧口径值（v2 的 0.001 / 0.0002 等）。
  *
  * 用法：node ref/check_doc_prices.js
@@ -32,14 +32,17 @@ const bandVals = [...new Set(eng.payload.bands.map((b) => Number(b.premiumEth)))
 // 允许出现的"非 v3 分布值"：v2 链上现行价、地板/上限、gas 量级、ETH 金额、v1 口径公平保费
 const ALLOWED_EXTRA = new Set([
   0.001, 0.0002, 0.002, 0.01,          // v2 链上价 / v3 硬地板与尊严上限 / 赔付上限
-  0.00002, 0.00007,                     // MIN_PREMIUM_ABS / 最低批量价（正文要引用）
+  0.00002, 0.00006,                     // MIN_PREMIUM_ABS / 最低批量价（正文要引用）
   0.0001, 0.0005, 0.0008, 0.0003, 0.0004, 0.0006, 0.0009,
   0.00013, 0.00012,                     // 判定/赔付 gas
-  0.00159475,                           // VaR99/份
-  0.00013051,                           // N=1 每份固定成本
-  0.00003692, 0.00019083,               // 平台团体 97.5% 风险保费区间端点
-  0.000009,                             // N=1000 摊薄后的固定成本
+  0.00050948, 0.00159475,               // VaR99/份（12h/24h 新值；72h 旧值，正文用来做对比）
+  0.00013053, 0.00013051,               // N=1 每份固定成本（新；旧值用于对比）
+  0.00003278, 0.00010142,               // 平台团体 97.5% 风险保费区间端点（12h/24h）
+  0.00003692, 0.00019083,               // 同上（72h 旧值）
+  0.000009, 0.00000066,                 // N=1000 摊薄后的固定成本
   0.00001,                              // 网格 tick
+  0.00205, 0.00211, 0.00287,            // 已删除的那 3 格（武汉/广州/成都 72h t0c0）的诚实价
+  0.00105, 0.00099,
   // ── v1/v2 口径的"链上现行价"表（产品说明 §4.2，AGENTS §4⑥ 要求它照实写链上现状）──
   // 右列"公平保费"来自 actuary.js；左列 = p × PAYOUT_MAX（纯风险保费）
   0.000795, 0.000760, 0.000380, 0.001929, 0.000621,   // 公平保费（v1 口径，元/份）
@@ -56,6 +59,8 @@ const FILES = [
   'README.md',
   '02-作战与答辩/决策记录.md',
   '10-金融与定价/定价体系-v3.md',
+  '10-金融与定价/v3-合约规格.md',
+  '10-金融与定价/定价体系-v3-数表.md',
 ];
 
 let checked = 0, bad = 0;
@@ -99,11 +104,11 @@ const bandBps = eng.payload.bands.flatMap((b) => (b.nMax === 1 ? [] : [Number(((
 const unsellable = eng.payload.retail.filter((r) => r.premiumWei === '0').length;
 
 const scalars = {
-  '全表极差': { value: allSpread, dp: 3, expect: '6.607' },
-  '格内极差下界': { value: Math.min(...cellSpreads), dp: 2, expect: '2.19' },
-  '格内极差上界': { value: Math.max(...cellSpreads), dp: 2, expect: '5.14' },
-  '最深批量折扣(bps)': { value: Math.max(...bandBps), dp: 0, expect: '7586' },
-  '不卖格数': { value: unsellable, dp: 0, expect: '3' },
+  '全表极差': { value: allSpread, dp: 3, expect: '3.750' },
+  '格内极差下界': { value: Math.min(...cellSpreads), dp: 2, expect: '1.89' },
+  '格内极差上界': { value: Math.max(...cellSpreads), dp: 2, expect: '3.19' },
+  '最深批量折扣(bps)': { value: Math.max(...bandBps), dp: 0, expect: '7857' },
+  '不卖格数': { value: unsellable, dp: 0, expect: '0' },
 };
 console.log('\n整表标量（由 JSON 现算，文档里的数必须等于它）：');
 let sbad = 0;
@@ -113,8 +118,12 @@ for (const [k, s] of Object.entries(scalars)) {
   if (!okk) sbad++;
   console.log(`  ${okk ? '✓' : '✗'} ${k} = ${got}（文档里写的是 ${s.expect}）`);
 }
-// 这三个标量至少在下列文件里各出现过一次
-const MUST = { '6.607': ['提交材料/产品说明与商业模式.md', '提交材料/项目介绍.md', '提交材料/评委问答.md', 'README.md', '10-金融与定价/定价体系-v3.md'], '2.19': ['10-金融与定价/定价体系-v3.md'], '3': [] };
+// 这几个标量至少要在下列文件里各出现过一次
+const MUST = {
+  '3.750': ['提交材料/产品说明与商业模式.md', '提交材料/项目介绍.md', '提交材料/评委问答.md', 'README.md', '10-金融与定价/定价体系-v3.md'],
+  '1.89': ['10-金融与定价/定价体系-v3.md', '提交材料/产品说明与商业模式.md'],
+  '3.19': ['10-金融与定价/定价体系-v3.md', '提交材料/产品说明与商业模式.md'],
+};
 for (const [needle, files] of Object.entries(MUST)) {
   for (const rel of files) {
     const p = path.join(ROOT, rel);

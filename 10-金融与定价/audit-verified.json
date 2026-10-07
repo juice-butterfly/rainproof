@@ -1,0 +1,378 @@
+{
+  "meta": {
+    "generatedAt": "2026-10-07T03:09:53.698Z",
+    "thresholdMm": 50,
+    "durations": [
+      6,
+      12,
+      24,
+      48,
+      72,
+      168
+    ],
+    "dataStart": "2015-10-01",
+    "dataEnd": "2026-09-30",
+    "method": "integer decimillimetre sliding window",
+    "bootstrapReps": 4000,
+    "bootstrapSeed": 20261007,
+    "cacheDir": "cache",
+    "source": "Open-Meteo Archive (ERA5) hourly precipitation_sum, timezone Asia/Shanghai"
+  },
+  "cities": {
+    "wuhan": {
+      "hours": 96432,
+      "grid": {
+        "latitude": 30.615112,
+        "longitude": 114.27562,
+        "elevation": 15
+      },
+      "windows": {
+        "6": {
+          "windows": 96427,
+          "hits": 51,
+          "pPct": 0.0529,
+          "boundariesAtThreshold": 1,
+          "jsonPct": 0.0519,
+          "diffPp": 0.001,
+          "ci95": null
+        },
+        "12": {
+          "windows": 96421,
+          "hits": 212,
+          "pPct": 0.2199,
+          "boundariesAtThreshold": 0,
+          "jsonPct": 0.2199,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "24": {
+          "windows": 96409,
+          "hits": 735,
+          "pPct": 0.7624,
+          "boundariesAtThreshold": 8,
+          "jsonPct": 0.7541,
+          "diffPp": 0.0083,
+          "ci95": null
+        },
+        "48": {
+          "windows": 96385,
+          "hits": 2626,
+          "pPct": 2.7245,
+          "boundariesAtThreshold": 15,
+          "jsonPct": 2.7089,
+          "diffPp": 0.0156,
+          "ci95": null
+        },
+        "72": {
+          "windows": 96361,
+          "hits": 4596,
+          "pPct": 4.7696,
+          "boundariesAtThreshold": 14,
+          "jsonPct": 4.7561,
+          "diffPp": 0.0135,
+          "ci95": {
+            "lo": 3.421,
+            "hi": 6.332,
+            "clusters": 132
+          }
+        },
+        "168": {
+          "windows": 96265,
+          "hits": 15055,
+          "pPct": 15.6391,
+          "boundariesAtThreshold": 35,
+          "jsonPct": 15.6287,
+          "diffPp": 0.0104,
+          "ci95": null
+        }
+      },
+      "perYear72h": {},
+      "firstHour": "2015-10-01T00:00",
+      "lastHour": "2026-09-30T23:00"
+    },
+    "shanghai": {
+      "hours": 96432,
+      "grid": {
+        "latitude": 31.247803,
+        "longitude": 121.5,
+        "elevation": 5
+      },
+      "windows": {
+        "6": {
+          "windows": 96427,
+          "hits": 29,
+          "pPct": 0.0301,
+          "boundariesAtThreshold": 1,
+          "jsonPct": 0.0301,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "12": {
+          "windows": 96421,
+          "hits": 191,
+          "pPct": 0.1981,
+          "boundariesAtThreshold": 1,
+          "jsonPct": 0.1981,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "24": {
+          "windows": 96409,
+          "hits": 727,
+          "pPct": 0.7541,
+          "boundariesAtThreshold": 2,
+          "jsonPct": 0.7541,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "48": {
+          "windows": 96385,
+          "hits": 2248,
+          "pPct": 2.3323,
+          "boundariesAtThreshold": 7,
+          "jsonPct": 2.3323,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "72": {
+          "windows": 96361,
+          "hits": 4391,
+          "pPct": 4.5568,
+          "boundariesAtThreshold": 18,
+          "jsonPct": 4.5568,
+          "diffPp": 0,
+          "ci95": {
+            "lo": 3.303,
+            "hi": 5.971,
+            "clusters": 132
+          }
+        },
+        "168": {
+          "windows": 96265,
+          "hits": 14838,
+          "pPct": 15.4137,
+          "boundariesAtThreshold": 101,
+          "jsonPct": 15.4064,
+          "diffPp": 0.0073,
+          "ci95": null
+        }
+      },
+      "perYear72h": {},
+      "firstHour": "2015-10-01T00:00",
+      "lastHour": "2026-09-30T23:00"
+    },
+    "beijing": {
+      "hours": 96432,
+      "grid": {
+        "latitude": 39.89455,
+        "longitude": 116.35983,
+        "elevation": 47
+      },
+      "windows": {
+        "6": {
+          "windows": 96427,
+          "hits": 30,
+          "pPct": 0.0311,
+          "boundariesAtThreshold": 0,
+          "jsonPct": 0.0311,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "12": {
+          "windows": 96421,
+          "hits": 113,
+          "pPct": 0.1172,
+          "boundariesAtThreshold": 0,
+          "jsonPct": 0.1172,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "24": {
+          "windows": 96409,
+          "hits": 422,
+          "pPct": 0.4377,
+          "boundariesAtThreshold": 3,
+          "jsonPct": 0.4377,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "48": {
+          "windows": 96385,
+          "hits": 1240,
+          "pPct": 1.2865,
+          "boundariesAtThreshold": 14,
+          "jsonPct": 1.272,
+          "diffPp": 0.0145,
+          "ci95": null
+        },
+        "72": {
+          "windows": 96361,
+          "hits": 2198,
+          "pPct": 2.281,
+          "boundariesAtThreshold": 15,
+          "jsonPct": 2.2654,
+          "diffPp": 0.0156,
+          "ci95": {
+            "lo": 1.33,
+            "hi": 3.403,
+            "clusters": 132
+          }
+        },
+        "168": {
+          "windows": 96265,
+          "hits": 7167,
+          "pPct": 7.4451,
+          "boundariesAtThreshold": 20,
+          "jsonPct": 7.4243,
+          "diffPp": 0.0208,
+          "ci95": null
+        }
+      },
+      "perYear72h": {},
+      "firstHour": "2015-10-01T00:00",
+      "lastHour": "2026-09-30T23:00"
+    },
+    "guangzhou": {
+      "hours": 96432,
+      "grid": {
+        "latitude": 23.163443,
+        "longitude": 113.27749,
+        "elevation": 17
+      },
+      "windows": {
+        "6": {
+          "windows": 96427,
+          "hits": 58,
+          "pPct": 0.0601,
+          "boundariesAtThreshold": 1,
+          "jsonPct": 0.0591,
+          "diffPp": 0.001,
+          "ci95": null
+        },
+        "12": {
+          "windows": 96421,
+          "hits": 315,
+          "pPct": 0.3267,
+          "boundariesAtThreshold": 2,
+          "jsonPct": 0.3257,
+          "diffPp": 0.001,
+          "ci95": null
+        },
+        "24": {
+          "windows": 96409,
+          "hits": 1369,
+          "pPct": 1.42,
+          "boundariesAtThreshold": 6,
+          "jsonPct": 1.42,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "48": {
+          "windows": 96385,
+          "hits": 5738,
+          "pPct": 5.9532,
+          "boundariesAtThreshold": 25,
+          "jsonPct": 5.9428,
+          "diffPp": 0.0104,
+          "ci95": null
+        },
+        "72": {
+          "windows": 96361,
+          "hits": 11153,
+          "pPct": 11.5742,
+          "boundariesAtThreshold": 49,
+          "jsonPct": 11.5244,
+          "diffPp": 0.0498,
+          "ci95": {
+            "lo": 9.354,
+            "hi": 13.88,
+            "clusters": 132
+          }
+        },
+        "168": {
+          "windows": 96265,
+          "hits": 31278,
+          "pPct": 32.4916,
+          "boundariesAtThreshold": 52,
+          "jsonPct": 32.4375,
+          "diffPp": 0.0541,
+          "ci95": null
+        }
+      },
+      "perYear72h": {},
+      "firstHour": "2015-10-01T00:00",
+      "lastHour": "2026-09-30T23:00"
+    },
+    "chengdu": {
+      "hours": 96432,
+      "grid": {
+        "latitude": 30.544815,
+        "longitude": 104.08235,
+        "elevation": 485
+      },
+      "windows": {
+        "6": {
+          "windows": 96427,
+          "hits": 38,
+          "pPct": 0.0394,
+          "boundariesAtThreshold": 0,
+          "jsonPct": 0.0394,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "12": {
+          "windows": 96421,
+          "hits": 165,
+          "pPct": 0.1711,
+          "boundariesAtThreshold": 0,
+          "jsonPct": 0.1711,
+          "diffPp": 0,
+          "ci95": null
+        },
+        "24": {
+          "windows": 96409,
+          "hits": 573,
+          "pPct": 0.5943,
+          "boundariesAtThreshold": 2,
+          "jsonPct": 0.5923,
+          "diffPp": 0.002,
+          "ci95": null
+        },
+        "48": {
+          "windows": 96385,
+          "hits": 1983,
+          "pPct": 2.0574,
+          "boundariesAtThreshold": 5,
+          "jsonPct": 2.0543,
+          "diffPp": 0.0031,
+          "ci95": null
+        },
+        "72": {
+          "windows": 96361,
+          "hits": 3588,
+          "pPct": 3.7235,
+          "boundariesAtThreshold": 8,
+          "jsonPct": 3.7193,
+          "diffPp": 0.0042,
+          "ci95": {
+            "lo": 2.492,
+            "hi": 5.111,
+            "clusters": 132
+          }
+        },
+        "168": {
+          "windows": 96265,
+          "hits": 11350,
+          "pPct": 11.7904,
+          "boundariesAtThreshold": 61,
+          "jsonPct": 11.7395,
+          "diffPp": 0.0509,
+          "ci95": null
+        }
+      },
+      "perYear72h": {},
+      "firstHour": "2015-10-01T00:00",
+      "lastHour": "2026-09-30T23:00"
+    }
+  }
+}

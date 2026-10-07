@@ -24,29 +24,42 @@
 
 | 步骤 | 谁做 | 做什么 |
 |---|---|---|
-| ① 投保 | 骑手 | 交该区域保费（**0.0004–0.0020 ETH，按风险差异化**），锁定「区域 + 保障时长（1–72 小时）」，并记下投保当刻的链上降雨快照 `rainfallAtBuy` |
+| ① 投保 | 骑手 | 交该区域保费（**0.0002–0.0020 ETH，按「区域 × 保障时长」网格差异化**），锁定「区域 + 保障时长（**24 / 48 / 72 小时三档**）」，并记下投保当刻的链上降雨快照 `rainfallAtBuy` |
 | ② 喂价 | 预言机 | 把该区域自起点（`RAIN_EPOCH`）以来的累计降雨量写到链上，附**置信度、来源数、证据哈希** |
 | ③ 判定 | AI 判定层 | 三个独立气象模型交叉复核 → 确定性规则给出 **DENY / PAY** → 结论 + 输入哈希 + 输出哈希一起上链 |
-| ④ 赔付 | 任何人 | 保单期间降雨增量 ≥ **50mm**、AI 判定为 PAY、置信度 ≥ **60** → 触发赔付 **0.01 ETH** 给骑手 |
+| ④ 赔付 | 任何人 | 保单期间降雨增量达到该时长的国标线（24/48/72h → **50 / 100 / 150 mm**）、AI 判定为 PAY、置信度 ≥ **60** → 按国标档位（50% / 75% / 100%，即 0.005 / 0.0075 / **最高 0.01 ETH**）赔付给骑手 |
 
-关键参数（`03-合约/RainDeliveryInsurance.sol`，全部 `constant`，部署后不可改）：
+**演示基线（对外统一口径）**：BOT Chain 测试网 **968** 上的 **v2 合约**
+`0x89e7C942535930B61cB61631051E8b0bD670596a`（`rpc.bohr.life` / `scan.bohr.life`）。
+Sepolia 上的 v1 是**第一阶段留痕**，见文末「第一阶段留痕（Sepolia v1）」——别再拿它当演示对象。
 
-| 参数 | 值 |
-|---|---|
-| `PREMIUM` | 0.001 ETH |
-| `PAYOUT` | 0.01 ETH |
-| `THRESHOLD` | 50 mm |
-| `MIN_CONFIDENCE` | 60 |
-| `MIN_HOURS` / `MAX_HOURS` | 1 / 72 |
-| `REGION_COUNT` | 5 |
+关键参数（`03-合约/RainDeliveryInsuranceV2.sol`；下表 `constant` 的部分部署后不可改）：
 
-上面这五个是**兜底常量**。实际保费走合约里的承保旋钮
-`setUnderwriting(regionId, level, premium, reasonHash)`（只有 operator 能调），
-读价接口 `premiumOf(regionId)` 为 0 时回退到 `PREMIUM`。链上现价**不是手填的**：
+| 参数 | 值 | 说明 |
+|---|---|---|
+| `PAYOUT_MAX` | 0.01 ETH | 最高（100%）档赔付额；实赔走 `tierBps` 50% / 75% / 100% |
+| `THRESHOLD_PER_24H` | 50 mm | 国标 24h 暴雨下限；`thresholdOf(24/48/72)` = **50 / 100 / 150 mm** |
+| `MIN_HOURS` / `MAX_HOURS` | 24 / 72 | 只卖 24 / 48 / 72 三档（`hoursAllowed`） |
+| `MIN_CONFIDENCE` | 60 | AI 判定与喂价验收共用的门槛 |
+| `REGION_COUNT` | 5 | 1=武汉 2=上海 3=北京 4=广州 5=成都 |
+| `MAX_FEED_AGE` | 24 h | A4b：投保前 24h 内该区域必须喂过价 |
+| `MAX_POLICIES_PER_RIDER` | 3 | A3：**终身**笔数上限（结算不回退） |
+| `MAX_OPEN_EXPOSURE_PER_RIDER` | 0.02 ETH | A3：同时在保的赔付额上限（= 2 × 满额） |
+| `MIN_PREMIUM` | 0.0002 ETH | A1：保费地板 |
+| `PREMIUM_DEFAULT` | 0.001 ETH | 没设过网格价/区域价时的兜底 |
+| `PRODUCT_RAIN` | 1 | A9：险种编号（只做了暴雨） |
+
+**其中两个不是 `constant`、`operator` 能改的开关**，所以对外要分版本说：`coolingPeriod`（默认 3 天，**968 演示链上是 0**）与
+`eligibleRequired`（白名单总开关，**968 上是 false**）。链上现值直接读，别背：`node 04-脚本/keeper.js --once --dry-run`。
+
+`PREMIUM_DEFAULT` 只是**兜底常量**。实际保费走合约里的两个承保旋钮
+`setUnderwriting(regionId, level, premium, reasonHash)` 与 `setPremiumGrid(regionId, hours, premium, reasonHash)`（只有 operator 能调），
+读价接口 `premiumOf(regionId, hours)` 逐级回退：**网格价 → 区域基准价 `aiPremium` → `PREMIUM_DEFAULT`，且不低于 `MIN_PREMIUM`**。
+链上现价**不是手填的**：
 `04-脚本/set-premium.js` 读 `10-金融与定价/actuary-output.json`（11 年逐小时实测），按
 `上整( p × PAYOUT ÷ 目标赔付率 0.60 )` 算出，依据串照抄即可复算出同一个 `reasonHash`。
 
-| 区域 | 72h 触发概率 | 链上保费 | 赔付率（旧统一价 0.001 口径） | 现价赔付率 | 承保动作 |
+| 区域 | 72h 触发概率 | 链上保费（72h 档） | 赔付率（旧统一价 0.001 口径） | 现价赔付率 | 承保动作 |
 |---|---|---|---|---|---|
 | 武汉 | 4.770% | 0.0008 ETH | 47.7% | 59.6% | NORMAL |
 | 上海 | 4.557% | 0.0008 ETH | 45.6% | 57.0% | NORMAL |
@@ -63,8 +76,10 @@
 > **越线本身不显著**；能站住的说法是「广州**显著高于**其余四城，所以我们单独加价」。
 > 链上两轮定价变更（日粒度口径 → 72 小时权威口径）都有 `UnderwritingDecision` 事件留痕，参数怎么变的可查。
 
-**v3：五维定价（已算好并核验，链上待 A 执行）。** 上表是**链上现状**（v2：按区域一条曲线，
-**保费与保障时长、买家身份、购买量都无关**，24h 和 72h 同价）。v3 把它换成
+**v3：五维定价（已算好并核验，链上待 A 执行）。** 上表那一列是**链上 v2 网格在 72h 档上的现价**
+（v2 已按「区域 × 保障时长」出价：武汉 0.0002 / 0.0005 / 0.0008，广州 0.0003 / 0.001 / 0.002，
+都能用 `premiumOf(regionId, hours)` 读回 —— 以链上为准，别背）。v2 里的保费
+**与买家身份、购买量都无关**，这正是 v3 要补的两个维度。v3 把它换成
 `premiumOf(regionId, hours, riderTier, channel, count)`：**60 格零售 + 180 格批量带**，
 覆盖 地区 × 24/48/72h × 用户类型（众包/认证/平台团体）× 场景（自助/平台代付）× 购买量（1~1000）。
 五维合起来极差 **6.607×**（最低 北京 24h 平台团体 0.00028 → 最高 成都 72h 认证自助 0.00185）；
@@ -87,7 +102,9 @@
 
 我们不主张「不用链就做不了」—— 纯中心化服务也能实现同样的流程。链带来的、**我们的实现真正承重的**是两条：
 
-1. **规则不可事后修改**：上表所有参数都是 `constant`，部署后连部署者自己也改不了。
+1. **规则不可事后修改**：上表里 `constant` 的那些参数、以及国标分档公式（`thresholdOf` / `tierOf` / `tierBps`），
+   部署后连部署者自己也改不了。`operator` 能改的**只有** `coolingPeriod` 与 `eligibleRequired` 两个开关，
+   以及承保价（`setUnderwriting` / `setPremiumGrid`）——这三类改动全部留事件，可以查、可以复算。
 2. **判定过程公开可复算**：每次喂价和每次 AI 判定都把**输入证据哈希 + 输出结论哈希**写进链上事件，
    链上不存原文。任何人拿到 `09-AI判定留痕/` 里的 JSON 重算一遍，就能验证我们没在事后改结论。
 
@@ -145,6 +162,9 @@ AI 判定登记后不影响已生效的赔付条件。详见下面「已知边�
   [`08-截图存证/历史回放-2024武汉暴雨.md`](08-截图存证/历史回放-2024武汉暴雨.md)。
 - **自动理赔 keeper**：`04-脚本/keeper.js` 轮询链上保单状态，发现 `claimable` 就替骑手领赔款。
   它能这么做，是因为 `claim(uint256)` 本身**没有权限修饰符** —— 理赔不依赖某一家运营方在线。
+  边界说清楚：keeper 只负责「领钱」；**判定必须由 operator 的两条脚本先提交上链**（`ai-judge` →
+  `submit-judgement`），合约里没有任何定时器。`--settle`（把到期未赔的保单结算掉、回收敞口）是
+  `settleExpired`，`onlyOperator`，需要 operator 私钥。
 - **演示前端**：合约地址自愈、钱包缺网络时自动添加、赔付按钮按保单状态说明原因、
   注资按钮按钱包余额封顶。
 
@@ -194,7 +214,7 @@ npm test          # = check-canonical && check-ai && check-ui && e2e && e2e:v2�
 - `e2e_contract.js`：本地链上跑完整业务流（v1 合约），73 项断言
 - `e2e_v2.js`：本地链上跑 v2 合约的九项改动（A1 保费网格 / A3 限购 / A4 冷静期 / A4b 喂价新鲜度 / A5 sources 上链 / A6 在保敞口 / A7 国标分档 / A8 白名单 / A9 productId），101 项断言 —— 它在部署前抓出过 `withdrawPool` 的 uint256 下溢缺陷
 
-### 连真链（Sepolia）
+### 连真链（演示链路 = BOT Chain 测试网 968；换链只改 RPC 环境变量）
 
 ```bash
 cd 04-脚本
@@ -208,6 +228,10 @@ node hook-watch.js --once         # 事件钩子：扫一遍链上保单，对�
 node ai-collect.js <保单号>        # 采集三模型证据快照 → 09-AI判定留痕/
 node ai-judge.js <保单号>          # 确定性判定 → 判定结果 JSON
 node submit-judgement.js <保单号>  # 重算核对后把判定提交上链
+node keeper.js --once             # 理赔 keeper：赔掉所有 claimable 的保单（claim() 无权限，谁跑都行）
+node keeper.js --once --settle    # 额外把「到期未赔」的保单结算掉、回收在保敞口（onlyOperator，需 operator 私钥）
+node rehearse-v2.js               # v2 九项改动彩排（默认只读演练，--apply 才发交易）
+node set-premium.js               # 承保价网格读/写（默认只读，--apply 才写链）
 ```
 
 ### 部署合约
@@ -238,8 +262,8 @@ $env:SEPOLIA_RPC='https://rpc.bohr.life'; npm run deploy:v2
 
 由 GitHub Pages 直接从 `05-演示站点/` 发布（见 `.github/workflows/deploy-demo.yml`），**与仓库里的文件字节一致**，不是另一份副本。
 
-- **只读浏览不需要钱包**：降雨看板、资金池余额、事件流、核验台打开就能看 —— 这些数据是页面现读 Sepolia 的。
-- 要真的走「投保 / 注资 / 申请赔付」，需要浏览器装 MetaMask 并切到 Sepolia（chainId `11155111`）。这是链上交互的固有前提：网页不能替用户签名。
+- **只读浏览不需要钱包**：降雨看板、资金池余额、事件流、核验台打开就能看 —— 这些数据是页面现读 **BOT Chain 测试网 968** 的。
+- 要真的走「投保 / 注资 / 申请赔付」，需要浏览器装 MetaMask 并切到 BOT Chain 测试网（chainId `968`）。这是链上交互的固有前提：网页不能替用户签名。
 - 核验台：https://juice-butterfly.github.io/rainproof/verifier.html
 
 ### 打开演示前端（本地，开发用）
@@ -250,7 +274,7 @@ python -m http.server 8090 --directory 05-演示站点
 # 然后浏览器打开 http://127.0.0.1:8090/index.html
 ```
 
-钱包连 Sepolia（chainId `11155111`；页面在你钱包里没有这条链时会自动帮你加）。
+钱包连 BOT Chain 测试网（chainId `968`；页面在你钱包里没有这条链时会自动帮你加）。
 
 ### 离线核验（不依赖任何在线区块浏览器）
 
@@ -259,15 +283,50 @@ python -m http.server 8090 --directory 05-演示站点
 
 ---
 
-## 3. 链上地址（Sepolia 测试网）
+## 3. 链上地址
+
+**演示基线是 BOT Chain 测试网 968 上的 v2**；Sepolia 上的 v1 是第一阶段留痕与对照，别拿它当演示对象。
+
+### 演示基线：BOT Chain 测试网 968（v2）
 
 | 项 | 值 |
 |---|---|
-| 网络 | Sepolia（chainId `11155111`） |
-| 合约 | `0x89e7C942535930B61cB61631051E8b0bD670596a` |
-| 部署交易 | `0x197ef6ca029dd59df77e28951ed6eb0cd18b26fc20463fb2d0b1bdf882eaaf03`（区块 11,855,936） |
-| 运行时代码长度 | 10,758 字节 |
-| 完整交易记录 | [全部链上事件（部署 / 注资 / 投保 / 喂价 / 判定 / 赔付）](08-截图存证/真链留痕-2026-10-06.md) |
+| 网络 | BOT Chain 测试网（chainId `968` · RPC `https://rpc.bohr.life`） |
+| 合约（v2） | `0x89e7C942535930B61cB61631051E8b0bD670596a`（主网 677 上会是同一个地址） |
+| 运行时代码长度 | 12,378 字节 |
+| 浏览器 | https://scan.bohr.life/address/0x89e7C942535930B61cB61631051E8b0bD670596a |
+| 当前状态 | 池子 0.0868 BOT · 准备金 0.03 BOT · 6 张保单（3 张已赔付）· 五城累计 101 / 287 / 109 / 303 / 227 mm |
+| 完整交易记录 | [BOT Chain 968 的全部链上事件](02-作战与答辩/汉客松-交易哈希清单.md)（§五） |
+
+演示页、核验台、PPT 与截图读的都是这一条链：`05-演示站点/index.html` 里 `CHAIN_ID = 968n`，
+且页面用 **chainId + 块高双重确认**身份（块高太小一律判为本地假链，并锁死投保 / 注资）。
+主网 677 尚未部署（operator 余额 0）。
+
+### 第一阶段留痕：Sepolia `11155111`（v1）
+
+赛期第一阶段用 v1 合约在 Sepolia 上把「喂价 → 投保 → 判定 → 赔付」整条流程真跑过一遍，证据留在这里：
+
+| 项 | 值 |
+|---|---|
+| 合约（v1） | `0x89e7C942535930B61cB61631051E8b0bD670596a` —— 与 968 上的 v2 **地址相同**（同一部署账户的第 1 个 nonce），引用时务必写清是哪条链 |
+| 部署 | 区块 11,855,936 · 运行时代码 10,758 字节 · 部署交易 `0x197ef6ca029dd59df77e28951ed6eb0cd18b26fc20463fb2d0b1bdf882eaaf03` |
+| 留痕 | [Sepolia 全部链上事件（17 条）](08-截图存证/真链留痕-2026-10-06.md) · [2024 武汉暴雨历史回放](08-截图存证/历史回放-2024武汉暴雨.md) · [AI 判定留痕 JSON](09-AI判定留痕/) |
+
+v1 与 v2 的参数差别（**v1 的留痕仍是有效证据，但它不是演示基线**）：
+
+| | v1（Sepolia） | v2（BOT Chain 968，演示基线） |
+|---|---|---|
+| 保障时长 | `MIN_HOURS`/`MAX_HOURS` = 1 / 72（任意小时） | 只卖 `24 / 48 / 72` 三档 |
+| 触发阈值 | 单一 `THRESHOLD = 50 mm` | `thresholdOf(24/48/72)` = 50 / 100 / 150 mm |
+| 赔付额 | 固定 `PAYOUT = 0.01 ETH` | 国标分档 `PAYOUT_MAX` × 50% / 75% / 100% |
+| 保费 | `PREMIUM = 0.001 ETH` + `setUnderwriting` 区域价 | 网格价 `setPremiumGrid(区域 × 时长)` → `aiPremium` → `PREMIUM_DEFAULT`，地板 `MIN_PREMIUM` |
+| 喂价新鲜度 | 无 | `MAX_FEED_AGE = 24h`（投保前该区域必须喂过价） |
+| 限购 / 敞口 | 无 | `MAX_POLICIES_PER_RIDER = 3` · `MAX_OPEN_EXPOSURE_PER_RIDER = 0.02 ETH` |
+| 结算敞口回收 | 无 | `openExposure` + `settleExpired` |
+| 数据源个数 | `sources` 恒为 0 | `sources` 上链 |
+| 冷静期 / 白名单 | 无 | 代码已实现，**968 上两个开关都关着** |
+
+判定层（canonical 哈希、R1–R5、三模型交叉复核）**两版一字未改**。
 
 ---
 

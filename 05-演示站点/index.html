@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>雨证 · RainProof — 可验证的 AI 参数化配送险</title>
+<meta name="description" content="雨证 RainProof：把「暴雨赔不赔」写成链上可复算的规则 —— 喂价、AI 判定、分档赔付全部留痕，第三方拿同一份快照重跑得到逐字节相同的结果。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='25' font-size='25'%3E%F0%9F%8C%A7%3C/text%3E%3C/svg%3E">
+<meta property="og:title" content="雨证 RainProof — 可验证的 AI 参数化配送险">
+<meta property="og:description" content="暴雨赔付规则写在链上：链上喂价、AI 判定与证据哈希、国标分档赔付，全部可复算。">
+<meta property="og:type" content="website">
 <style>
   /* ============================================================================
      雨证 · 演示页设计系统（2026-10-07 重构）
@@ -82,7 +87,11 @@
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .grid2{display:grid;grid-template-columns:1.55fr .95fr;gap:28px}
   .stick{position:sticky;top:20px}
-  @media (max-width:1000px){ .grid2{grid-template-columns:1fr} }
+  @media (max-width:1000px){
+    .grid2{grid-template-columns:1fr}
+    /* 窄屏右栏会被挤到最下面：投保面板必须排在事件流前面，否则手机上要先划过整屏日志才看得到"投保" */
+    .grid2 > div:last-child{order:-1}
+  }
   .k{font-size:var(--t-lab);color:var(--faint);letter-spacing:.3px;margin-bottom:6px}
   .v{font-family:var(--mono);font-size:var(--t-tbl);word-break:break-all}
   .mono{font-family:var(--mono)}
@@ -128,7 +137,7 @@
   .rtop b{font-family:var(--mono);font-size:14px;color:var(--ink)}
   .bar{height:8px;background:#08111C;border-radius:99px;position:relative;margin-top:18px;
     outline:1px solid var(--hair)}
-  .bar::before{content:"触发线";position:absolute;left:calc(50% + 6px);top:-15px;font-size:10px;letter-spacing:.4px;
+  .bar::before{content:"触发线";position:absolute;left:calc(50% + 6px);top:-15px;font-size:11px;letter-spacing:.4px;
     color:var(--faint);white-space:nowrap}
   .bar i{display:block;height:100%;border-radius:99px;position:relative;
     background:var(--blue);transition:width .5s cubic-bezier(.16,1,.3,1)}
@@ -137,7 +146,7 @@
   .rnote{font-size:var(--t-lab);color:var(--faint);margin-top:5px}
   /* 选中的那一行 == 整页背景雨幕的来源 */
   .region.is-sel .rtop > span:first-child{color:var(--ink);font-weight:620}
-  .region.is-sel .rtop > span:first-child::after{content:"背景雨幕";margin-left:7px;font-size:10px;
+  .region.is-sel .rtop > span:first-child::after{content:"背景雨幕";margin-left:7px;font-size:11px;
     font-weight:400;letter-spacing:.2px;color:var(--cyan);border:1px solid rgba(47,211,238,.4);
     background:rgba(47,211,238,.07);border-radius:var(--r-xs);padding:1px 5px;vertical-align:1px}
   .region.is-sel > .bar{outline-color:rgba(47,211,238,.45)}
@@ -257,7 +266,7 @@
   <!-- ============ 左栏：现状与记录 ============ -->
   <div>
     <section class="sec">
-      <h2>降雨看板<em>链上的累计值，由喂价脚本写入；标了「背景雨幕」的那一行，就是整页背景雨的来源</em></h2>
+      <h2>降雨看板<em>链上的累计值，只增不减（喂价脚本从 2026-10-01 起累加）；触发赔的是<strong>投保后的增量</strong>，不是这个数；标了「背景雨幕」的那一行，就是整页背景雨的来源</em></h2>
       <div class="panel" id="rainBoard">
         <div class="loading">正在读取各区域降雨</div>
       </div>
@@ -296,7 +305,8 @@
         <div class="v" id="threshShow">—</div>
         <button class="btn primary block" id="buyBtn" style="margin-top:16px" disabled>连接钱包后投保</button>
         <div class="note" id="buyHint">
-          保单期间该区域<strong>新增累计降雨 ≥ 阈值</strong> 就能申请赔付（基线 = 投保当刻的链上雨量），赔 <strong id="payoutShow">—</strong>。
+          保单期间该区域<strong>新增累计降雨 ≥ 阈值</strong> 就能申请赔付（基线 = 投保当刻的链上雨量），最高赔 <strong id="payoutShow">—</strong>。
+          实赔按国标档位打折：<strong>暴雨 50% / 大暴雨 75% / 特大暴雨 100%</strong>。
         </div>
       </div>
     </section>
@@ -329,8 +339,8 @@
       <button class="btn sm gold" id="fundBtn" disabled>注资到资金池（按钱包余额自动封顶）</button>
     </div>
     <div class="note">
-      <strong>演示前必须先把池子喂饱。</strong>收了 1 份保费（0.001）却要赔 10 倍（0.01），
-      池子是空的，第一笔赔付都过不去。本地链上验过的那条 <code>insurance pool empty</code> 就是它。
+      <strong>资金池必须有余额。</strong>收 1 份保费（0.0002–0.002）却要赔最高 10 倍（0.01），
+      池子是空的，第一笔赔付都过不去 —— 链上会直接抛 <code>insurance pool empty</code>。
     </div>
   </div>
 </details>
@@ -346,7 +356,7 @@
 </footer>
 </div>
 
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script src="ethers.umd.min.js"></script>
 <script>
@@ -356,6 +366,9 @@ const ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{
 const QS = new URLSearchParams(location.search);
 // ?rpc=… 可临时指定节点（本地链联调用，例如 http://127.0.0.1:8545）
 const RPC_OVERRIDE = QS.get("rpc");
+// ★ 诚实的单节点：968 目前没有可验证的第二个公共 RPC（thirdweb / ankr / ws 都试过，不是连不上就是链 ID 不对），
+//   所以这里不写"自动轮换节点"这种做不到的承诺。节点抖了就换网络，或用 ?rpc=<你确信可达的节点> 临时顶一下；
+//   读节点失败不会把页面卡死 —— 轮询每 12 秒自己重试（见文件末尾）。
 const RPC_NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
   "https://rpc.bohr.life"
 ];
@@ -412,7 +425,12 @@ function toast(msg, kind) {
   t.textContent = msg;
   t.className = "show" + (kind ? " " + kind : "");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.className = ""; }, kind === "err" ? 12000 : 5000);
+  // 错误留 12 秒（要读完 revert reason），正常提示 5 秒；收起后把文字清掉，
+  // 否则屏幕阅读器下次经过这条 aria-live 区时还会念出上一次那句旧提示。
+  toastTimer = setTimeout(() => {
+    t.className = "";
+    setTimeout(() => { if (!t.className) t.textContent = ""; }, 320);
+  }, kind === "err" ? 12000 : 5000);
 }
 function setMode(text, cls) { const e = $("modeTag"); e.textContent = text; e.className = "tag " + (cls || ""); }
 
@@ -443,7 +461,7 @@ function showFakeChainWarning() {
     "font:700 14px/1.7 system-ui,'Microsoft YaHei',sans-serif;padding:8px 14px;text-align:center;" +
     "box-shadow:0 2px 10px rgba(0,0,0,.35)";
   bar.textContent = "⚠ 当前连的是本地假链（块高 " + S.chain.blockNumber.toLocaleString("en-US") +
-    "，chainId 被伪装成 " + (S.chain.chainName || "已知链") + "）—— 不是真链！投保/注资已锁死，不要把这一页给评委看。" +
+    "，chainId 被伪装成 " + (S.chain.chainName || "已知链") + "）—— 不是真链！投保/注资已锁死。" +
     "去掉网址里的 ?rpc= 参数，或清掉 localStorage[\"" + LS_KEY + "\"] 后刷新。";
   document.body.appendChild(bar);
   document.body.style.paddingTop = "44px";
@@ -513,7 +531,15 @@ async function attachContract(addr, quiet) {
 
   // 读合约（永远走公共节点读，不走钱包 —— 少弹窗、也更快）
   if (!S.provider) S.provider = await getReadProvider();
-  const code = await S.provider.getCode(addr);
+  let code;
+  try {
+    code = await S.provider.getCode(addr);
+  } catch (e) {
+    // 节点抖一下就把异常一路冒到 boot()，页面会停在"节点连不上"再也不动 —— 这里只报一句，
+    // 剩下的交给文件末尾那个 12 秒轮询自己去重试。
+    if (!quiet) toast("读节点失败（" + (e.shortMessage || e.message || e) + "）—— 12 秒后会自动重试", "err");
+    return false;
+  }
   if (!code || code === "0x") {
     if (!quiet) toast("这个地址在链上没有合约代码。可能是地址抄错了，或者部署失败了 —— 去链上核验台确认一下。", "err");
     return false;
@@ -660,11 +686,13 @@ async function refreshAll() {
 }
 
 /* 配送区域表 —— 下拉框、降雨看板、背景雨幕共用这一份。
-   顺序必须与链上 regionId(1..5) 对齐；链上 regionName() 存的是拼音，这里统一显示中文。 */
+   顺序必须与链上 regionId(1..5) 对齐；链上 regionName() 存的是拼音（"wuhan"/"shanghai"…），
+   所以界面上一律走这张表显示中文，不要直接把 regionName() 的输出摆到页面上。 */
 const REGIONS = [
   { id:1, label:"武汉" }, { id:2, label:"上海" }, { id:3, label:"北京" },
   { id:4, label:"广州" }, { id:5, label:"成都" }
 ];
+const RName = id => (REGIONS.find(r => r.id === Number(id)) || {}).label || ("区域 #" + id);
 
 // 国标（GB/T 28592-2012）三档 → 赔付比例，与合约 tierBps(0/1/2) = 50% / 75% / 100% 对齐
 const TIER_LABEL = ["暴雨档 50%", "大暴雨档 75%", "特大暴雨档 100%"];
@@ -698,7 +726,7 @@ async function loadRegions() {
   }
   const got = Object.keys(vals).length;
   if (got) S.rainVals = vals;                       // 只收下真正读到的值，全失败时不动上一版
-  const sig = REGIONS.map(r => vals[r.id]).join(",");
+  const sig = thr + "|" + REGIONS.map(r => vals[r.id]).join(",");   // ★ 阈值也算进签名：切时长会换阈值，只比雨量会把旧刻度留在页面上
   // 一个都没读到、且看板上已经有数字时，宁可留着上一版 —— 现场 RPC 抖一下不该给评委看一屏报错
   if (sig !== S.rainSig && (got || !S.rainSig)) {
     S.rainSig = sig;
@@ -708,13 +736,17 @@ async function loadRegions() {
   applyRain();
 }
 
-/* 背景雨幕的雨量 = 「配送区域」当前选中那条链上记录，不是五个区域的均值、也不是最大值。
-   到阈值就是满格：所以两个都超阈值的区域，背景一样是暴雨 —— 视觉说的正是「这条线被跨过了」。 */
+/* 背景雨幕的强度 = 「配送区域」当前选中那条链上记录，刻度取 max(阈值×2, 五城最大值)：
+   条子（雨量看板）负责说「这条线被跨过了没有」，雨幕负责说「这场雨有多大」——
+   如果雨幕也按 阈值×2 封顶，演示链上五城（101/287/109/303/227 mm）除武汉外全顶格，
+   背景就全是同一场暴雨、看不出层次了。 */
 function applyRain() {
   if (!S.meta || !S.rainVals) return;
   const v = S.rainVals[Number($("regionSel").value) || 1];
   if (v == null) return;                            // 选中区域没读到 → 保持上一次的雨量，不清零
-  document.documentElement.style.setProperty("--rain", Math.min(1, v / Number(S.meta.threshold)));
+  const thr = Number(S.meta.threshold) || 50;
+  const scale = Math.max(thr * 2, Math.max(...Object.values(S.rainVals), 0));
+  document.documentElement.style.setProperty("--rain", Math.min(1, v / scale));
 }
 
 /* 看板上标出是哪一行在驱动背景雨幕 */
@@ -759,19 +791,19 @@ async function loadMyPolicies() {
       // 判定记录单独 try：这份附加信息读不到时，不该把整张保单列表变成错误页
       let jm = null;
       try { jm = await S.readC.judgements(id); } catch (e) { jm = null; }
-      const name = await S.readC.regionName(p.regionId);
+      const name = RName(p.regionId);
       const from = new Date(Number(p.startTime) * 1000), to = new Date(Number(p.endTime) * 1000);
       const fmt = d => `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-      const label = { active:"保障中", pending_judgement:"待 AI 判定", claimable:"可申请赔付 ✅",
+      const label = { active:"保障中", pending:"等待生效", pending_judgement:"待 AI 判定", claimable:"可申请赔付 ✅",
                       denied:"AI 判定不赔", low_confidence:"AI 置信度不足",
-                      paid:"已赔付", settled:"已结清", expired:"已过期", not_found:"不存在" }[status] || status;
+                      paid:"已赔付", expired:"已过期", not_found:"不存在" }[status] || status;
       const claimable = status === "claimable";
       // v2 按国标分档：应赔额存在保单里（payout 字段），不是每张单子都赔满额。
       // 地址上是老 ABI（没有 payout 字段）时退回 PAYOUT_MAX，不至于显示成 undefined。
       const due = p.payout != null ? p.payout : S.meta.payout;
       // 按钮点不动的时候，按钮自己必须说出「为什么点不动」。
       // 否则现场只能把它解释成「这个功能坏了」—— 而这恰恰是判定层存在的最好证明。
-      const NOBTN = { paid:"已赔付", settled:"已结清", pending_judgement:"待 AI 判定", denied:"AI 判定不赔",
+      const NOBTN = { paid:"已赔付", pending:"等待生效", pending_judgement:"待 AI 判定", denied:"AI 判定不赔",
                       low_confidence:"置信度不足", expired:"已过期", not_found:"不存在" };
       // AI 判定列：把链上那条判定记录翻成人话 —— 判定 / 置信度 / 两个证据哈希 / 模型版本。
       // 数据全部来自链上 judgements(id)，不依赖任何离线文件，评委可以自己调 eth_call 对一遍。
@@ -843,10 +875,10 @@ async function loadEvents() {
       }
       let desc = "";
       if (d.name === "PolicyBought")      // v2 多一个 effectiveFrom：窗口时长 = endTime − effectiveFrom
-        desc = `保单 #${d.args[0]} · ${short(d.args[1])} 投保 ${await S.readC.regionName(d.args[2])} · `
+        desc = `保单 #${d.args[0]} · ${short(d.args[1])} 投保 ${RName(d.args[2])} · `
              + `${Math.round((Number(d.args[4]) - Number(d.args[3])) / 3600)} 小时窗口`;
       else if (d.name === "RainfallUpdated")  // v2 把置信度与 reporter 也写进事件
-        desc = `${await S.readC.regionName(d.args[0])} 累计降雨更新为 ${d.args[1]} mm · 置信度 ${d.args[3]} · 记录者 ${short(d.args[4])}`;
+        desc = `${RName(d.args[0])} 累计降雨更新为 ${d.args[1]} mm · 置信度 ${d.args[3]} · 记录者 ${short(d.args[4])}`;
       else if (d.name === "ClaimPaid")    // v2 多一个 tier：国标分档决定赔多少
         desc = `保单 #${d.args[0]} 赔付 ${fmtEth(d.args[2])} ${SYM()} 给 ${short(d.args[1])}`
              + (TIER_LABEL[Number(d.args[3])] ? ` · ${TIER_LABEL[Number(d.args[3])]}` : "");
@@ -860,12 +892,12 @@ async function loadEvents() {
              + `${Number(d.args[2]) === 1 ? "赔付 PAY" : "不赔 DENY"} · 置信度 ${d.args[3]} · ${d.args[4]} 个源 · `
              + `输入 ${shortHash(d.args[5])} 输出 ${shortHash(d.args[6])} · ${d.args[7]}`;
       else if (d.name === "UnderwritingDecision")
-        desc = `${await S.readC.regionName(d.args[0])} 承保定价：保费 ${fmtEth(d.args[2])} ${SYM()} · `
+        desc = `${RName(d.args[0])} 承保定价：保费 ${fmtEth(d.args[2])} ${SYM()} · `
              + `${["正常","加价","拒保"][Number(d.args[1])] || "档 " + d.args[1]} · 依据 ${shortHash(d.args[3])}`;
       else if (d.name === "PremiumSet")
-        desc = `${await S.readC.regionName(d.args[0])} 保费表更新：${Number(d.args[1])} 小时窗口 → ${fmtEth(d.args[2])} ${SYM()} · 依据 ${shortHash(d.args[3])}`;
+        desc = `${RName(d.args[0])} 保费表更新：${Number(d.args[1])} 小时窗口 → ${fmtEth(d.args[2])} ${SYM()} · 依据 ${shortHash(d.args[3])}`;
       else if (d.name === "FeedRejected")
-        desc = `${await S.readC.regionName(d.args[0])} 喂价被拒（置信度 ${d.args[1]} / ${d.args[2]} 个源）· 依据 ${shortHash(d.args[3])}`;
+        desc = `${RName(d.args[0])} 喂价被拒（置信度 ${d.args[1]} / ${d.args[2]} 个源）· 依据 ${shortHash(d.args[3])}`;
       else if (d.name === "ReserveSet")
         desc = `准备金下限设为 ${fmtEth(d.args[0])} ${SYM()}`;
       else if (d.name === "ExposureSettled")
@@ -944,7 +976,7 @@ $("fundBtn").onclick = () => {
     let value = cap;
     if (bal < cap + reserve) value = bal > reserve ? bal - reserve : 0n;
     if (value < ethers.parseEther("0.005")) {
-      throw new Error(`钱包只剩 ${ethers.formatEther(bal)} ${SYM()}，扣掉 gas 预留后不够注资（至少 0.008）`);
+      throw new Error(`钱包只剩 ${ethers.formatEther(bal)} ${SYM()}，扣掉 gas 预留后不够注资（至少 0.005）`);
     }
     return new ethers.Contract(S.addr, ABI, S.signer).fundPool({ value });
   }, "注资完成");
@@ -960,10 +992,15 @@ if (window.ethereum) {
 (async () => {
   const sel = $("regionSel");
   sel.innerHTML = REGIONS.map(r => `<option value="${r.id}">${r.label}（#${r.id}）</option>`).join("");
-  await boot();
-  await refreshPremium();
+  try { await boot(); } catch (e) {}
+  try { await refreshPremium(); } catch (e) {}
+  // 轮询永远注册：boot() 失败（节点抖了 / 地址没填）时 12 秒后自己再连一次，
+  // 页面不会停在一屏"节点连不上"上等人手动刷新。
   setInterval(async () => {
-    if (!S.readC || !S.addr || !S.meta) return;
+    if (!S.readC || !S.addr || !S.meta) {
+      try { await boot(); if (S.readC) await refreshPremium(); } catch (e) {}
+      return;
+    }
     try { $("blk").textContent = (await S.provider.getBlockNumber()).toLocaleString("en-US"); } catch (e) {}
     loadRegions();   // 喂价脚本写完链上，看板和背景雨幕自己跟上，不用手动刷新页面
   }, 12000);

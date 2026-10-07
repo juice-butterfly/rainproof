@@ -136,10 +136,13 @@ components:
 | `--ink` | `#E9F0F8` | 主文字 |
 | `--dim` | `#A9BACB` | 次级文字、说明 |
 | `--faint` | `#7F93A9` | 三级文字、单位、时间 |
-| `--blue` / `--blue-l` | `#3B82F6` / `#7FB0FF` | 主色（操作、链接、主要按钮底） |
+| `--blue` / `--blue-l` / `--blue-d` | `#3B82F6` / `#7FB0FF` / `#1D4ED8` | 主色（操作、链接、主要按钮底）；`-d` 用于按压态与深底上的描边 |
 | `--accent` | `#FFC857` | 强调（保费数值、触发线、已触发标记） |
 | `--ok` / `--bad` / `--warn` | `#3FD9A5` / `#F0836F` / `#F2B33D` | 状态：已赔付 / 失败 / 警告 |
 | `--hair` / `--hair-2` | `rgba(148,180,215,.14)` / `.26` | 1px 发丝线（分隔、描边）；`-2` 用于悬停与滚动条 |
+| `--card` / `--line2` | `rgba(255,255,255,.028)` / `rgba(242,179,61,.30)` | 可选表面（离线核验台在用）：内嵌块底 / 琥珀次级描边。主页面不需要就不定义 |
+
+> 历史变量名 `--jade` / `--jade-l` / `--jade-d` 是这套蓝的别名（早期是翡翠绿）。它们**还在被引用**，所以要么连别名一起定义、要么连引用一起改 —— 只改一半会让那一半规则静默失效（离线核验台的焦点环就是这么丢的）。
 
 **规则**
 - **对比度**：正文与 placeholder ≥ **4.5:1**，大字与图表标记 ≥ **3:1**。`--faint` 只用于 ≥ 11px 的标签/单位，且必须落在 `--panel` 之上（不要压在 `--panel-2` 的浅块上）。
@@ -191,19 +194,19 @@ components:
 - 胶囊形只给小控件与刻度条，**不给卡片、面板或按钮**。
 - 图标一律**手绘几何 SVG**（圆角矩形 + 3 条斜雨线 + 一条 `--accent` 底横线，`viewBox="0 0 34 34"`），与标题**并排**，不用方块底衬、不用 emoji 或符号字形。
 - 没有硬偏移阴影（`box-shadow: 4px 4px 0`）、没有斜切、没有描边+内高光的「幽灵卡」。
-- 雨幕：canvas 固定在底层（`#rainLayer`），`--rain` 变量（0–1）由链上雨量驱动；`prefers-reduced-motion: reduce` 下改为静态雨丝渐变、并把所有动画压到 `0.001ms`。
+- 雨幕：canvas 固定在底层（`#rainLayer`），`--rain` 变量（0–1）由链上雨量驱动（刻度 `max(阈值×2, 五城最大值)`，见「降雨看板」条）；`prefers-reduced-motion: reduce` 下改为静态雨丝渐变、并把所有动画压到 `0.001ms`。离线核验台没有雨幕，也**没有** `prefers-reduced-motion` 兜底（as-built 差异，待补）。
 
 ## Components
 
 组件 token 见 frontmatter（`panel` / `button-primary` / `button-default` / `button-small` / `tag` / `tag-accent` / `metric` / `note` / `toast`）。行为约定：
 
 - **按钮**：hover 只改描边与底色，不位移、不加阴影；`:active` 允许 1px 下沉；`:disabled` 用 `opacity:.5` + **虚线描边**，语义是「还没连钱包 / 条件不满足」。主操作只有一个（`.primary` 实心蓝），其余为描边按钮。
-- **输入控件**：`select` 自绘箭头（`appearance:none` + 右侧 34px padding + `::after`），聚焦时描边变 `--blue-light` 并带 3px 低透明色环（唯一允许的聚焦光晕，仅限表单控件）。
+- **输入控件**：`select` 自绘箭头（`appearance:none` + 右侧 34px padding + `::after`），聚焦时描边变 `--blue-l` 并带 3px 低透明色环（唯一允许的聚焦光晕，仅限表单控件）。
 - **状态**：每个可交互元素必须有 hover / focus-visible / disabled，数据区必须有 loading（转圈 + 文案）/ empty（说明下一步做什么）/ error（说清问题与恢复路径）四态。空态要写「为什么会空 + 怎么让它不空」，例如「连钱包后，这里会列出你在本合约上的全部保单」。
-- **降雨看板**：每条区域一行 —— 行首「城市 + `#id`」、行尾「链上雨量 + 状态徽标」；下方是刻度条（`min(1, 雨量 ÷ (阈值×2))`，阈值位置在 50% 处并画触发线），再下面是「阈值 50 mm · 距触发还差 N mm」的读数行。**刻度公式与触发线位置被 `07-测试工具/check-ui.js` 锁定**，是演示可信度的一部分。
+- **降雨看板**：每条区域一行 —— 行首「城市 + `#id`」、行尾「链上雨量 + 状态徽标」；下方是刻度条（`min(1, 雨量 ÷ (阈值×2))`，阈值位置在 50% 处并画触发线），再下面是「阈值 50 mm · 距触发还差 N mm」的读数行。**刻度公式与触发线位置被 `07-测试工具/check-ui.js` 锁定**，是演示可信度的一部分。注意两个刻度不是同一个：条子回答「这条线跨过去没有」（分母 `阈值×2`），背景雨幕回答「这场雨有多大」（分母 `max(阈值×2, 五城最大值)`）—— 如果雨幕也按 `阈值×2` 封顶，演示链上五城除武汉外会全部顶格，动效层次就没了。
 - **数据行**：保单与事件都是「列头 + 行」的表格化网格，不用卡片；行间 1px 发丝线；哈希与地址用等宽体、中段省略、可复制/可链接（`核验 ↗`）。
-- **toast**：底部居中、单条、3 秒自动消失；文案是「发生了什么 + 下一步」，前缀用冒号而不是破折号。
-- **浏览器表面**：`::selection`、`caret-color`、`::placeholder`、`scrollbar-color` / `::-webkit-scrollbar`、`:focus-visible{outline:2px solid var(--blue-light);outline-offset:2px}`、`a{text-underline-offset:3px}` —— 这些都要显式写，默认样式在这个深色底上不可接受。
+- **toast**：底部居中、单条、自动消失 —— **普通提示 5 秒、错误 12 秒**（错误要把恢复路径念完，3 秒不够）；文案是「发生了什么 + 下一步」，前缀用冒号而不是破折号；`role="status"` + `aria-live="polite"`，收起动画结束后**清空文字**（否则屏幕阅读器会重念旧内容）。
+- **浏览器表面**：`::selection`、`caret-color`、`::placeholder`、`scrollbar-color` / `::-webkit-scrollbar`、`:focus-visible{outline:2px solid var(--blue-l);outline-offset:2px}`、`a{text-underline-offset:3px}` —— 这些都要显式写，默认样式在这个深色底上不可接受。
 
 ## Do's and Don'ts
 

@@ -7,8 +7,10 @@
 <style>
   :root{
     --ink:#E9F0F8; --dim:#A9BACB; --faint:#7F93A9;
-    /* --jade* / --gold* 保留为历史变量名，值已对齐产品页主色 */
-    --jade:#3B82F6; --jade-l:#7FB0FF; --jade-d:#1D4ED8;
+    /* 产品页主色。历史变量名 --jade* 保留为别名 —— 这一页里两个名字都在被引用，
+       少定义哪一个都会让一半规则静默失效（焦点环就是被这个坑掉的） */
+    --blue:#3B82F6; --blue-l:#7FB0FF; --blue-d:#1D4ED8;
+    --jade:var(--blue); --jade-l:var(--blue-l); --jade-d:var(--blue-d);
     --gold:#F2B33D; --gold-l:#FFC857;
     --cyan:#2FD3EE; --accent:#FFC857;
     --bg1:#070E19; --bg2:#0A1523; --panel:#0C1725; --panel2:#101E30;
@@ -119,7 +121,7 @@
   .ptitle{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
   .tag{
     font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:6px;
-    border:1px solid var(--line);color:var(--jade-l);background:rgba(14,124,102,.12);
+    border:1px solid var(--line);color:var(--blue-l);background:rgba(59,130,246,.14);
   }
   .tag.gold{border-color:var(--line2);color:var(--gold-l);background:rgba(201,138,46,.12)}
   .tag.red{border-color:rgba(224,107,90,.5);color:var(--bad);background:rgba(224,107,90,.12)}
@@ -299,7 +301,8 @@
 /* ================= 配置 ================= */
 const NODES = [
   "https://rpc.bohr.life"
-  // BOT Chain 测试网 968 的公共节点；主网 677 用 https://rpc.botchain.ai。
+  // ★ 诚实的单节点：968 没有可验证的第二个公共 RPC，所以不承诺"自动轮换节点"。
+  //   主网 677 用 https://rpc.botchain.ai；节点抖了就换网络，或加 ?rpc=<你确信可达的节点>。
 ];
 const DEFAULT_QUERY = "0x89e7C942535930B61cB61631051E8b0bD670596a";
 
@@ -686,10 +689,10 @@ async function run(q) {
       $("resultSec").classList.add("hidden");
       showErr(`这串东西既不是地址也不是交易哈希（长度 ${q.length}）。`,
         `地址是 <code>0x</code> + 40 位十六进制 = 共 42 字符；交易哈希是 <code>0x</code> + 64 位 = 共 66 字符。
-         你这串是 ${q.length} 字符。<b>多半是把 </b>的尖括号、空格或换行一起复制进来了。`);
+         你这串是 ${q.length} 字符。<b>多半是把地址两端的尖括号、空格或换行一起复制进来了。</b>`);
     }
   } catch (e) {
-    showErr("查询失败：" + e.message, "换个节点试试：刷新本页会自动轮换可用节点。");
+    showErr("查询失败：" + e.message, "换个网络再试，或在网址后加 ?rpc= 指向一个你确信可达的节点。");
   }
 }
 window.run = run;

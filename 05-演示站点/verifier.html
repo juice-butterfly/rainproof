@@ -311,9 +311,10 @@ const QS = new URLSearchParams(location.search);
 // 演示页的「核验 ↗」链接会把当前 rpc 一起带过来，否则点过去会去查默认节点，
 // 别的链上的交易当然「查不到」。
 const RPC_OVERRIDE = QS.get("rpc");
+// ★ 诚实的单节点：968 没有可验证的第二个公共 RPC，所以页面不写"自动轮换节点"这种做不到的承诺。
+//   主网 677 用 https://rpc.botchain.ai；节点抖了就换网络，或用 ?rpc=<你确信可达的节点> 临时顶一下。
 const NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
   "https://rpc.bohr.life"
-  // BOT Chain 测试网 968 的公共节点；主网 677 用 https://rpc.botchain.ai。
 ];
 // ★ 2026-10-06：原来这里是赛前脚手架的 SimpleStore 地址 0x5f7040…82dc（已经不在链上用了）。
 //   改成真链部署的 RainDeliveryInsuranceV2（BOT Chain 测试网 968），否则点「合约」按钮会查一个空地址。
@@ -693,7 +694,7 @@ async function loadLogs(addr, focusTx, txLogs) {
 
   if (logs === null || !logs.length) {
     $("logPanel").innerHTML = txPart + `<div class="empty">${logs === null
-      ? "两个节点都不肯扫这个合约的日志范围（eth_getLogs 有范围上限）。上面那一段是本笔交易自己的事件，不受影响。"
+      ? "节点不肯扫这个合约的日志范围（eth_getLogs 有范围上限）。上面那一段是本笔交易自己的事件，不受影响。"
       : `这个地址到目前为止没有发出过任何事件。如果你粘的是 <b>RainDeliveryInsurance 合约地址</b>，那说明地址不对。本次真链部署的合约是 <code>${DEFAULT_QUERY}</code>，点上面的「合约」按钮即可。`}</div>`;
     return;
   }
@@ -747,10 +748,10 @@ async function run(q) {
       $("resultSec").classList.add("hidden");
       showErr(`这串东西既不是地址也不是交易哈希（长度 ${q.length}）。`,
         `地址是 <code>0x</code> + 40 位十六进制 = 共 42 字符；交易哈希是 <code>0x</code> + 64 位 = 共 66 字符。
-         你这串是 ${q.length} 字符。<b>多半是把 </b>的尖括号、空格或换行一起复制进来了。`);
+         你这串是 ${q.length} 字符。<b>多半是把地址两端的尖括号、空格或换行一起复制进来了。</b>`);
     }
   } catch (e) {
-    showErr("查询失败：" + e.message, "换个节点试试：刷新本页会自动轮换可用节点。");
+    showErr("查询失败：" + e.message, "换个网络再试，或在网址后加 ?rpc= 指向一个你确信可达的节点。");
   }
 }
 window.run = run;

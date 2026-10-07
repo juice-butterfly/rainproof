@@ -2,6 +2,7 @@
   "name": "hanhesong-deploy",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "type": "commonjs",
   "scripts": {
     "deploy": "node deploy.js",
@@ -9,9 +10,19 @@
     "push": "node push-rainfall.js",
     "status": "node push-rainfall.js --status",
     "demo": "node push-rainfall.js --demo",
+    "refresh": "node push-rainfall.js --refresh",
     "tx": "node check-chain.js tx",
     "addr": "node check-chain.js addr",
-    "code": "node check-chain.js code"
+    "code": "node check-chain.js code",
+    "keeper": "node keeper.js",
+    "keeper:once": "node keeper.js --once",
+    "keeper:settle": "node keeper.js --once --settle",
+    "collect": "node ai-collect.js",
+    "judge": "node ai-judge.js",
+    "submit": "node submit-judgement.js",
+    "hook": "node hook-watch.js --once --v2",
+    "rehearse": "node rehearse-v2.js",
+    "premium": "node set-premium.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

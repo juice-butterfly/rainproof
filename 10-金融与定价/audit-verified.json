@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-07T03:09:53.698Z",
+    "generatedAt": "2026-10-07T03:26:16.853Z",
     "thresholdMm": 50,
     "durations": [
       6,
@@ -16,7 +16,41 @@
     "bootstrapReps": 4000,
     "bootstrapSeed": 20261007,
     "cacheDir": "cache",
-    "source": "Open-Meteo Archive (ERA5) hourly precipitation_sum, timezone Asia/Shanghai"
+    "source": "Open-Meteo Archive (ERA5) hourly precipitation_sum, timezone Asia/Shanghai",
+    "a7Tiers": [
+      {
+        "tier": 0,
+        "minPerHour": 0,
+        "payoutPct": 0,
+        "note": "不触发（during < 50mm）"
+      },
+      {
+        "tier": 1,
+        "minPerHour": 4.17,
+        "payoutPct": 25,
+        "note": "暴雨强度"
+      },
+      {
+        "tier": 2,
+        "minPerHour": 8.33,
+        "payoutPct": 50,
+        "note": "大暴雨强度"
+      },
+      {
+        "tier": 3,
+        "minPerHour": 16.7,
+        "payoutPct": 75,
+        "note": "特大暴雨强度"
+      },
+      {
+        "tier": 4,
+        "minPerHour": 33.3,
+        "payoutPct": 100,
+        "note": "极端强度"
+      }
+    ],
+    "payoutEth": 0.01,
+    "targetLossRatio": 0.6
   },
   "cities": {
     "wuhan": {
@@ -88,7 +122,66 @@
       },
       "perYear72h": {},
       "firstHour": "2015-10-01T00:00",
-      "lastHour": "2026-09-30T23:00"
+      "lastHour": "2026-09-30T23:00",
+      "tiers": {
+        "24": {
+          "counts": [
+            96296,
+            111,
+            2,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.8828,
+            0.1151,
+            0.0021,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.000298,
+          "expectedLossEth": 0.000003,
+          "premiumAt60pct": 0.000005
+        },
+        "48": {
+          "counts": [
+            96313,
+            72,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.9253,
+            0.0747,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.000187,
+          "expectedLossEth": 0.000002,
+          "premiumAt60pct": 0.000003
+        },
+        "72": {
+          "counts": [
+            96311,
+            50,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.9481,
+            0.0519,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.00013,
+          "expectedLossEth": 0.000001,
+          "premiumAt60pct": 0.000002
+        }
+      }
     },
     "shanghai": {
       "hours": 96432,
@@ -159,7 +252,66 @@
       },
       "perYear72h": {},
       "firstHour": "2015-10-01T00:00",
-      "lastHour": "2026-09-30T23:00"
+      "lastHour": "2026-09-30T23:00",
+      "tiers": {
+        "24": {
+          "counts": [
+            96325,
+            84,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.9129,
+            0.0871,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.000218,
+          "expectedLossEth": 0.000002,
+          "premiumAt60pct": 0.000004
+        },
+        "48": {
+          "counts": [
+            96380,
+            5,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.9948,
+            0.0052,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.000013,
+          "expectedLossEth": 0,
+          "premiumAt60pct": 0
+        },
+        "72": {
+          "counts": [
+            96361,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            100,
+            0,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0,
+          "expectedLossEth": 0,
+          "premiumAt60pct": 0
+        }
+      }
     },
     "beijing": {
       "hours": 96432,
@@ -230,7 +382,66 @@
       },
       "perYear72h": {},
       "firstHour": "2015-10-01T00:00",
-      "lastHour": "2026-09-30T23:00"
+      "lastHour": "2026-09-30T23:00",
+      "tiers": {
+        "24": {
+          "counts": [
+            96367,
+            42,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.9564,
+            0.0436,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.000109,
+          "expectedLossEth": 0.000001,
+          "premiumAt60pct": 0.000002
+        },
+        "48": {
+          "counts": [
+            96378,
+            7,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.9927,
+            0.0073,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.000018,
+          "expectedLossEth": 0,
+          "premiumAt60pct": 0
+        },
+        "72": {
+          "counts": [
+            96361,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            100,
+            0,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0,
+          "expectedLossEth": 0,
+          "premiumAt60pct": 0
+        }
+      }
     },
     "guangzhou": {
       "hours": 96432,
@@ -301,7 +512,66 @@
       },
       "perYear72h": {},
       "firstHour": "2015-10-01T00:00",
-      "lastHour": "2026-09-30T23:00"
+      "lastHour": "2026-09-30T23:00",
+      "tiers": {
+        "24": {
+          "counts": [
+            96288,
+            121,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.8745,
+            0.1255,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.000314,
+          "expectedLossEth": 0.000003,
+          "premiumAt60pct": 0.000005
+        },
+        "48": {
+          "counts": [
+            96355,
+            30,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.9689,
+            0.0311,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.000078,
+          "expectedLossEth": 0.000001,
+          "premiumAt60pct": 0.000001
+        },
+        "72": {
+          "counts": [
+            96361,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            100,
+            0,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0,
+          "expectedLossEth": 0,
+          "premiumAt60pct": 0
+        }
+      }
     },
     "chengdu": {
       "hours": 96432,
@@ -372,7 +642,66 @@
       },
       "perYear72h": {},
       "firstHour": "2015-10-01T00:00",
-      "lastHour": "2026-09-30T23:00"
+      "lastHour": "2026-09-30T23:00",
+      "tiers": {
+        "24": {
+          "counts": [
+            96327,
+            67,
+            15,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.9149,
+            0.0695,
+            0.0156,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.000252,
+          "expectedLossEth": 0.000003,
+          "premiumAt60pct": 0.000004
+        },
+        "48": {
+          "counts": [
+            96340,
+            45,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            99.9533,
+            0.0467,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0.000117,
+          "expectedLossEth": 0.000001,
+          "premiumAt60pct": 0.000002
+        },
+        "72": {
+          "counts": [
+            96361,
+            0,
+            0,
+            0,
+            0
+          ],
+          "pctByTier": [
+            100,
+            0,
+            0,
+            0,
+            0
+          ],
+          "expectedPayoutFraction": 0,
+          "expectedLossEth": 0,
+          "premiumAt60pct": 0
+        }
+      }
     }
   }
 }

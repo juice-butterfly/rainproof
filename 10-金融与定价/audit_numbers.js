@@ -139,6 +139,39 @@ function boundaryWindows(sums) {
   return exact;
 }
 
+// ── A7 强度分档（给 A 的合约 v2 用） ────────────────────────────────────────
+// 分档线直接取自国标 GB/T 28592-2012 的 24h 雨量等级，换算成"平均强度"后与窗口无关：
+//   暴雨 50mm/24h = 2.083 mm/h ... 但 A 的 v2 用的是"四色预警 + 国标"的 4/8/16/33 mm/h。
+// 实现上必须用整数十分位比较，否则 4.17mm/h 这类边界又会踩同一个浮点坑。
+const TIERS = [
+  { tier: 0, minPerHour: 0, payoutPct: 0, note: '不触发（during < 50mm）' },
+  { tier: 1, minPerHour: 4.17, payoutPct: 25, note: '暴雨强度' },
+  { tier: 2, minPerHour: 8.33, payoutPct: 50, note: '大暴雨强度' },
+  { tier: 3, minPerHour: 16.7, payoutPct: 75, note: '特大暴雨强度' },
+  { tier: 4, minPerHour: 33.3, payoutPct: 100, note: '极端强度' },
+];
+
+function tierStats(sums, windowHours) {
+  const counts = new Array(TIERS.length).fill(0);
+  const lowerBound10 = (tier) => Math.round(tier.minPerHour * windowHours * 10); // 平均强度下限 → 累计下限
+  for (const sum of sums) {
+    let hit = 0;
+    for (const t of TIERS) if (t.tier > 0 && sum >= lowerBound10(t)) hit = t.tier;
+    counts[hit]++;
+  }
+  const n = sums.length;
+  const probs = counts.map((c) => c / n);
+  const expectedPayoutFraction = TIERS.reduce((a, t) => a + probs[t.tier] * (t.payoutPct / 100), 0);
+  const fairPremiumEth = expectedPayoutFraction * 0.01; // PAYOUT = 0.01 ETH
+  return {
+    counts,
+    pctByTier: probs.map((x) => round(x * 100, 4)),
+    expectedPayoutFraction: round(expectedPayoutFraction, 6),
+    expectedLossEth: round(fairPremiumEth, 6),
+    premiumAt60pct: round(fairPremiumEth / 0.6, 6),
+  };
+}
+
 // ── 主流程 ──────────────────────────────────────────────────────────────────
 function main() {
   const argv = process.argv.slice(2);
@@ -155,6 +188,9 @@ function main() {
       bootstrapSeed: 20261007,
       cacheDir: path.relative(process.cwd(), CACHE_DIR).replace(/\\/g, '/'),
       source: 'Open-Meteo Archive (ERA5) hourly precipitation_sum, timezone Asia/Shanghai',
+      a7Tiers: TIERS,
+      payoutEth: 0.01,
+      targetLossRatio: 0.6,
     },
     cities: {},
   };
@@ -196,11 +232,25 @@ function main() {
         ci95: ci ? { lo: round(ci.lo, 3), hi: round(ci.hi, 3), clusters: ci.months } : null,
       };
 
+      // A7 四档（只对合约要卖的窗口算：24/48/72h）
+      if (h === 24 || h === 48 || h === 72) entry.tiers = entry.tiers || {};
+      if (h === 24 || h === 48 || h === 72) entry.tiers[String(h)] = tierStats(sums, h);
+
       console.log(
         `  ${String(h).padStart(3)}h  ${String(hits).padStart(6)}/${String(windows).padEnd(6)}  ` +
         `${p.toFixed(4).padStart(8)}%  ${(jsonPct === null ? '—' : jsonPct.toFixed(4)).padStart(8)}%  ` +
         `${(diff === null ? '—' : diff.toFixed(4)).padStart(7)}   ` +
         `${(ci ? `[${ci.lo.toFixed(2)}, ${ci.hi.toFixed(2)}]` : '').padEnd(17)}  ${String(exact).padStart(4)}`
+      );
+    }
+    // A7 四档分布（只有 24/48/72h）
+    for (const h of ['24', '48', '72']) {
+      const t = entry.tiers?.[h];
+      if (!t) continue;
+      const cells = t.pctByTier.map((x, i) => `${i}档${x}%`).join(' ');
+      console.log(
+        `  A7 ${h.padStart(3)}h  ${cells}  →  期望赔付 ${(t.expectedPayoutFraction * 100).toFixed(3)}%` +
+        `  = ${t.expectedLossEth} ETH/份  →  R*=60% 保费 ${t.premiumAt60pct} ETH`
       );
     }
     console.log('');

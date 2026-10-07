@@ -70,7 +70,8 @@ function readBytecode() {
 }
 
 // 已知真链：chainId → 显示名。RPC 由 .env 的 SEPOLIA_RPC 指定（变量名沿用，指哪条链由它自己答）。
-const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
+// 968 = BOT Chain 测试网（rpc.bohr.life，有免费水龙头）；677 = BOT Chain 主网（rpc.botchain.ai，主网 BOT 只能从官方 DEX 换）
+const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet", 968: "BOT Chain Testnet" };
 
 // 读操作自动重试：BOT Chain 主网 RPC 从本机实测会偶发 timeout（同一台机器上
 // 裸 POST 1 秒就回，ethers 连打几个请求时会挂住），所以读一次不成就再读，别让部署栽在
@@ -117,7 +118,7 @@ async function main() {
   // 2026-10-06 实测 Sepolia 块高 1185 万+、BOT Chain 主网 2573 万+，本地假链从 0 开始。这里只把身份说清楚，本地联调照样能跑。
   const blockNumber = await retry("读块高", () => provider.getBlockNumber());
   const isRealChain = blockNumber >= 1000000;
-  const sym = chainId === 677 ? "BOT" : "SepETH";   // BOT Chain 的原生代币叫 BOT，不是 SepETH
+  const sym = chainId === 677 || chainId === 968 ? "BOT" : "SepETH";   // BOT Chain（主网 677 / 测试网 968）的原生代币叫 BOT，不是 SepETH
   console.log("网络       : " + (isRealChain
     ? `${chainName} (${chainId})`
     : `⚠️ 本地假链（块高 ${blockNumber}，chainId 被伪装成 ${chainId} = ${chainName}）—— 不是真链！`));

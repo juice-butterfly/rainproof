@@ -172,11 +172,16 @@ npm run deploy:v2     # v2（RainDeliveryInsuranceV2.sol，九项改动版；先
 换链只改 RPC 环境变量（脚本用 chainId + 块高双重确认身份，认不出的链会直接拒绝）：
 
 ```bash
-# BOT Chain 主网（chainId 677，原生代币 BOT，RPC https://rpc.botchain.ai）
+# BOT Chain 主网（chainId 677，RPC https://rpc.botchain.ai）
 $env:SEPOLIA_RPC='https://rpc.botchain.ai'; npm run deploy:v2
+
+# BOT Chain 测试网（chainId 968，RPC https://rpc.bohr.life，水龙头 https://faucet.botchain.ai 免费领 BOT）
+$env:SEPOLIA_RPC='https://rpc.bohr.life'; npm run deploy:v2
 ```
 
 **部署前先确认两件事**：① 部署账户在目标链上有原生代币付 gas（v2 部署约 260 万 gas，20 gwei 下约 0.05 BOT）；② 能连上 RPC（`rpc.botchain.ai` 在部分网络下 DNS 会被污染、解析到无法连接的地址，需要换网络或挂 VPN）。余额为 0 或连不上时脚本会明确报出来，不会静默重试。
+
+**主网 gas 从哪来**：主网**没有**水龙头。按 [BOT Chain 项目集成指南](https://docs.google.com/document/d/1xYzdfJlD08UOV9CKE3nV7NTSQg6lPz9B17aIW2NF5Wg/edit)与[开发者文档](https://dev-docs.botchain.ai/docs/Developers/quick-guide/)，主网 BOT 只能在官方 [B DEX](https://dex.botchain.ai/#/swap) 用已支持的资产换（或由主办方为参赛项目发放）；测试网 BOT 从 [水龙头](https://faucet.botchain.ai)免费领。所以顺序是：**先测试网跑通 → 再拿主网 gas 上线**。
 
 ### 在线演示（不用装环境，直接点开）
 

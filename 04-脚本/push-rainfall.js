@@ -618,7 +618,7 @@ async function printStatus(readC, chainInfo) {
       : C.dim("—（还没有喂过价）");
     console.log(
       `  #${id} ${nm.padEnd(14)} ${String(mm).padStart(5)}mm  ${bar(mm, Number(threshold), 12)}  ` +
-      `${(prem === null ? "—" : formatEther(prem) + " ETH").padEnd(10)} ${riskStr.padEnd(6)} ${fjStr}${fresh}`
+      `${(prem === null ? "—" : formatEther(prem) + " " + sym).padEnd(10)} ${riskStr.padEnd(6)} ${fjStr}${fresh}`
     );
   }
   console.log("");

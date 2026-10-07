@@ -161,6 +161,23 @@ node ai-judge.js <保单号>          # 确定性判定 → 判定结果 JSON
 node submit-judgement.js <保单号>  # 重算核对后把判定提交上链
 ```
 
+### 部署合约
+
+```bash
+cd 04-脚本
+npm run deploy        # v1（RainDeliveryInsurance.sol，Sepolia 上正在跑的那份）
+npm run deploy:v2     # v2（RainDeliveryInsuranceV2.sol，九项改动版；先跑 npm run compile:v2）
+```
+
+换链只改 RPC 环境变量（脚本用 chainId + 块高双重确认身份，认不出的链会直接拒绝）：
+
+```bash
+# BOT Chain 主网（chainId 677，原生代币 BOT，RPC https://rpc.botchain.ai）
+$env:SEPOLIA_RPC='https://rpc.botchain.ai'; npm run deploy:v2
+```
+
+**部署前先确认两件事**：① 部署账户在目标链上有原生代币付 gas（v2 部署约 260 万 gas，20 gwei 下约 0.05 BOT）；② 能连上 RPC（`rpc.botchain.ai` 在部分网络下 DNS 会被污染、解析到无法连接的地址，需要换网络或挂 VPN）。余额为 0 或连不上时脚本会明确报出来，不会静默重试。
+
 ### 在线演示（不用装环境，直接点开）
 
 **https://juice-butterfly.github.io/rainproof/**

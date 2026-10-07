@@ -5,6 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "deploy": "node deploy.js",
+    "deploy:v2": "node deploy.js --v2",
     "push": "node push-rainfall.js",
     "status": "node push-rainfall.js --status",
     "demo": "node push-rainfall.js --demo",

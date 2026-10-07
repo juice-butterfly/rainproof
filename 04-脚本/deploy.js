@@ -5,9 +5,16 @@
  *   1) npm install
  *   2) 把 .env.example 复制成 .env，填上 PRIVATE_KEY（可选 SEPOLIA_RPC / CONTRACT_ADDRESS）
  *   3) 先编译：在 07-测试工具 里跑
- *        node compile_sol.js ../03-合约/RainDeliveryInsurance.sol
+ *        node compile_sol.js ../03-合约/RainDeliveryInsurance.sol      （v1）
+ *        npm run compile:v2                                             （v2）
  *      （产物直接落在 03-合约/，这个脚本就从那里读，不需要手工复制粘贴）
- *   4) npm run deploy
+ *   4) npm run deploy              ← 部署 v1
+ *      node deploy.js --v2         ← 部署 v2
+ *
+ * 部署到 BOT Chain 主网（chainId 677，原生代币 BOT）：
+ *      $env:SEPOLIA_RPC='https://rpc.botchain.ai'; node deploy.js --v2
+ *   （变量名叫 SEPOLIA_RPC 是历史包袱：它只是一条"RPC 地址"，是哪条链由节点自己答，
+ *     脚本会用 chainId + 块高双重确认身份，认不出来就拒绝部署。）
  *
  * 这个脚本会把合约地址打印出来，并告诉你用「链上核验台」怎么验证。
  */
@@ -21,15 +28,23 @@ const { JsonRpcProvider, Wallet, ContractFactory } = require("ethers");
 //   以前这里读 04-脚本/abi.json + 04-脚本/bytecode.txt，而 compile_sol.js 是把产物写进
 //   03-合约/ 的 —— 两边一旦不同步，部署用的就是【旧字节码】，而且不会有任何报错。
 //   现在 ABI/bytecode 只有一处，物理上不可能再对不上。
+//
+// ★ 部署哪一版：默认 v1（RainDeliveryInsurance），加 --v2 部署 v2（RainDeliveryInsuranceV2）。
+//   v2 必须先编译：cd 07-测试工具 && npm run compile:v2
 const SOL_DIR = path.join(__dirname, "..", "03-合约");
-const ABI_FILE = path.join(SOL_DIR, "RainDeliveryInsurance.abi.json");
-const BYTECODE_FILE = path.join(SOL_DIR, "RainDeliveryInsurance.bytecode.txt");
+const VARIANT = process.argv.includes("--v2") ? "V2" : "";
+const CONTRACT_NAME = "RainDeliveryInsurance" + VARIANT;
+const ABI_FILE = path.join(SOL_DIR, `${CONTRACT_NAME}.abi.json`);
+const BYTECODE_FILE = path.join(SOL_DIR, `${CONTRACT_NAME}.bytecode.txt`);
+const COMPILE_HINT = VARIANT
+  ? "先在 07-测试工具 里跑：npm run compile:v2"
+  : "先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol";
 
 function readAbi() {
-  if (!fs.existsSync(ABI_FILE)) throw new Error("找不到编译产物：" + ABI_FILE + "\n  先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol");
+  if (!fs.existsSync(ABI_FILE)) throw new Error("找不到编译产物：" + ABI_FILE + "\n  " + COMPILE_HINT);
   const raw = fs.readFileSync(ABI_FILE, "utf8").trim();
   if (!raw || raw === "[]") {
-    throw new Error("ABI 是空的：" + ABI_FILE + "\n  先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol");
+    throw new Error("ABI 是空的：" + ABI_FILE + "\n  " + COMPILE_HINT);
   }
   try {
     const abi = JSON.parse(raw);
@@ -43,13 +58,10 @@ function readAbi() {
 }
 
 function readBytecode() {
-  if (!fs.existsSync(BYTECODE_FILE)) throw new Error("找不到编译产物：" + BYTECODE_FILE + "\n  先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol");
+  if (!fs.existsSync(BYTECODE_FILE)) throw new Error("找不到编译产物：" + BYTECODE_FILE + "\n  " + COMPILE_HINT);
   const raw = fs.readFileSync(BYTECODE_FILE, "utf8").trim();
   if (!raw || raw === "0x" || raw.length < 10) {
-    throw new Error(
-      "bytecode 是空的：" + BYTECODE_FILE +
-      "\n  先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol"
-    );
+    throw new Error("bytecode 是空的：" + BYTECODE_FILE + "\n  " + COMPILE_HINT);
   }
   if (!raw.startsWith("0x")) {
     throw new Error("bytecode.txt 应该以 0x 开头");
@@ -60,6 +72,23 @@ function readBytecode() {
 // 已知真链：chainId → 显示名。RPC 由 .env 的 SEPOLIA_RPC 指定（变量名沿用，指哪条链由它自己答）。
 const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
 
+// 读操作自动重试：BOT Chain 主网 RPC 从本机实测会偶发 timeout（同一台机器上
+// 裸 POST 1 秒就回，ethers 连打几个请求时会挂住），所以读一次不成就再读，别让部署栽在
+// "读网络" 这种无副作用的一步上。★ 发交易不在这里自动重试 —— 重试可能变成重复部署。
+async function retry(label, fn, n = 3) {
+  let last;
+  for (let i = 1; i <= n; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      last = e;
+      console.log(`  ⚠️ ${label} 第 ${i}/${n} 次失败：${e.shortMessage || e.message}`);
+      if (i < n) await new Promise((r) => setTimeout(r, 3000));
+    }
+  }
+  throw last;
+}
+
 async function main() {
   const rpc = process.env.SEPOLIA_RPC || "https://ethereum-sepolia-rpc.publicnode.com";
 
@@ -69,11 +98,15 @@ async function main() {
 
   const abi = readAbi();
   const bytecode = readBytecode();
+  console.log("合约       :", CONTRACT_NAME + (VARIANT ? "（v2）" : "（v1）"));
   console.log("ABI 条目数 :", abi.length);
   console.log("Bytecode   :", bytecode.length, "字符");
+  console.log("RPC        :", rpc);
 
-  const provider = new JsonRpcProvider(rpc);
-  const net = await provider.getNetwork();
+  // staticNetwork：ether 默认每次请求前后都要 eth_chainId/块高来回确认，链一慢就 timeout；
+  // 固定住网络后只问一次，身份仍然照旧由 chainId + 块高双重确认（见下）。
+  const provider = new JsonRpcProvider(rpc, undefined, { staticNetwork: true });
+  const net = await retry("读网络", () => provider.getNetwork());
   const chainId = Number(net.chainId);
   const chainName = KNOWN_CHAINS[chainId];
   if (!chainName) {
@@ -82,20 +115,20 @@ async function main() {
   }
   // chainId 能被本地假链伪装（07-测试工具/prep_local_chain.js 就设成 11155111），块高不能：
   // 2026-10-06 实测 Sepolia 块高 1185 万+、BOT Chain 主网 2573 万+，本地假链从 0 开始。这里只把身份说清楚，本地联调照样能跑。
-  const blockNumber = await provider.getBlockNumber();
+  const blockNumber = await retry("读块高", () => provider.getBlockNumber());
   const isRealChain = blockNumber >= 1000000;
   const sym = chainId === 677 ? "BOT" : "SepETH";   // BOT Chain 的原生代币叫 BOT，不是 SepETH
   console.log("网络       : " + (isRealChain
     ? `${chainName} (${chainId})`
-    : `⚠️ 本地假链（块高 ${blockNumber}，chainId 被伪装成 ${chainId}）—— 不是真链！`));
+    : `⚠️ 本地假链（块高 ${blockNumber}，chainId 被伪装成 ${chainId} = ${chainName}）—— 不是真链！`));
 
   const wallet = new Wallet(process.env.PRIVATE_KEY, provider);
-  const balance = await provider.getBalance(wallet.address);
+  const balance = await retry("读余额", () => provider.getBalance(wallet.address));
   console.log("部署账户   :", wallet.address);
   console.log("账户余额   :", (Number(balance) / 1e18).toFixed(6), sym);
 
   if (balance === 0n) {
-    throw new Error("账户余额为 0 —— 先去水龙头领测试币");
+    throw new Error(`账户余额为 0 —— 这个地址在 ${chainName} 上没有 ${sym} 可付 gas，先领/申请 gas`);
   }
 
   console.log("\n正在部署，请稍候...");
@@ -105,7 +138,16 @@ async function main() {
   console.log("交易哈希   :", tx.hash);
   console.log("等待确认（约 10~30 秒）...");
 
-  await contract.waitForDeployment();
+  // ★ 交易已经发出去了，这里再超时也【绝不能重发】—— 重发就是第二个合约、两笔 gas。
+  //   万一超时，就拿上面这个哈希自己去浏览器查。
+  try {
+    await contract.waitForDeployment();
+  } catch (e) {
+    console.error(`\n⚠️ 等确认超时/失败：${e.shortMessage || e.message}`);
+    console.error("   交易可能已经上链了 —— 别重跑本脚本，先拿这个哈希去浏览器查：");
+    console.error("   " + tx.hash);
+    process.exit(2);
+  }
   const address = await contract.getAddress();
 
   console.log("\n✅ 部署成功");

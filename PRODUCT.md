@@ -78,13 +78,13 @@ web
 
 1. ❌「AI 判断骑手是否受损」→ ✅「AI 做数据复核与承保定价，不决定赔多少钱；赔多少是写死的规则」。
 2. ❌「合约自动把钱赔了」→ ✅「`claim` 权限开放，任何人可触发；合约本身没有自动触发机制，钱只进保单登记的骑手地址」。
-3. ❌ 把两条链说成「旧的 / 新的」→ ✅ **v1 = 链上事实与演示基线，v2 = 承保层加深**；地址相同是两条链上的两个合约，任何地址引用必须同时说 chainId。
+3. ❌ 把两条链说成「旧的 / 新的」→ ✅ **演示基线 = BOT Chain 测试网 968 上的 v2（演示页读的就是它）；Sepolia 上的 v1 = 第一阶段留痕与对照**；地址相同是两条链上的两个合约，任何地址引用必须同时说 chainId。
 
 另外两条红线：❌「我们的合约能防止逆选择」（现在是半成品状态）；❌ 说「已有准备金 / 准备金充足」（v1 链上 `reserve` 为 0）。
 
 ## 分版本口径纪律
 
-- **v1（Sepolia，当前演示基线）**：`reserve` 靠 operator 手工设定，**没有自动规则**；`submitJudgement` 写死 `sources: 0`；`premiumOf(regionId)` 只按区域。
+- **v1（Sepolia，第一阶段留痕与对照，不再被演示页读取）**：`reserve` 靠 operator 手工设定，**没有自动规则**；`submitJudgement` 写死 `sources: 0`；`premiumOf(regionId)` 只按区域。
 - **v2（BOT Chain 968 / 主网 677）**：`openExposure` + `reserveOf() = max(reserve, openExposure)` **就是那条自动规则**；`premiumOf(regionId, hours)`；`sources` 上链；分档赔付。
 - **台上跑哪一版就按哪一版说**，混讲会被读代码的评委当场纠正。
 

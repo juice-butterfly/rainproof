@@ -41,7 +41,7 @@ M = Inches(0.9)
 CW = W - 2 * M
 
 SHOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                    "08-截图存证", "演示页-2026-10-07.png")
+                    "08-截图存证", "演示页-968-视口.png")
 ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                       "08-截图存证", "ppt-assets")
 
@@ -344,7 +344,7 @@ def s08_demo(prs, n):
         ("② 读保单 #0。", "上海、34mm、判定 DENY、置信度 95。"),
         ("③ 粘一个哈希。", "进核验台，直接向节点要原始记录。"),
     ], size=12.5, gap=12)
-    small(s, "线上页面直连 Sepolia 节点，没有服务器、没有区块浏览器、没有缓存。", Inches(6.2), size=11)
+    small(s, "线上页面直连 BOT Chain 测试网 968 的节点，没有服务器、没有区块浏览器、没有缓存。", Inches(6.2), size=11)
     notes(s, "【切到演示页，30 秒】这是我们线上正在跑的页面，直连节点。我现在把区域从武汉拨到广州 —— "
              "看这条刻度，已经越过触发线。再看这份保单：#0，上海，34 毫米，AI 判定 DENY，置信度 95。"
              "这条保单不会赔一分钱。")
@@ -479,10 +479,11 @@ def s16_spec(prs, n):
         ["准备金", "reserveOf() = max(reserve, openExposure)", "v2 A6，自动下限"],
         ["白名单", "默认关闭", "v2 A8"],
     ], [Inches(1.9), Inches(5.3), Inches(4.23)], row_h=Inches(0.44), body_size=11)
-    small(s, "两条链：Sepolia 11155111 是 v1 演示基线（真实数据 DENY 在这里）；BOT Chain 968 是 v2 承保层（九项改动，彩排 25 项断言全绿）。"
-             "地址同为 0x89e7C942535930B61cB61631051E8b0bD670596a —— 同一个地址在两条链上是两个合约，绝不混写。", Inches(5.9), size=11.5, color=DIM)
-    notes(s, "这一页是我们全部参数，全部从链上读出来，不是宣传材料。两条链分开说：Sepolia 是演示基线，"
-             "BOT Chain 968 是承保层。地址一样，但是两个合约 —— 这一点我们从不混着讲。")
+    small(s, "两条链：BOT Chain 测试网 968 是演示页读的那一条（v2 承保层，九项改动，彩排 25 项断言全绿）；"
+             "Sepolia 11155111 上是第一阶段的 v1 留痕（真实数据 DENY 在这里）。地址同为 0x89e7C942535930B61cB61631051E8b0bD670596a —— "
+             "同一个地址在两条链上是两个合约，绝不混写；数值单位在 Sepolia 上是 ETH、在 BOT Chain 上是 BOT（合约常量同一套）。", Inches(5.9), size=11.5, color=DIM)
+    notes(s, "这一页是我们全部参数，全部从链上读出来，不是宣传材料。两条链分开说：演示页读的是 BOT Chain 968 上的 v2，"
+             "Sepolia 上是第一阶段的 v1 留痕。地址一样，但是两个合约 —— 这一点我们从不混着讲。")
     return s
 
 

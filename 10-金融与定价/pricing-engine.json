@@ -1,7 +1,7 @@
 {
   "meta": {
     "generatedBy": "10-金融与定价/pricing_engine.js",
-    "generatedAt": "2026-10-07T06:54:12.932Z",
+    "generatedAt": "2026-10-07T08:30:40.861Z",
     "version": "v3",
     "source": "Open-Meteo Archive (ERA5) 逐小时，五城各 96,432 小时",
     "dataStart": "2015-10-01",
@@ -81,7 +81,7 @@
         "selectivity": 0.55,
         "sellable": true,
         "sellableByPolicy": true,
-        "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+        "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
         "riderName": "认证骑手",
         "channelName": "自助投保",
         "name": "认证骑手·自助投保"
@@ -139,7 +139,7 @@
       "批量折扣只覆盖 AI 判定 gas 的摊薄；赔付 gas 仍按期望出险次数计费。",
       "sellable=false 的格不是\"价格算错了\"，而是**产品政策**：无身份绑定 + 雨季城市 + 最长时长，报出来的价已经高于尊严上限，宁愿不卖。",
       "临灾条件率（imminentRatePct / t2c1 行）是**诊断量**，不进入任何报价；见文件头\"为什么删掉临灾档\"。",
-      "本表未含冷静期(coolingPeriod)造成的生效延迟 —— v2 默认 3 天 ≥ 最长保障期 72h，意味着任何\"临时追保\"都盖不住当次天气，方向上是本表的进一步保守。"
+      "本表未含冷静期(coolingPeriod)造成的生效延迟 —— 合约**默认** 3 天 ≥ 最长保障期 72h，意味着任何\"临时追保\"都盖不住当次天气，方向上是本表的进一步保守。⚠️ 但 **968 演示链上该值被设成 0**（演示动线需要），别把\"生产默认\"说成\"链上现状\"。"
     ]
   },
   "cells": [
@@ -365,7 +365,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96409,
       "nHit": 735,
       "nHitByTier": [
@@ -683,7 +683,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96385,
       "nHit": 915,
       "nHitByTier": [
@@ -1001,7 +1001,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96361,
       "nHit": 781,
       "nHitByTier": [
@@ -1319,7 +1319,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96409,
       "nHit": 727,
       "nHitByTier": [
@@ -1637,7 +1637,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96385,
       "nHit": 946,
       "nHitByTier": [
@@ -1955,7 +1955,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96361,
       "nHit": 877,
       "nHitByTier": [
@@ -2273,7 +2273,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96409,
       "nHit": 422,
       "nHitByTier": [
@@ -2591,7 +2591,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96385,
       "nHit": 423,
       "nHitByTier": [
@@ -2909,7 +2909,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96361,
       "nHit": 337,
       "nHitByTier": [
@@ -3227,7 +3227,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96409,
       "nHit": 1369,
       "nHitByTier": [
@@ -3545,7 +3545,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96385,
       "nHit": 2158,
       "nHitByTier": [
@@ -3863,7 +3863,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96361,
       "nHit": 2106,
       "nHitByTier": [
@@ -4181,7 +4181,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96409,
       "nHit": 573,
       "nHitByTier": [
@@ -4499,7 +4499,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96385,
       "nHit": 704,
       "nHitByTier": [
@@ -4817,7 +4817,7 @@
       "channelName": "自助投保",
       "segName": "认证骑手·自助投保",
       "selectivity": 0.55,
-      "why": "平台 attestation 绑定身份 + ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
+      "why": "平台 attestation 绑定身份 + 生产默认 ≥3 天冷静期，削掉短期择时但削不掉\"雨季才想起来买\"",
       "nWin": 96361,
       "nHit": 560,
       "nHitByTier": [

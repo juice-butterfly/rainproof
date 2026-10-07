@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 253 253'%3E%3Crect width='253' height='253' rx='40' fill='%2308121c'/%3E%3Crect x='6.5' y='6.5' width='239' height='239' rx='22' fill='none' stroke='%237cb0f9' stroke-width='13'/%3E%3Cpath d='M116.5 62.5L60.5 155.5M171.5 47.5L124.5 123.5M189.5 89.5L150.5 155.5' fill='none' stroke='%23b9e0f8' stroke-width='13' stroke-linecap='round'/%3E%3Cpath d='M42 189.5h170' fill='none' stroke='%23fec459' stroke-width='10' stroke-linecap='round'/%3E%3C/svg%3E">
-<title>雨证 · RainProof — BOT Chain 链上核验台</title>
+<title>雨证 · RainProof — BOT Chain 链上核验台 / On-chain verifier</title>
 <style>
   /* ===== 设计令牌（2026-10-07 重设计：从「运营台」到「量测仪」）=====
      三条语义色域各司其职：
@@ -287,11 +287,11 @@
         <path d="M42 189.5h170" stroke="#fec459" stroke-width="10" stroke-linecap="round"/>
       </svg>
     </div>
-    <h1>雨证 · RainProof · BOT Chain 链上核验台<span>不依赖任何区块浏览器</span></h1>
+    <h1>雨证 · RainProof · BOT Chain 链上核验台 / On-chain verifier<span>不依赖任何区块浏览器 / No block explorer needed</span></h1>
     <div class="chainbar">
-      <span><span class="dot" id="dot"></span><span id="connText">连接中…</span></span>
-      <span>区块 <b id="blkNum">—</b></span>
-      <span>延迟 <b id="lat">—</b></span>
+      <span><span class="dot" id="dot"></span><span id="connText">连接中… / connecting…</span></span>
+      <span>区块 Block <b id="blkNum">—</b></span>
+      <span>延迟 Latency <b id="lat">—</b></span>
       <span>Gas <b id="gas">—</b></span>
     </div>
   </div>
@@ -304,21 +304,22 @@
 
 <!-- ========== 查询 ========== -->
 <section class="sec">
-  <h2>查询<em>粘地址查合约 / 粘哈希查交易，自动识别</em></h2>
+  <p style="color:var(--dim);font-size:13px;margin:0 0 12px">This page asks a public node directly and prints the raw on-chain answer, payload untouched. <b>No scan.bohr.life, no backend indexer.</b></p>
+      <h2>查询 / Query<em>粘地址查合约 / 粘哈希查交易，自动识别 · Paste an address or a tx hash — auto-detected</em></h2>
 
   <div class="searchrow">
     <input id="q" spellcheck="false" autocomplete="off"
-           placeholder="0x… 地址（40 位）或 0x… 交易哈希（64 位）">
-    <button class="btn primary" id="goBtn">查询</button>
-    <button class="btn" id="refreshBtn">刷新链状态</button>
+           placeholder="0x… 地址（40 位）或 0x… 交易哈希（64 位） / 0x… address (40 hex) or tx hash (64 hex)">
+    <button class="btn primary" id="goBtn">查询 / Query</button>
+    <button class="btn" id="refreshBtn">刷新链状态 / Refresh</button>
   </div>
 
   <div class="chips">
-    <span>我这次的：</span>
-    <button class="chip" data-q="0x89e7C942535930B61cB61631051E8b0bD670596a">合约 <b>0x89e7C9…596a</b></button>
-    <button class="chip" data-q="0xa294f0293ab391b0ff458964333bc23a9109f8b72d31a905211b1c30e9e53515">部署交易 <b>0xa294f0…e53515</b></button>
-    <button class="chip" data-q="0x25148f13742d89dce755cee28f72366ed89a6ef577ab7d13ebb36d893fcc2211">判定交易 <b>0x25148f…2211</b>（保单 #3 · 赔付 PAY）</button>
-    <button class="chip" data-q="0x07f7eff6d4daad8c1859c0a79e6496ed8f18c6709b5fc344dd693e7d7793286b">赔付交易 <b>0x07f7ef…3286b</b></button>
+    <span>我这次的： / My links:</span>
+    <button class="chip" data-q="0x89e7C942535930B61cB61631051E8b0bD670596a">合约 Contract <b>0x89e7C9…596a</b></button>
+    <button class="chip" data-q="0xa294f0293ab391b0ff458964333bc23a9109f8b72d31a905211b1c30e9e53515">部署交易 Deploy tx <b>0xa294f0…e53515</b></button>
+    <button class="chip" data-q="0x25148f13742d89dce755cee28f72366ed89a6ef577ab7d13ebb36d893fcc2211">判定交易 Judgement tx <b>0x25148f…2211</b>（保单 #3 · 赔付 PAY / policy #3 · payout）</button>
+    <button class="chip" data-q="0x07f7eff6d4daad8c1859c0a79e6496ed8f18c6709b5fc344dd693e7d7793286b">赔付交易 Payout tx <b>0x07f7ef…3286b</b></button>
   </div>
 
   <div class="panel hidden" id="errPanel"></div>
@@ -326,40 +327,40 @@
 
 <!-- ========== 结果 ========== -->
 <section class="sec hidden" id="resultSec">
-  <h2 class="gold">查询结果<em id="resultKind"></em></h2>
+  <h2 class="gold">查询结果 / Result<em id="resultKind"></em></h2>
   <div id="resultBody"></div>
 </section>
 
 <!-- ========== 事件日志 ========== -->
 <section class="sec hidden" id="logSec">
-  <h2>合约事件日志<em>eth_getLogs · 这个合约发出过的事件</em></h2>
+  <h2>合约事件日志 / Event log<em>eth_getLogs · 这个合约发出过的事件 · events emitted by this contract</em></h2>
   <div class="panel" id="logPanel"></div>
 </section>
 
 <!-- ========== 最近区块 ========== -->
 <section class="sec">
-  <h2>链上最近区块<em>证明这条链在动</em></h2>
+  <h2>链上最近区块 / Latest blocks<em>证明这条链在动 · proof the chain is alive</em></h2>
   <div class="panel" id="blockPanel">
-    <div class="loading">正在读最新区块</div>
+    <div class="loading">正在读最新区块 / reading latest blocks</div>
   </div>
 </section>
 
 <footer>
   <div class="foot">
-    <span><b>雨证 · RainProof · 链上核验台</b></span>
+    <span><b>雨证 · RainProof · 链上核验台 / verifier</b></span>
     <span>chainId <b>968</b></span>
-    <span>合约 <b>0x89e7…596a</b></span>
-    <span class="sp">不依赖任何区块浏览器</span>
+    <span>合约 Contract <b>0x89e7…596a</b></span>
+    <span class="sp">不依赖任何区块浏览器 / No block explorer needed</span>
   </div>
   <details>
-    <summary>这一页为什么能当证据 / 打不开怎么办</summary>
-    <p><b>为什么要有这一页：</b>BOT Chain 自己的浏览器是 <code>scan.bohr.life</code>，但它显示的是「它认为的事实」；
+    <summary>这一页为什么能当证据 / 打不开怎么办 · Why this page counts as evidence</summary>
+    <p><b>为什么要有这一页： / Why this page exists:</b>BOT Chain 自己的浏览器是 <code>scan.bohr.life</code>，但它显示的是「它认为的事实」；
   这一页把 <code>eth_getLogs</code> 与 <code>eth_call</code> 的原始返回直接摆出来，字段一个不改。
   <b>这一页绕开全部中间商，直接问节点要数据 —— 浏览器打不开也能验。</b></p>
-    <p><b>打不开怎么办：</b>双击本文件即可，无需安装任何东西（只依赖同目录的 <code>ethers.umd.min.js</code>）。
+    <p><b>打不开怎么办： / If it will not open:</b>双击本文件即可，无需安装任何东西（只依赖同目录的 <code>ethers.umd.min.js</code>）。
     若浏览器拦截本地文件发请求，在演示站点目录执行 <code>python -m http.server 8090</code>，然后访问
     <code>http://127.0.0.1:8090/verifier.html</code> 打开本页。
-    <br><b>但要说清楚：</b>这一页本身离线能开，<b>读链必须联网</b>。网络断时它只会显示「连不上节点」，改用仓库里的截图存证。</p>
+    <br><b>但要说清楚： / To be clear:</b>这一页本身离线能开，<b>读链必须联网</b>。网络断时它只会显示「连不上节点」，改用仓库里的截图存证。</p>
   </details>
 </footer>
 
@@ -404,7 +405,7 @@ function showFakeChainBar(bn) {
     "font:700 14px/1.7 system-ui,'Microsoft YaHei',sans-serif;padding:8px 14px;text-align:center;" +
     "box-shadow:0 2px 10px rgba(0,0,0,.35)";
   bar.textContent = "⚠ 当前连的是本地假链（块高 " + Number(bn).toLocaleString("en-US") +
-    "，chainId 被伪装成本地登记过的链）—— 这一页查到的不是真链数据。去掉网址里的 ?rpc= 参数后刷新。";
+    "，chainId 被伪装成本地登记过的链）—— 这一页查到的不是真链数据。去掉网址里的 ?rpc= 参数后刷新。 / This is a local fake chain with a spoofed chainId — what you see is not real chain data. Remove the ?rpc= parameter and reload.";
   document.body.appendChild(bar);
   document.body.style.paddingTop = "44px";
 }
@@ -446,7 +447,7 @@ async function rpc(method, params, timeout = 20000, requireNonNull = false) {
     }
   }
   if (sawNull && !lastErr) return null;
-  throw lastErr || new Error("所有节点都连不上");
+  throw lastErr || new Error("所有节点都连不上 / all nodes unreachable");
 }
 
 /* ================= 数值格式化 ================= */
@@ -470,11 +471,11 @@ const short = a => (a && a.length > 12 ? a.slice(0, 6) + "…" + a.slice(-4) : a
 // 区块时间戳差值
 function ago(ts) {
   const d = Math.floor(Date.now() / 1000) - Number(ts);
-  if (d < 0) return "刚刚";
-  if (d < 60) return d + " 秒前";
-  if (d < 3600) return Math.floor(d / 60) + " 分钟前";
-  if (d < 86400) return Math.floor(d / 3600) + " 小时前";
-  return Math.floor(d / 86400) + " 天前";
+  if (d < 0) return "刚刚 / just now";
+  if (d < 60) return d + " 秒前 / s ago";
+  if (d < 3600) return Math.floor(d / 60) + " 分钟前 / min ago";
+  if (d < 86400) return Math.floor(d / 3600) + " 小时前 / h ago";
+  return Math.floor(d / 86400) + " 天前 / d ago";
 }
 const isAddr = q => /^0x[0-9a-fA-F]{40}$/.test(q);
 const isTx = q => /^0x[0-9a-fA-F]{64}$/.test(q);
@@ -486,12 +487,12 @@ function copyBtn(text, label) {
     const el = $(id);
     if (el) el.onclick = () => {
       navigator.clipboard.writeText(text).then(() => {
-        el.textContent = "已复制"; el.classList.add("done");
-        setTimeout(() => { el.textContent = label || "复制"; el.classList.remove("done"); }, 1400);
-      }).catch(() => { el.textContent = "手动选"; });
+        el.textContent = "已复制 / copied"; el.classList.add("done");
+        setTimeout(() => { el.textContent = label || "复制 / copy"; el.classList.remove("done"); }, 1400);
+      }).catch(() => { el.textContent = "手动选 / pick it"; });
     };
   }, 0);
-  return `<button class="cp" id="${id}">${label || "复制"}</button>`;
+  return `<button class="cp" id="${id}">${label || "复制 / copy"}</button>`;
 }
 function addrRow(label, addr) {
   return `<div style="margin-bottom:14px">
@@ -506,7 +507,7 @@ function kv(items) {
 function showErr(msg, hint) {
   const p = $("errPanel");
   p.className = "panel err";
-  p.innerHTML = `<div class="ptitle"><span class="tag red">出错了</span></div>
+  p.innerHTML = `<div class="ptitle"><span class="tag red">出错了 / error</span></div>
     <div class="v" style="font-size:13px">${esc(msg)}</div>
     ${hint ? `<div class="v small" style="margin-top:10px">${hint}</div>` : ""}`;
 }
@@ -519,21 +520,21 @@ async function chainStatus(silent) {
     const id = await rpc("eth_chainId", []);
     const cid = parseInt(id, 16);
     const chainName = KNOWN_CHAINS[cid];
-    if (!chainName) throw new Error("不是已知的真链（chainId=" + cid + "）");
+    if (!chainName) throw new Error("不是已知的真链 / not a known real chain (chainId=" + cid + "）");
     S.chainId = cid;
     const bn = Number(BigInt(blkHex));
     $("blkNum").textContent = fmtNum(big(blkHex));
     $("gas").textContent = fmtGwei(gasHex) + " Gwei";
     $("lat").textContent = S.lat + "ms";
     $("dot").className = "dot on";
-    if (bn < MIN_REAL_BLOCK) { $("connText").textContent = "本地假链（非 " + chainName + "）"; showFakeChainBar(bn); }
-    else { $("connText").textContent = "已连接 " + chainName; }
+    if (bn < MIN_REAL_BLOCK) { $("connText").textContent = "本地假链（非 " + chainName + "） / local fake chain (not " + chainName + ")"; showFakeChainBar(bn); }
+    else { $("connText").textContent = "已连接 / connected: " + chainName; }
     return bn;
   } catch (e) {
     $("dot").className = "dot err";
-    $("connText").textContent = "连不上节点";
+    $("connText").textContent = "连不上节点 / node unreachable";
     $("lat").textContent = "—";
-    if (!silent) showErr("连不上 BOT Chain 节点：" + e.message,
+    if (!silent) showErr("连不上 BOT Chain 节点 / cannot reach the BOT Chain node: " + e.message,
       "检查网络。这一页访问的是 <b>rpc.bohr.life</b>，是公共节点，通常能直连。");
     throw e;
   }
@@ -543,8 +544,8 @@ async function chainStatus(silent) {
 async function lookupAddress(addr, isPrimary) {
   clearErr();
   $("resultSec").classList.remove("hidden");
-  $("resultKind").textContent = "地址 / 合约";
-  $("resultBody").innerHTML = `<div class="panel"><div class="loading">正在读链上数据</div></div>`;
+  $("resultKind").textContent = "地址 / 合约 · Address / contract";
+  $("resultBody").innerHTML = `<div class="panel"><div class="loading">正在读链上数据 / reading on-chain data</div></div>`;
 
   const [bal, nonce, code] = await Promise.all([
     rpc("eth_getBalance", [addr, "latest"]),
@@ -557,26 +558,26 @@ async function lookupAddress(addr, isPrimary) {
   S.lastAddr = isContract ? addr : null;
 
   const rows = [
-    ["余额", fmtEth(bal) + " <span style='font-size:12px;color:var(--dim)'>" + SYM() + "</span>", "big"],
-    ["发过多少笔交易（nonce）", fmtNum(nonce), ""],
-    ["这是不是合约", isContract
-      ? `<span style="color:var(--ok)">是合约 ✅</span>`
-      : `<span style="color:var(--money)">普通账户（没有代码）</span>`, ""],
-    ["合约代码长度", isContract ? codeBytes + " 字节" : "0（空）", isContract ? "gold" : "small"],
-    ["查询节点", S.rpc.replace("https://", ""), "small"],
-    ["响应延迟", S.lat + " ms", "small"]
+    ["余额 / Balance", fmtEth(bal) + " <span style='font-size:12px;color:var(--dim)'>" + SYM() + "</span>", "big"],
+    ["发过多少笔交易（nonce） / Txs sent (nonce)", fmtNum(nonce), ""],
+    ["这是不是合约 / Is it a contract", isContract
+      ? `<span style="color:var(--ok)">是合约 ✅ / contract</span>`
+      : `<span style="color:var(--money)">普通账户（没有代码） / plain account (no code)</span>`, ""],
+    ["合约代码长度 / Code size", isContract ? codeBytes + " 字节 / bytes" : "0（空）/ empty", isContract ? "gold" : "small"],
+    ["查询节点 / Node", S.rpc.replace("https://", ""), "small"],
+    ["响应延迟 / Latency", S.lat + " ms", "small"]
   ];
 
   $("resultBody").innerHTML = `<div class="panel">
     <div class="ptitle">
-      <span class="tag ${isContract ? "" : "gold"}">${isContract ? "智能合约" : "普通账户"}</span>
-      <span style="font-size:12px;color:var(--faint)">这条记录此刻就在链上，不是缓存</span>
+      <span class="tag ${isContract ? "" : "gold"}">${isContract ? "智能合约 / contract" : "普通账户 / EOA"}</span>
+      <span style="font-size:12px;color:var(--faint)">这条记录此刻就在链上，不是缓存 / this record is on-chain right now, not cached</span>
     </div>
-    ${addrRow("地址", addr)}
+    ${addrRow("地址 / address", addr)}
     ${kv(rows)}
     ${isContract ? `<div class="note" style="--note-line:rgba(59,130,246,.26);--note-bg:rgba(59,130,246,.06)">
-      <b>代码长度不为 0，说明这个地址上真的躺着一份合约。</b>
-      这就是「部署成功」的硬证据：不看任何界面，只问节点。
+      <b>代码长度不为 0，说明这个地址上真的躺着一份合约。 / Non-zero code length means a contract really lives at this address.</b>
+      这就是「部署成功」的硬证据：不看任何界面，只问节点。 / Hard proof of a successful deployment: no UI involved, just ask the node.
     </div>` : ""}
   </div>`;
 
@@ -610,14 +611,14 @@ async function probeOtherChains(hash) {
       const j = await res.json();
       if (j && j.result) {
         const bn = j.result.blockNumber
-          ? Number(BigInt(j.result.blockNumber)).toLocaleString("en-US") : "（还在待打包）";
+          ? Number(BigInt(j.result.blockNumber)).toLocaleString("en-US") : "（还在待打包）/ still pending";
         const who = (j.result.from ? "发送方 <code>" + esc(j.result.from) + "</code>，" : "")
-                  + (j.result.to ? "收款方 <code>" + esc(j.result.to) + "</code>" : "是一笔合约部署");
+                  + (j.result.to ? "收款方 <code>" + esc(j.result.to) + "</code>" : "是一笔合约部署 / contract deployment");
         // 不止说一句"它在别的链上" —— 给一条真能走的路：带上那条链的 ?rpc= 重开本页，
         // 页面会用那个节点把这条交易完整读出来（?rpc= 与 ?q= 都是本页本来就支持的传参）。
         slot.innerHTML = `<div class="v" style="margin-top:10px">✅ 不过它在 <b>${esc(c.name)}</b> 上是真交易：
           区块 ${bn}，${who}。
-          <br><span class="small">这条哈希来自另一条链，本页读的 ${esc(KNOWN_CHAINS[S.chainId] || "当前链")} 上查不到它 —— 这正是我们把「哈希/地址必须跟 chainId 一起说」写进口径的原因。</span>
+          <br><span class="small">这条哈希来自另一条链，本页读的 ${esc(KNOWN_CHAINS[S.chainId] || "当前链")} 上查不到它 —— 这正是我们把「哈希/地址必须跟 chainId 一起说」写进口径的原因。<br>this hash belongs to another chain and cannot be found on the chain this page reads — which is why our convention requires quoting a hash or an address together with its chainId.</span>
           <div style="margin-top:10px"><a class="btn sm" style="display:inline-block;text-decoration:none"
             href="?rpc=${encodeURIComponent(c.url)}&amp;q=${encodeURIComponent(hash)}">在这条链上打开这条哈希 →</a></div>
         </div>`;
@@ -632,8 +633,8 @@ async function lookupTx(hash) {
   clearErr();
   $("logSec").classList.add("hidden");
   $("resultSec").classList.remove("hidden");
-  $("resultKind").textContent = "交易";
-  $("resultBody").innerHTML = `<div class="panel"><div class="loading">正在读这笔交易</div></div>`;
+  $("resultKind").textContent = "交易 / Transaction";
+  $("resultBody").innerHTML = `<div class="panel"><div class="loading">正在读这笔交易 / reading this tx</div></div>`;
 
   const [tx, rc] = await Promise.all([
     rpc("eth_getTransactionByHash", [hash]),
@@ -644,17 +645,17 @@ async function lookupTx(hash) {
     $("logSec").classList.add("hidden");
     const cn = KNOWN_CHAINS[S.chainId] || "当前链";
     $("resultBody").innerHTML = `<div class="panel">
-      <div class="ptitle"><span class="tag red">查不到</span></div>
-      <div class="v">节点返回 null：这条哈希在 ${esc(cn)} 上不存在。</div>
+      <div class="ptitle"><span class="tag red">查不到 / not found</span></div>
+      <div class="v">节点返回 null：这条哈希在 ${esc(cn)} 上不存在。 / The node returned null: this hash does not exist on ${esc(cn)}.</div>
       <div id="probeHint"></div>
       <div class="v small" style="margin-top:10px">
         本页只读一条链（<code>${esc(S.rpc)}</code>）。若这条哈希来自<b>第一阶段 Sepolia 留痕</b>
         （<code>08-截图存证/真链留痕-2026-10-06.md</code> 里区块 11,85x,xxx 那几张表）或本机联调链，
-        它在 968（本页读的 v2 演示基线）上本来就不存在 —— <b>哈希和地址必须跟链一起说</b>。
+        它在 968（本页读的 v2 演示基线）上本来就不存在 —— <b>哈希和地址必须跟链一起说</b>。 / It simply does not exist on 968 (the v2 demo baseline this page reads) — always quote a hash together with its chain.
       </div>
       <div class="v small" style="margin-top:12px">
         最常见的原因：<b>哈希复制少了/多了字符</b>（完整哈希是 66 个字符：<code>0x</code> + 64 位）、
-        混进了空格或尖括号、或者这笔交易还在待打包。
+        混进了空格或尖括号、或者这笔交易还在待打包。 / stray spaces or angle brackets got copied in, or the transaction is still pending.
       </div>
       <div class="addrline" style="margin-top:12px"><span class="a">${esc(hash)}</span>
         <span style="color:var(--faint);font-size:12px">长度 ${hash.length} / 应为 66</span></div>
@@ -673,38 +674,38 @@ async function lookupTx(hash) {
   const isDeploy = tx.to === null;
 
   const rows = [
-    ["状态", rc ? (ok ? "<span style='color:var(--ok)'>成功 ✅</span>" : "<span style='color:var(--bad)'>失败 ❌</span>") : "待打包", ""],
-    ["区块号", tx.blockNumber ? fmtNum(big(tx.blockNumber)) : "待打包", tx.blockNumber ? "" : "small"],
-    ["区块时间", ts ? ago(ts) : "—", "small"],
-    ["这笔是什么", isDeploy ? "<span style='color:var(--money)'>部署合约</span>" : "普通转账 / 调合约", isDeploy ? "gold" : ""],
-    ["转账金额", fmtEth(tx.value) + " " + SYM(), ""],
-    ["Gas 实际用了", rc ? fmtNum(big(rc.gasUsed)) : "—", ""],
-    ["Gas 价格", fmtGwei(tx.gasPrice) + " Gwei", "small"],
-    ["nonce", fmtNum(big(tx.nonce)) + "（这是该账户发的第几笔）", "small"],
-    ["查询节点", S.rpc.replace("https://", ""), "small"]
+    ["状态 / Status", rc ? (ok ? "<span style='color:var(--ok)'>成功 ✅</span>" : "<span style='color:var(--bad)'>失败 ❌</span>") : "待打包 / pending", ""],
+    ["区块号 / Block", tx.blockNumber ? fmtNum(big(tx.blockNumber)) : "待打包 / pending", tx.blockNumber ? "" : "small"],
+    ["区块时间 / Block time", ts ? ago(ts) : "—", "small"],
+    ["这笔是什么 / What it is", isDeploy ? "<span style='color:var(--money)'>部署合约 / contract deploy</span>" : "普通转账 / 调合约 · transfer / call", isDeploy ? "gold" : ""],
+    ["转账金额 / Value", fmtEth(tx.value) + " " + SYM(), ""],
+    ["Gas 实际用了 / Gas used", rc ? fmtNum(big(rc.gasUsed)) : "—", ""],
+    ["Gas 价格 / Gas price", fmtGwei(tx.gasPrice) + " Gwei", "small"],
+    ["nonce", fmtNum(big(tx.nonce)) + "（这是该账户发的第几笔 / tx # from this account）", "small"],
+    ["查询节点 / Node", S.rpc.replace("https://", ""), "small"]
   ];
 
   const contractRow = rc && rc.contractAddress
     ? `<div class="note" style="--note-line:rgba(242,179,61,.22);--note-bg:rgba(242,179,61,.055);margin-top:16px">
-         <b>这笔交易创建了一个合约，地址是：</b>
+         <b>这笔交易创建了一个合约，地址是： / This transaction created a contract at:</b>
          <div class="addrline" style="margin-top:9px">
            <span class="a">${esc(rc.contractAddress)}</span>${copyBtn(rc.contractAddress)}
          </div>
          <div style="margin-top:11px">
            <button class="btn sm" onclick="document.getElementById('q').value='${rc.contractAddress}';run('${rc.contractAddress}')">
-             查看这个合约 →</button>
+             查看这个合约 / view this contract →</button>
          </div>
        </div>`
     : "";
 
   $("resultBody").innerHTML = `<div class="panel">
     <div class="ptitle">
-      <span class="tag ${isDeploy ? "gold" : ""}">${isDeploy ? "合约部署交易" : "普通交易"}</span>
-      <span style="font-size:12px;color:var(--faint)">数据来源：节点直读</span>
+      <span class="tag ${isDeploy ? "gold" : ""}">${isDeploy ? "合约部署交易 / contract deploy" : "普通交易 / transaction"}</span>
+      <span style="font-size:12px;color:var(--faint)">数据来源：节点直读 / source: read straight from the node</span>
     </div>
-    ${addrRow("交易哈希", hash)}
-    ${isDeploy ? "" : addrRow("发送方 from", tx.from)}
-    ${addrRow(isDeploy ? "发送方 from" : "接收方 to", isDeploy ? tx.from : tx.to)}
+    ${addrRow("交易哈希 / tx hash", hash)}
+    ${isDeploy ? "" : addrRow("发送方 from / from", tx.from)}
+    ${addrRow(isDeploy ? "发送方 from / from" : "接收方 to / to", isDeploy ? tx.from : tx.to)}
     ${kv(rows)}
     ${contractRow}
   </div>`;
@@ -723,11 +724,11 @@ const EVENT_ABI = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"
 const IFACE = (typeof ethers !== "undefined" && ethers.Interface) ? new ethers.Interface(EVENT_ABI) : null;
 
 function regionName(id)   { return ({ 1: "武汉", 2: "上海", 3: "北京", 4: "广州", 5: "成都" })[Number(id)] || ("区 " + id); }
-function kindLabel(k)     { return Number(k) === 1 ? "损失判定" : "喂价验收"; }      // KIND_LOSS=1 / KIND_FEED=0
-function decisionLabel(d) { return Number(d) === 1 ? "赔付 PAY" : "不赔 DENY"; }    // DECISION_PAY=1 / DECISION_DENY=0
-function levelLabel(l)    { return ["正常承保", "加价承保", "暂停承保"][Number(l)] || ("level " + l); }
+function kindLabel(k)     { return Number(k) === 1 ? "损失判定 / loss judgement" : "喂价验收 / feed review"; }      // KIND_LOSS=1 / KIND_FEED=0
+function decisionLabel(d) { return Number(d) === 1 ? "赔付 PAY / payout" : "不赔 DENY / no payout"; }    // DECISION_PAY=1 / DECISION_DENY=0
+function levelLabel(l)    { return ["正常承保 / normal", "加价承保 / surcharged", "暂停承保 / suspended"][Number(l)] || ("level " + l); }
 // 国标（GB/T 28592-2012）三档 → 赔付比例，与合约 tierBps(0/1/2) = 50% / 75% / 100% 对齐
-const TIER_LABEL = ["暴雨档 50%", "大暴雨档 75%", "特大暴雨档 100%"];
+const TIER_LABEL = ["暴雨档 50% / heavy rain", "大暴雨档 75% / severe", "特大暴雨档 100% / extreme"];
 
 function decodeLog(l) {
   if (!IFACE) return null;
@@ -752,7 +753,7 @@ function eventSummary(name, a) {
       case "CoolingPeriodSet":     return `冷静期 ${Number(a.seconds_) / 3600} 小时`;
       case "EligibleSet":          return `白名单 ${a.ok ? "加入" : "移出"} ${short(a.who)}`;
       case "EligibleRequiredSet":  return `白名单${a.required ? "已启用" : "已关闭"}`;
-      case "PausedSet":            return a.paused ? "已暂停" : "已恢复";
+      case "PausedSet":            return a.paused ? "已暂停 / suspended" : "已恢复 / resumed";
       case "OperatorChanged":      return `${short(a.from)} → ${short(a.to)}`;
       default:                     return "";
     }
@@ -778,21 +779,21 @@ function buildLogTable(logs, focusTx, opts) {
     </tr>`;
   }).join("");
   return `<div class="tblwrap"><table class="tbl"><thead><tr>
-      <th>区块</th><th>交易</th><th>事件</th><th>关键字段</th>
+      <th>区块 Block</th><th>交易 Tx</th><th>事件 Event</th><th>关键字段 Key fields</th>
     </tr></thead><tbody>${body}</tbody></table></div>` +
     (decoded === 0 ? `<div class="empty">ethers 没加载成功，这一栏只能显示原始哈希。检查同目录的 <code>ethers.umd.min.js</code> 在不在。</div>` : "");
 }
 
 async function loadLogs(addr, focusTx, txLogs) {
   $("logSec").classList.remove("hidden");
-  $("logPanel").innerHTML = `<div class="loading">正在读事件日志</div>`;
+  $("logPanel").innerHTML = `<div class="loading">正在读事件日志 / reading event logs</div>`;
 
   // ① 这笔交易自己的事件：直接从交易回执里取，不经 eth_getLogs ——
   //    演示时粘一个交易哈希，这一段**一定出得来**，不受节点扫块范围限制。
   let txPart = "";
   if (txLogs && txLogs.length) {
-    txPart = `<div class="ptitle"><span class="tag gold">这笔交易发出的 ${txLogs.length} 条事件</span>
-      <span style="font-size:12px;color:var(--faint)">来源：交易回执本身</span></div>` +
+    txPart = `<div class="ptitle"><span class="tag gold">这笔交易发出的 ${txLogs.length} 条事件 / events in this tx</span>
+      <span style="font-size:12px;color:var(--faint)">来源：交易回执本身 / from the receipt itself</span></div>` +
       buildLogTable(txLogs, focusTx, { limit: txLogs.length });
   }
 
@@ -801,8 +802,8 @@ async function loadLogs(addr, focusTx, txLogs) {
   // ★ 修掉一个真 bug：原来两次的范围一模一样（["0x0","latest"] 写了两遍），第二次等于白试。
   let head = 0;
   try { head = Number(BigInt(await rpc("eth_blockNumber"))); } catch (e) { head = 0; }
-  const ranges = [["0x0", "latest", "全部历史"]];
-  if (head > 10000) ranges.push(["0x" + (head - 10000).toString(16), "latest", "最近 1 万块"]);
+  const ranges = [["0x0", "latest", "全部历史 / all history"]];
+  if (head > 10000) ranges.push(["0x" + (head - 10000).toString(16), "latest", "最近 1 万块 / latest 10,000 blocks"]);
   let logs = null, windowNote = "";
   for (const [f, t, note] of ranges) {
     try { logs = await rpc("eth_getLogs", [{ address: addr, fromBlock: f, toBlock: t }], 25000); windowNote = note; break; }
@@ -817,8 +818,8 @@ async function loadLogs(addr, focusTx, txLogs) {
   }
 
   $("logPanel").innerHTML = txPart + `
-    <div class="ptitle"><span class="tag">共 ${logs.length} 条</span>
-      <span style="font-size:12px;color:var(--faint)">显示最近 25 条 · 扫描范围：${esc(windowNote)}</span></div>` +
+    <div class="ptitle"><span class="tag">共 ${logs.length} 条 / ${logs.length} events</span>
+      <span style="font-size:12px;color:var(--faint)">显示最近 25 条 / latest 25 · 扫描范围 Scan range: ${esc(windowNote)}</span></div>` +
     buildLogTable(logs, focusTx, { limit: 25 });
 }
 
@@ -838,13 +839,13 @@ async function loadBlocks(n = 8) {
         <td>${esc(short(b.miner))}</td>
       </tr>`).join("");
     $("blockPanel").innerHTML = `
-      <div class="ptitle"><span class="tag">实时</span>
-        <span style="font-size:12px;color:var(--faint)">BOT Chain 出块很快，这一栏的数字每次刷新都在涨</span></div>
+      <div class="ptitle"><span class="tag">实时 / live</span>
+        <span style="font-size:12px;color:var(--faint)">BOT Chain 出块很快，这一栏的数字每次刷新都在涨 / BOT Chain produces blocks fast — these numbers grow on every refresh</span></div>
       <div class="tblwrap"><table class="tbl"><thead><tr>
-        <th>区块号</th><th>出块时间</th><th>交易数</th><th>基础费率</th><th>出块节点</th>
+        <th>区块号 Block</th><th>出块时间 Time</th><th>交易数 Txs</th><th>基础费率 Base fee</th><th>出块节点 Producer</th>
       </tr></thead><tbody>${rows}</tbody></table></div>`;
   } catch (e) {
-    $("blockPanel").innerHTML = `<div class="empty">读不到区块：${esc(e.message)}</div>`;
+    $("blockPanel").innerHTML = `<div class="empty">读不到区块 / cannot read blocks: ${esc(e.message)}</div>`;
   }
 }
 
@@ -853,7 +854,7 @@ async function run(q) {
   q = (q || $("q").value).trim();
   // 容错：去掉常见脏字符
   q = q.replace(/^[<"'\s]+|[>"'\s]+$/g, "").replace(/\s+/g, "");
-  if (!q) { showErr("先粘一个地址或交易哈希进来。"); return; }
+  if (!q) { showErr("先粘一个地址或交易哈希进来。 / Paste an address or a tx hash first."); return; }
   if (!q.startsWith("0x")) q = "0x" + q;
   $("q").value = q;
 
@@ -863,12 +864,12 @@ async function run(q) {
     else {
       $("logSec").classList.add("hidden");
       $("resultSec").classList.add("hidden");
-      showErr(`这串东西既不是地址也不是交易哈希（长度 ${q.length}）。`,
+      showErr(`这串东西既不是地址也不是交易哈希（长度 ${q.length}）/ neither an address nor a tx hash (length ${q.length})`,
         `地址是 <code>0x</code> + 40 位十六进制 = 共 42 字符；交易哈希是 <code>0x</code> + 64 位 = 共 66 字符。
-         你这串是 ${q.length} 字符。<b>多半是把地址两端的尖括号、空格或换行一起复制进来了。</b>`);
+         你这串是 ${q.length} 字符。<b>多半是把地址两端的尖括号、空格或换行一起复制进来了。</b> / a full hash is 66 chars: 0x plus 64 — stray spaces or angle brackets are the usual cause.`);
     }
   } catch (e) {
-    showErr("查询失败：" + e.message, "换个网络再试，或在网址后加 ?rpc= 指向一个你确信可达的节点。");
+    showErr("查询失败 / query failed: " + e.message, "换个网络再试，或在网址后加 ?rpc= 指向一个你确信可达的节点。 / try another network, or add ?rpc= to the URL pointing at a node you know is reachable.");
   }
 }
 window.run = run;

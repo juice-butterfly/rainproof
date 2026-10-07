@@ -7,6 +7,19 @@
 
 ---
 
+## RainProof at a glance (English)
+
+> **Verifiable AI parametric delivery insurance** — replace *"trust me"* with *"verify it yourself"*.
+
+- **What it is** — a parametric rain policy for food-delivery riders. The rules live in a smart contract, the rainfall reading is written on-chain by an oracle, and the payout fires when the on-chain rainfall crosses the tier line. No claim filing, no loss adjustment, the rider proves nothing.
+- **Live demo baseline** — BOT Chain Testnet **968**, contract `0x89e7C942535930B61cB61631051E8b0bD670596a` (RPC `rpc.bohr.life`, explorer `scan.bohr.life`). Demo site: https://juice-butterfly.github.io/rainproof/
+- **v3 underwriting layer** (verified end-to-end on a local replay chain) — cover windows **12 h / 24 h only** (GB/T 28592—2012), threshold table 12 h → **30 / 70 mm**, 24 h → **50 / 100 mm**, two payout tiers **50% / 75%**.
+- **AI judgement layer** — three independent weather models are crossed-checked, deterministic rules R1–R5 return **DENY / PAY**, and the input hash + output hash go on-chain. The LLM never decides, and its explanation never enters the hash.
+- **Verify it yourself** — open `06-核验台单文件/汉客松-链上核验台.html` (one file, no backend) or the demo site's `verifier.html`, paste any transaction hash or address, and read the raw `eth_getLogs` / `eth_getTransactionByHash` output. No block explorer required.
+- **Team** 神麻 · 汉客松 S1 & ETH Wuhan 2026. The rest of this README is Chinese-first; this block is the English summary.
+
+---
+
 ## 1. 项目介绍
 
 ### 目标用户

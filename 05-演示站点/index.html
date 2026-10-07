@@ -589,6 +589,10 @@
     .filters{flex-wrap:wrap;row-gap:var(--s2)}
     .foot5{gap:var(--s1)}
   }
+  /* Bilingual: small English under or after the Chinese label (read-only additions). */
+  .en{display:block;font-size:var(--t-lab);font-weight:400;font-style:normal;color:var(--ink-3);letter-spacing:.04em;margin-top:2px}
+  .eni{font-size:var(--t-lab);font-weight:400;color:var(--ink-3)}
+  .eni::before{content:" / ";opacity:.75}
 </style>
 </head>
 <body>
@@ -608,34 +612,34 @@
   </div>
   <div class="who">
     <h1>雨证 · RainProof</h1>
-    <p>参数化降雨险 · 结算依据是链上降雨读数，不是查勘</p>
+    <p>参数化降雨险 · 结算依据是链上降雨读数，不是查勘<span class="en">Parametric rain insurance · settled by on-chain rainfall, not by loss adjustment</span></p>
   </div>
   <div class="net">
     <span class="chainpill"><span class="dot" id="dot"></span><b id="netText">未连接</b></span>
-    <span class="item">区块 <b id="blk">—</b></span>
-    <span class="item">合约 <b class="mono" id="addrMini" style="color:var(--evi)">未配置</b></span>
-    <button class="btn sm" id="walletBtn" title="连接钱包；已连接时点它会打开钱包的账户选择弹窗">连接钱包</button>
+    <span class="item">区块<span class="eni">Block</span> <b id="blk">—</b></span>
+    <span class="item">合约<span class="eni">Contract</span> <b class="mono" id="addrMini" style="color:var(--evi)">未配置</b></span>
+    <button class="btn sm" id="walletBtn" title="连接钱包；已连接时点它会打开钱包的账户选择弹窗">连接钱包<span class="eni">Connect</span></button>
   </div>
   <!-- 只读连接：不经过钱包插件，粘贴一个地址就能看它在链上的全部数据（点「连接钱包」展开） -->
   <div class="roconnect" id="roBox" hidden>
     <input id="roAddr" spellcheck="false" autocomplete="off"
            placeholder="0x… 地址（42 个字符）：只读查看这个地址的保单" aria-label="只读查看的地址">
-    <button class="btn sm" id="roGo">只读连接</button>
-    <button class="btn sm" id="roWallet">用钱包插件连接</button>
-    <span class="rohint">只读模式不签名、不发交易：能看链上全部数据，<b>不能</b>投保或注资 —— 交易仍然只能由钱包（MetaMask）签名。</span>
+    <button class="btn sm" id="roGo">只读连接<span class="eni">Read-only</span></button>
+    <button class="btn sm" id="roWallet">用钱包插件连接<span class="eni">Via wallet</span></button>
+    <span class="rohint">只读模式不签名、不发交易：能看链上全部数据，<b>不能</b>投保或注资 —— 交易仍然只能由钱包（MetaMask）签名。<span class="eni">Read-only mode signs nothing: you can read everything, but buying and funding still need MetaMask.</span></span>
   </div>
 </header>
 
 <!-- 读数条：先回答「够不够赔 / 赔过没有 / 现在什么状态」，再请人往下看 -->
 <div class="readouts">
-  <div class="ro"><span class="lb">资金池</span><span class="vl" id="poolBal">—</span>
-    <span class="sub">可覆盖 <b id="poolCap">—</b> 笔满额赔付</span></div>
-  <div class="ro money"><span class="lb">已赔付</span><span class="vl" id="paidShow">—</span>
-    <span class="sub" id="paidSub">正在读链上事件</span></div>
-  <div class="ro measure"><span class="lb">已越阈值区域</span><span class="vl" id="overShow">—</span>
-    <span class="sub" id="overSub">按 72 小时窗口</span></div>
-  <div class="ro"><span class="lb">待 AI 判定</span><span class="vl" id="pendShow">—</span>
-    <span class="sub" id="pendSub">连接钱包后可读</span></div>
+  <div class="ro"><span class="lb">资金池<span class="eni">Pool</span></span><span class="vl" id="poolBal">—</span>
+    <span class="sub">可覆盖 <b id="poolCap">—</b> 笔满额赔付<span class="eni">full payouts</span></span></div>
+  <div class="ro money"><span class="lb">已赔付<span class="eni">Paid out</span></span><span class="vl" id="paidShow">—</span>
+    <span class="sub" id="paidSub">正在读链上事件<span class="eni">reading events</span></span></div>
+  <div class="ro measure"><span class="lb">已越阈值区域<span class="eni">Over threshold</span></span><span class="vl" id="overShow">—</span>
+    <span class="sub" id="overSub">按 72 小时窗口<span class="eni">72 h window</span></span></div>
+  <div class="ro"><span class="lb">待 AI 判定<span class="eni">Awaiting AI</span></span><span class="vl" id="pendShow">—</span>
+    <span class="sub" id="pendSub">连接钱包后可读<span class="eni">connect to read</span></span></div>
 </div>
 
 <div class="grid2">
@@ -643,31 +647,31 @@
   <div>
     <section class="sec lead">
       <div class="hd">
-        <h2>降雨量测</h2>
+        <h2>降雨量测<span class="en">Rainfall readings</span></h2>
         <span class="n">rainfall(uint8) · 五城累计值</span>
         <span class="r">同一把尺子：满量程 = 2 × 阈值 · 超出者顶格</span>
       </div>
       <div class="block" id="rainBoard">
-        <div class="loading">正在读取各区域降雨</div>
+        <div class="loading">正在读取各区域降雨<span class="eni">reading rainfall</span></div>
       </div>
     </section>
 
     <section class="sec">
       <div class="hd">
-        <h2>链上动态</h2>
+        <h2>链上动态<span class="en">On-chain activity</span></h2>
         <span class="n">eth_getLogs · 合约直接发出的事件</span>
         <span class="r">事件名与参数都是合约发出的原始内容，本页只做翻译</span>
       </div>
       <div class="filters" id="evFilters">
-        <button class="f on" data-fam="all">全部</button>
-        <button class="f" data-fam="buy">投保</button>
-        <button class="f" data-fam="feed">喂价</button>
-        <button class="f" data-fam="judge">判定</button>
-        <button class="f" data-fam="pay">赔付</button>
-        <button class="f" data-fam="pool">资金池</button>
+        <button class="f on" data-fam="all">全部<span class="eni">All</span></button>
+        <button class="f" data-fam="buy">投保<span class="eni">Buy</span></button>
+        <button class="f" data-fam="feed">喂价<span class="eni">Feed</span></button>
+        <button class="f" data-fam="judge">判定<span class="eni">Judge</span></button>
+        <button class="f" data-fam="pay">赔付<span class="eni">Payout</span></button>
+        <button class="f" data-fam="pool">资金池<span class="eni">Pool</span></button>
       </div>
       <div class="panel" id="events">
-        <div class="loading">正在读取事件日志</div>
+        <div class="loading">正在读取事件日志<span class="eni">reading event logs</span></div>
       </div>
     </section>
   </div>
@@ -675,67 +679,67 @@
   <!-- ============ 右栏：这一页唯一的动作 + 动作背后的 AI 层 ============ -->
   <div class="rcol">
     <section class="sec">
-      <div class="hd"><h2>开一张保单</h2><span class="n">buyPolicy(regionId, hours)</span></div>
+      <div class="hd"><h2>开一张保单<span class="en">Open a policy</span></h2><span class="n">buyPolicy(regionId, hours)</span></div>
       <div class="block">
-        <div class="k">配送区域</div>
+        <div class="k">配送区域<span class="eni">Delivery region</span></div>
         <div class="chips" id="regionChips" style="margin-top:8px"></div>
         <label class="vh" for="regionSel">配送区域</label>
         <select id="regionSel" class="vh"></select>
 
-        <div class="k" style="margin-top:var(--s4)">保障时长</div>
+        <div class="k" style="margin-top:var(--s4)">保障时长<span class="eni">Cover window</span></div>
         <div class="chips" id="hoursChips" style="margin-top:8px"></div>
         <label class="vh" for="hoursInput">保障时长</label>
         <select id="hoursInput" class="vh">
-          <option value="24">24 小时（1 天）</option>
-          <option value="48">48 小时（2 天）</option>
-          <option value="72" selected>72 小时（3 天，最长）</option>
+          <option value="24">24 小时（1 天） / 24 h</option>
+          <option value="48">48 小时（2 天） / 48 h</option>
+          <option value="72" selected>72 小时（3 天，最长） / 72 h</option>
         </select>
 
         <div class="quote">
-          <div><div class="lb">应付保费</div><div class="amt" id="premiumShow">—</div></div>
-          <div class="side" id="premiumSide">premiumOf(1, 72)<br>链上取值</div>
+          <div><div class="lb">应付保费<span class="eni">Premium</span></div><div class="amt" id="premiumShow">—</div></div>
+          <div class="side" id="premiumSide">premiumOf(1, 72)<br>链上取值 / on-chain</div>
         </div>
 
         <div class="spec">
-          <div class="r"><span class="l">触发条件（增量 ≥）</span><span class="v2" id="threshShow">—</span></div>
-          <div class="r"><span class="l">赔付档位</span><span class="v2">按国标三级 · 50 / 75 / 100%</span></div>
-          <div class="r"><span class="l">本单赔付上限</span><span class="v2 money" id="payoutShow">—</span></div>
-          <div class="r"><span class="l">生效延迟</span><span class="v2">无（v2 去掉冷静期）</span></div>
+          <div class="r"><span class="l">触发条件（增量 ≥）<span class="eni">Trigger (increase ≥)</span></span><span class="v2" id="threshShow">—</span></div>
+          <div class="r"><span class="l">赔付档位<span class="eni">Payout tier</span></span><span class="v2">按国标三级 · 50 / 75 / 100%<span class="eni">per GB standard</span></span></div>
+          <div class="r"><span class="l">本单赔付上限<span class="eni">Max payout</span></span><span class="v2 money" id="payoutShow">—</span></div>
+          <div class="r"><span class="l">生效延迟<span class="eni">Effective delay</span></span><span class="v2">无（v2 去掉冷静期）<span class="eni">none (v2 removed it)</span></span></div>
         </div>
 
-        <button class="btn primary block" id="buyBtn" style="margin-top:var(--s4)" disabled>连接钱包后投保</button>
+        <button class="btn primary block" id="buyBtn" style="margin-top:var(--s4)" disabled>连接钱包后投保<span class="eni">Connect to buy</span></button>
         <div class="note dim" id="buyHint" style="margin-top:var(--s3)">
           理赔只看<strong>投保后的增量</strong>：投保当刻的链上读数记为基线，
           之后<strong>新增累计降雨 ≥ 阈值</strong> 才进入判定。
-          实赔按国标档位打折：<strong>暴雨 50% / 大暴雨 75% / 特大暴雨 100%</strong>。
+          实赔按国标档位打折：<strong>暴雨 50% / 大暴雨 75% / 特大暴雨 100%</strong>。<br><span class="en">Claims use the post-purchase increase: the reading at purchase is the baseline, and only new rainfall ≥ the threshold enters judgement. A payout is scaled by tier — 50% / 75% / 100%.</span>
         </div>
       </div>
     </section>
 
     <section class="sec">
-      <div class="hd"><h2>AI 层做了什么</h2><span class="n">链下算 · 链上留痕</span></div>
+      <div class="hd"><h2>AI 层做了什么<span class="en">What the AI layer does</span></h2><span class="n">链下算 · 链上留痕</span></div>
       <div class="panel">
-        <div class="airow"><b>喂价验收</b><span>三模型交叉比对，离群就拒收 —— 拒收本身也上链留痕</span></div>
-        <div class="airow"><b>判定复核</b><span>按 R1–R5 规则给出赔/不赔与置信度，输入快照与输出结论各一个哈希写进链</span></div>
-        <div class="airow"><b>承保定价</b><span>五个区域的差异化保费，依据串哈希写进 <code>UnderwritingDecision</code> 事件</span></div>
+        <div class="airow"><b>喂价验收</b><span>三模型交叉比对，离群就拒收 —— 拒收本身也上链留痕<span class="eni">Three models cross-checked; an outlier feed is rejected and the rejection is logged on-chain too</span></span></div>
+        <div class="airow"><b>判定复核</b><span>按 R1–R5 规则给出赔/不赔与置信度，输入快照与输出结论各一个哈希写进链<span class="eni">Deterministic R1–R5 rules return PAY / DENY plus a confidence, with one hash for the input snapshot and one for the output</span></span></div>
+        <div class="airow"><b>承保定价</b><span>五个区域的差异化保费，依据串哈希写进 <code>UnderwritingDecision</code> 事件<span class="eni">Region-specific premiums, with the evidence hash in the UnderwritingDecision event</span></span></div>
       </div>
     </section>
   </div>
 </div>
 
 <section class="sec">
-  <div class="hd"><h2>我的保单</h2><span class="n">policiesOf(account) · 逐份读链上</span>
+  <div class="hd"><h2>我的保单<span class="en">My policies</span></h2><span class="n">policiesOf(account) · 逐份读链上</span>
     <span class="r">按钮点不动时，按钮自己会写出原因</span></div>
   <div class="ptable-head">
-    <span>保单 / 区域</span><span>保障期与进度</span><span>链上 AI 判定（可核）</span><span>操作</span>
+    <span>保单 / 区域<span class="eni">Policy / region</span></span><span>保障期与进度<span class="eni">Cover & progress</span></span><span>链上 AI 判定（可核）<span class="eni">On-chain AI judgement</span></span><span>操作<span class="eni">Actions</span></span>
   </div>
   <div class="panel" id="myPolicies">
-    <div class="empty">连接钱包后，这里会列出你在本合约上的全部保单。</div>
+    <div class="empty">连接钱包后，这里会列出你在本合约上的全部保单。<span class="en">Connect a wallet to list your policies on this contract.</span></div>
   </div>
 </section>
 
 <details class="cfgbox">
-  <summary>合约配置与运营操作</summary>
+  <summary>合约配置与运营操作<span class="eni">Contract config & ops</span></summary>
   <div class="panel">
     <div class="cfg">
       <input id="addrInput" spellcheck="false" placeholder="0x… 部署出来的合约地址（42 个字符）">
@@ -744,10 +748,10 @@
     </div>
     <div class="note jade" id="cfgHint">
       还没有合约地址？先打开 <a href="verifier.html">链上核验台</a> 确认部署成功，再把地址粘到这里。
-      地址只存在你自己的浏览器里（localStorage），不上传任何地方。
+      地址只存在你自己的浏览器里（localStorage），不上传任何地方。<br><span class="en">No contract address yet? Confirm the deployment in the on-chain verifier first, then paste it here. It is stored in your browser only.</span>
     </div>
     <div class="row" style="margin-top:16px">
-      <button class="btn sm gold" id="fundBtn" disabled>注资到资金池（按钱包余额自动封顶）</button>
+      <button class="btn sm gold" id="fundBtn" disabled>注资到资金池（按钱包余额自动封顶）<span class="eni">Fund the pool</span></button>
     </div>
     <div class="note">
       <strong>资金池必须有余额。</strong>收 1 份保费（0.0002–0.002）却要赔最高 10 倍（0.01），
@@ -761,11 +765,11 @@
   <span>BOT Chain <b>968</b></span>
   <span>合约 <b id="footAddr" title="0x89e7C942535930B61cB61631051E8b0bD670596a">0x89e7…596a</b></span>
   <span>节点 <b>rpc.bohr.life</b></span>
-  <span class="sp">不依赖任何区块浏览器 · 数据直接向公共节点提问</span>
+  <span class="sp">不依赖任何区块浏览器 · 数据直接向公共节点提问<span class="eni">No block explorer needed — every number is read straight from the public node</span></span>
 </footer>
 
 <details class="notes">
-  <summary>只读模式与诚实说明</summary>
+  <summary>只读模式与诚实说明<span class="eni">Read-only mode & notes</span></summary>
   <div class="note">
     <p><b>只读模式：</b>没连钱包也能看全部数据。现场万一 MetaMask 出问题，照样能演示「链上有什么」。</p>
     <p><b>诚实说明：</b>喂价脚本是<b>中心化预言机</b>，数据可信度取决于运营方；生产环境应改用去中心化预言机网络

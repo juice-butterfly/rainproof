@@ -57,6 +57,7 @@ const COLLECT_VERSION = "ai-collect-v1";
 const ABI_DIR = path.join(__dirname, "..", "03-合约");
 const ABI_V1 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsurance.abi.json"), "utf8"));
 const ABI_V2 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsuranceV2.abi.json"), "utf8"));
+const ABI_V3 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsuranceV3.abi.json"), "utf8"));
 
 const ARGV = process.argv.slice(2);
 const POLICY_ID = Number(ARGV.find((a) => /^\d+$/.test(a)));
@@ -161,10 +162,17 @@ function synthModels(region, startDate, targetMm, onchainValue) {
   const provider = new JsonRpcProvider(RPC);
   // 按链上有没有 v2 的 thresholdOf() 选 ABI：968 / 677 走 v2，
   // Sepolia 的 v1 与 2024 武汉暴雨回放链走 v1（两边的 Policy 结构体不同，不能混用）。
-  let c = new Contract(ADDR, ABI_V2, provider);
-  let isV2 = true;
-  try { await c.thresholdOf(24); }
-  catch { isV2 = false; c = new Contract(ADDR, ABI_V1, provider); }
+  // 按链上有的「版本指纹」选 ABI：v3 entryThresholdOf(uint256)｜v2 thresholdOf(uint256)｜v1 THRESHOLD()。
+  // 探测顺序必须从新到旧：v3 的 thresholdOf 是 2 参，拿 v2 的 1 参签名去问会失败、退回 v1 反而更糟。
+  let c = new Contract(ADDR, ABI_V3, provider);
+  let kind = "v3";
+  try { await c.entryThresholdOf(24); }
+  catch {
+    kind = "v2";
+    c = new Contract(ADDR, ABI_V2, provider);
+    try { await c.thresholdOf(24); }
+    catch { kind = "v1"; c = new Contract(ADDR, ABI_V1, provider); }
+  }
   await assertRegionsMatchContract(c);   // 区域表对不上就别往下走
 
   const p = await c.policies(POLICY_ID);
@@ -184,7 +192,11 @@ function synthModels(region, startDate, targetMm, onchainValue) {
   // 写成 50×12/24 = 25mm 并列进对外材料里，同一个「12h 暴雨险」出现两个数 —— 对外引用
   // 档线时必须连合约名、窗口一起写。v2 上 hours 只允许 24/48/72（hoursAllowed），
   // 所以 12h 那行在 v2 上永远走不到。
-  const thresholdMm = Number(isV2 ? await c.thresholdOf(p.windowHours) : await c.THRESHOLD());
+  // v3 上 hours 只允许 12/24（hoursAllowed），阈值走国标两档表的入口线 = thresholdOf(hours, 0)。
+  const thresholdMm = Number(
+    kind === "v3" ? await c.entryThresholdOf(p.windowHours)
+      : kind === "v2" ? await c.thresholdOf(p.windowHours)
+        : await c.THRESHOLD());
   const minConfidence = Number(await c.MIN_CONFIDENCE());
 
   let models;

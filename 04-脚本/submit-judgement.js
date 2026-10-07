@@ -41,6 +41,7 @@ const OUT_DIR = process.env.AI_OUT_DIR || path.join(__dirname, "..", "09-AI判�
 const ABI_DIR = path.join(__dirname, "..", "03-合约");
 const ABI_V1 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsurance.abi.json"), "utf8"));
 const ABI_V2 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsuranceV2.abi.json"), "utf8"));
+const ABI_V3 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsuranceV3.abi.json"), "utf8"));
 
 (async () => {
   const policyId = Number(process.argv.slice(2).find((a) => /^\d+$/.test(a)));
@@ -67,10 +68,19 @@ const ABI_V2 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsura
   const provider = new JsonRpcProvider(RPC);
   const wallet = new Wallet(KEY, provider);
   // 按链上有没有 v2 的 thresholdOf() 选 ABI：两边的 submitJudgement 参数个数不同（v2 多 sources）。
-  let c = new Contract(ADDR, ABI_V2, wallet);
-  let isV2 = true;
-  try { await c.thresholdOf(24); }
-  catch { isV2 = false; c = new Contract(ADDR, ABI_V1, wallet); }
+  // 按链上有的「版本指纹」选 ABI：v3 entryThresholdOf(uint256)｜v2 thresholdOf(uint256)｜v1 THRESHOLD()。
+  // 三版的 submitJudgement 参数个数都不同（v1 六参 / v2 七参 / v3 八参，v3 多 rainfallAtJudgement），
+  // 签名错了会打到不存在的 selector 上，回执只有 "execution reverted: 0x"。
+  let c = new Contract(ADDR, ABI_V3, wallet);
+  let kind = "v3";
+  try { await c.entryThresholdOf(24); }
+  catch {
+    kind = "v2";
+    c = new Contract(ADDR, ABI_V2, wallet);
+    try { await c.thresholdOf(24); }
+    catch { kind = "v1"; c = new Contract(ADDR, ABI_V1, wallet); }
+  }
+  const isV2 = kind === "v2";
 
   const operator = (await c.operator()).toLowerCase();
   if (wallet.address.toLowerCase() !== operator) {
@@ -93,7 +103,11 @@ const ABI_V2 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsura
   console.log(`inputHash  ${snapHash}`);
   console.log(`outputHash ${outputHash}`);
 
-  const tx = await (isV2
+  const tx = await (kind === "v3"
+    ? c.submitJudgement(policyId, judgement.decision, judgement.confidence, judgement.sources,
+                        snapshot.oracle.cumulativeMm,   // v3：判定当时的链上读数（增量=它−买入基线）
+                        snapHash, outputHash, judgement.judgeVersion)
+    : isV2
     ? c.submitJudgement(policyId, judgement.decision, judgement.confidence, judgement.sources,
                         snapHash, outputHash, judgement.judgeVersion)
     : c.submitJudgement(policyId, judgement.decision, judgement.confidence,
@@ -113,6 +127,8 @@ const ABI_V2 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsura
     ["modelVersion", after.modelVersion === judgement.judgeVersion],
   ];
   if (isV2) checks.push(["sources", Number(after.sources) === Number(judgement.sources)]);   // v2 才写 sources
+  if (kind === "v3") checks.push(["rainfallAtJudgement",
+    Number(after.rainfallAtJudgement) === Number(snapshot.oracle.cumulativeMm)]);
   const bad = checks.filter(([, ok]) => !ok).map(([k]) => k);
   console.log("读回校验    " + (bad.length ? `❌ 不一致：${bad.join(", ")}` : `✅ ${checks.length}/${checks.length} 个字段与本地文件一致`));
   console.log(`提交后状态 ${await c.policyStatus(policyId)}`);

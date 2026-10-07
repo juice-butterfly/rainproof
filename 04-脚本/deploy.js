@@ -32,13 +32,15 @@ const { JsonRpcProvider, Wallet, ContractFactory } = require("ethers");
 // ★ 部署哪一版：默认 v1（RainDeliveryInsurance），加 --v2 部署 v2（RainDeliveryInsuranceV2）。
 //   v2 必须先编译：cd 07-测试工具 && npm run compile:v2
 const SOL_DIR = path.join(__dirname, "..", "03-合约");
-const VARIANT = process.argv.includes("--v2") ? "V2" : "";
+const VARIANT = process.argv.includes("--v3") ? "V3" : process.argv.includes("--v2") ? "V2" : "";
 const CONTRACT_NAME = "RainDeliveryInsurance" + VARIANT;
 const ABI_FILE = path.join(SOL_DIR, `${CONTRACT_NAME}.abi.json`);
 const BYTECODE_FILE = path.join(SOL_DIR, `${CONTRACT_NAME}.bytecode.txt`);
-const COMPILE_HINT = VARIANT
-  ? "先在 07-测试工具 里跑：npm run compile:v2"
-  : "先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol";
+const COMPILE_HINT = VARIANT === "V3"
+  ? "先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsuranceV3.sol --via-ir"
+  : VARIANT
+    ? "先在 07-测试工具 里跑：npm run compile:v2"
+    : "先在 07-测试工具 里跑：node compile_sol.js ../03-合约/RainDeliveryInsurance.sol";
 
 function readAbi() {
   if (!fs.existsSync(ABI_FILE)) throw new Error("找不到编译产物：" + ABI_FILE + "\n  " + COMPILE_HINT);
@@ -99,7 +101,7 @@ async function main() {
 
   const abi = readAbi();
   const bytecode = readBytecode();
-  console.log("合约       :", CONTRACT_NAME + (VARIANT ? "（v2）" : "（v1）"));
+  console.log("合约       :", CONTRACT_NAME + (VARIANT ? `（${VARIANT.toLowerCase()}）` : "（v1）"));
   console.log("ABI 条目数 :", abi.length);
   console.log("Bytecode   :", bytecode.length, "字符");
   console.log("RPC        :", rpc);

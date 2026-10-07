@@ -58,6 +58,9 @@ const ABI = [
   "function PAYOUT_MAX() external view returns (uint256)",
   "function THRESHOLD_PER_24H() external view returns (uint256)",
   "function thresholdOf(uint256 windowHours) external view returns (uint256)",
+  // ★ v3（国标两档）把阈值拆成「入口线 × 赔付档」：thresholdOf(hours, tier) 变 2 参，
+  //   原来的「每 24h 阈值」语义落在入口线 entryThresholdOf(hours) = thresholdOf(hours, 0) 上。
+  "function entryThresholdOf(uint256 windowHours) external view returns (uint256)",
   "function premiumOf(uint8 regionId, uint256 windowHours) external view returns (uint256)",
   "function reserveOf() external view returns (uint256)",
   "function MAX_FEED_AGE() external view returns (uint64)",
@@ -343,7 +346,7 @@ async function main() {
   const [onchainOperator, paused, pool, payout, threshold, regionCount, minConfidence, balance] = await Promise.all([
     readC.operator(), readC.paused(), readC.poolBalance(),
     readEither(readC, [["PAYOUT()"], ["PAYOUT_MAX()"]]),
-    readEither(readC, [["THRESHOLD()"], ["THRESHOLD_PER_24H()"]]),
+    readEither(readC, [["THRESHOLD()"], ["THRESHOLD_PER_24H()"], ["entryThresholdOf(uint256)", [24]]]),
     readC.REGION_COUNT(), readC.MIN_CONFIDENCE(),
     provider.getBalance(wallet.address),
   ]);
@@ -609,7 +612,7 @@ const FEED_KIND = { 0: "喂价", 1: "损失判定" };
 async function printStatus(readC, chainInfo) {
   const sym = chainInfo ? chainInfo.sym : "SepETH";
   const [threshold, payout, pool, paused, operator, regionCount, reserve, minConf] = await Promise.all([
-    readEither(readC, [["THRESHOLD()"], ["THRESHOLD_PER_24H()"]]),
+    readEither(readC, [["THRESHOLD()"], ["THRESHOLD_PER_24H()"], ["entryThresholdOf(uint256)", [24]]]),
     readEither(readC, [["PAYOUT()"], ["PAYOUT_MAX()"]]),
     readC.poolBalance(),
     readC.paused(), readC.operator(), readC.REGION_COUNT(),

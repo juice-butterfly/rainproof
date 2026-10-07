@@ -31,7 +31,10 @@ const fs = require("fs");
 const path = require("path");
 const { JsonRpcProvider, Wallet, Contract, formatEther } = require("ethers");
 
-const ABI_FILE = path.join(__dirname, "..", "03-合约", "RainDeliveryInsuranceV2.abi.json");
+// 默认 v2（968 演示基线与 677 用的是 v2）；加 --v3 时读 v3 的 ABI（v3 把阈值/赔付档改成国标两档，
+// 但 keeper 只用 nextPolicyId / policyStatus / payoutOf / claim / settleExpired，两版都有）。
+const VARIANT = process.argv.includes("--v3") ? "V3" : "V2";
+const ABI_FILE = path.join(__dirname, "..", "03-合约", `RainDeliveryInsurance${VARIANT}.abi.json`);
 const ARGV = process.argv.slice(2);
 const ONCE = ARGV.includes("--once");
 const DRY = ARGV.includes("--dry-run");

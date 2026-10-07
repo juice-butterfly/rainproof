@@ -1,7 +1,7 @@
 {
   "meta": {
     "generatedBy": "10-金融与定价/pricing_engine.js",
-    "generatedAt": "2026-10-07T06:45:03.789Z",
+    "generatedAt": "2026-10-07T06:53:32.569Z",
     "version": "v3",
     "source": "Open-Meteo Archive (ERA5) 逐小时，五城各 96,432 小时",
     "dataStart": "2015-10-01",

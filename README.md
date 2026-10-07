@@ -158,7 +158,17 @@ node ai-judge.js <保单号>          # 确定性判定 → 判定结果 JSON
 node submit-judgement.js <保单号>  # 重算核对后把判定提交上链
 ```
 
-### 打开演示前端
+### 在线演示（不用装环境，直接点开）
+
+**https://juice-butterfly.github.io/rainproof/**
+
+由 GitHub Pages 直接从 `05-演示站点/` 发布（见 `.github/workflows/deploy-demo.yml`），**与仓库里的文件字节一致**，不是另一份副本。
+
+- **只读浏览不需要钱包**：降雨看板、资金池余额、事件流、核验台打开就能看 —— 这些数据是页面现读 Sepolia 的。
+- 要真的走「投保 / 注资 / 申请赔付」，需要浏览器装 MetaMask 并切到 Sepolia（chainId `11155111`）。这是链上交互的固有前提：网页不能替用户签名。
+- 核验台：https://juice-butterfly.github.io/rainproof/verifier.html
+
+### 打开演示前端（本地，开发用）
 
 ```bash
 # 需要一个 HTTP 服务（MetaMask 默认不注入 file:// 页面）

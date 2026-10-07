@@ -72,11 +72,15 @@
 
 用 git tag 划界，可自行复算：
 
-| 边界 | tag | commit |
+| 边界 | tag | commit（`git rev-parse <tag>^{commit}`） |
 |---|---|---|
-| 赛前基线 | `baseline-pre-hackathon` | `4f0e29e` |
-| 开赛前最后一次提交 | `prestart-freeze` | `2eabfa1` |
+| 赛前基线 | `baseline-pre-hackathon` | `b522196` |
+| 开赛分界 | `hackathon-start` | `31d7851` |
+| 开赛前最后一次提交 | `prestart-freeze` | `73bb6bc` |
 | 赛期全部提交 | — | `git log --oneline prestart-freeze..HEAD` |
+
+> 三个 tag 都是**带注释的 tag**，`git rev-parse <tag>` 给出的是 tag 对象哈希（`4f0e29e` / `a353b34` / `2eabfa1`），
+> 上表的 commit 由 `git rev-parse <tag>^{commit}` 得到 —— 两个都对，但引用"赛前基线是哪一笔"要写 commit。
 
 **赛期新增（相对 `prestart-freeze`，`git diff --stat prestart-freeze..HEAD` 可复算）**：
 

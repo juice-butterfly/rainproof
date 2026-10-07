@@ -683,11 +683,17 @@ def s18b_limits(prs, n):
 def build(path):
     prs = Presentation()
     prs.slide_width, prs.slide_height = W, H
-    builders = [s01_cover, s02_person, s03_conflict, s04_math, s04b_problem, s04c_target,
-                s05_what_if, s06_idea, s07_flow, s07b_arch, s08_demo, s09_punchline,
-                s09b_evidence, s10_ai1, s11_ai2, s12_ai3, s13_onemore, s14_compare,
-                s14b_tiers, s15_cost, s17b_business, s16_spec, s18a_roadmap, s18b_limits,
-                s18_appendix, s17_close]
+    # 前 16 页 = 主讲（6 分钟版逐页讲；5 分钟 / 3 分钟版见 提交材料/路演PPT-讲稿与跳页表.md）
+    # 后 10 页 = 备用（答辩与追问时才翻；翻页用 输入页码 + Enter）
+    builders = [
+        # ---- 主讲 16 页 ----
+        s01_cover, s02_person, s03_conflict, s04_math, s05_what_if, s06_idea,
+        s07_flow, s08_demo, s09_punchline, s10_ai1, s11_ai2, s12_ai3,
+        s13_onemore, s14_compare, s15_cost, s17_close,
+        # ---- 备用 10 页 ----
+        s04b_problem, s04c_target, s07b_arch, s09b_evidence, s14b_tiers,
+        s17b_business, s16_spec, s18a_roadmap, s18b_limits, s18_appendix,
+    ]
     for i, fn in enumerate(builders, start=1):
         slide = fn(prs, i)
         if i > 1:

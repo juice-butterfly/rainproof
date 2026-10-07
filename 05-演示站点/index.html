@@ -425,6 +425,12 @@
     font-family:var(--f-num);font-size:var(--t-data);padding:10px 12px;outline:none;transition:border-color .16s}
   input:hover,select:hover{border-color:rgba(148,180,215,.36)}
   input:focus,select:focus{border-color:var(--measure)}
+  /* 只读连接行：不经过钱包插件，粘贴地址即可查看该地址的链上数据 */
+  .roconnect{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin-top:var(--s4);
+    padding:var(--s3) var(--s4);border:1px dashed var(--line-2);border-radius:var(--r-sm);background:var(--surface-2)}
+  .roconnect[hidden]{display:none}
+  .roconnect input{flex:1 1 280px;min-width:0;font-family:var(--f-num);padding:var(--s2) var(--s3);font-size:var(--t-data)}
+  .rohint{flex:1 1 100%;font-size:var(--t-lab);color:var(--ink-3);line-height:1.6}
   select{cursor:pointer;font-family:var(--f-ui);font-size:var(--t-body);appearance:none;padding-right:34px;
     background-image:linear-gradient(45deg,transparent 50%,var(--ink-2) 50%),linear-gradient(135deg,var(--ink-2) 50%,transparent 50%);
     background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
@@ -466,15 +472,21 @@
     border:1px solid var(--line);background:transparent;color:var(--ink-3);cursor:pointer}
   .f.on{border-color:var(--line-2);color:var(--ink);background:var(--surface)}
   #events{display:flex;flex-direction:column}
-  .ev{display:grid;grid-template-columns:92px 168px minmax(0,1fr) 132px;gap:var(--s4);align-items:baseline;
+  .ev{display:grid;grid-template-columns:96px 168px minmax(0,1fr) 46px;gap:var(--s4);align-items:baseline;
     padding:11px 0;border-bottom:1px solid var(--line);font-size:var(--t-data)}
   .ev:last-child{border-bottom:none}
-  .ev .ea{order:1;font-family:var(--f-num);font-size:var(--t-lab);color:var(--ink-3);white-space:nowrap}
+  /* 区块号与「多久前」分两行：挤在一行会顶出格子，压在右边的事件名标签上 */
+  .ev .ea{order:1;font-family:var(--f-num);font-size:var(--t-lab);color:var(--ink-3);white-space:normal;line-height:1.45}
+  .ev .ea i{display:block;font-style:normal;opacity:.78}
   .ev .en{order:2;justify-self:start}
   .ev .et{order:3;color:var(--ink-2);font-family:var(--f-ui);font-size:var(--t-body);line-height:1.5;overflow-wrap:anywhere}
   .ev .et b{color:var(--ink);font-weight:600}
   .ev .et .mono,.ev .et span[title]{font-family:var(--f-num);color:var(--evi)}
-  .ev .etx{order:4;font-family:var(--f-num);font-size:var(--t-lab);color:var(--evi);text-align:right;white-space:nowrap}
+  /* 右边这一格是「去核验台查这笔交易」的入口：写完整哈希太长、↗ 又看不出是干什么的，
+     改成两个中文字，完整哈希放 title（悬停可见） */
+  .ev .etx{order:4;font-family:var(--f-ui);font-size:var(--t-lab);color:var(--measure);text-align:right;
+    white-space:nowrap;text-decoration:none}
+  .ev .etx:hover{text-decoration:underline}
   .ev .en.money{border-color:rgba(255,200,87,.42);color:var(--money)}
   .ev .en.measure{border-color:rgba(52,211,228,.4);color:var(--measure)}
   .ev .en.evi{border-color:rgba(158,140,245,.4);color:var(--evi)}
@@ -601,6 +613,14 @@
     <span class="item">区块 <b id="blk">—</b></span>
     <span class="item">合约 <b class="mono" id="addrMini" style="color:var(--evi)">未配置</b></span>
     <button class="btn sm" id="walletBtn" title="连接钱包；已连接时点它会打开钱包的账户选择弹窗">连接钱包</button>
+  </div>
+  <!-- 只读连接：不经过钱包插件，粘贴一个地址就能看它在链上的全部数据（点「连接钱包」展开） -->
+  <div class="roconnect" id="roBox" hidden>
+    <input id="roAddr" spellcheck="false" autocomplete="off"
+           placeholder="0x… 地址（42 个字符）：只读查看这个地址的保单" aria-label="只读查看的地址">
+    <button class="btn sm" id="roGo">只读连接</button>
+    <button class="btn sm" id="roWallet">用钱包插件连接</button>
+    <span class="rohint">只读模式不签名、不发交易：能看链上全部数据，<b>不能</b>投保或注资 —— 交易仍然只能由钱包（MetaMask）签名。</span>
   </div>
 </header>
 
@@ -920,8 +940,11 @@ async function boot() {
       else $("walletBtn").textContent = "连接钱包";
     } catch (e) {}
   } else {
-    $("walletBtn").disabled = true;
-    $("walletBtn").textContent = "未检测到钱包扩展";
+    // 没有钱包扩展不是死路：本页读链上数据永远走公共节点，不需要签名者。
+    // 所以点这个按钮改成展开「粘贴地址只读查看」那一行，而不是把按钮禁用掉。
+    $("walletBtn").textContent = "输入地址连接（只读）";
+    $("walletBtn").title = "没有检测到钱包扩展。点一下可以粘贴一个地址，只读查看它在链上的全部数据。";
+    $("roWallet").hidden = true;
   }
 }
 
@@ -1012,6 +1035,8 @@ async function connectWallet(silent) {
       return;
     }
     S.account = accts[0];
+    S.readonly = false;        // 钱包连上了就不再是只读查看
+    $("roBox").hidden = true;
 
     // 网络
     const cid = Number(await window.ethereum.request({ method: "eth_chainId" }));
@@ -1059,6 +1084,7 @@ async function connectWallet(silent) {
     $("buyBtn").disabled = !S.addr;
     $("fundBtn").disabled = !S.addr;
     $("buyBtn").textContent = S.addr ? "投保" : "先填合约地址";
+    $("fundBtn").textContent = "注资到资金池（按钱包余额自动封顶）";
     await refreshAll();
     if (!silent) toast("钱包已连接：" + S.account, "ok");
   } catch (e) {
@@ -1066,9 +1092,30 @@ async function connectWallet(silent) {
   }
 }
 
+/* 只读连接：贴一个地址就能看这个地址在本合约上的保单与余额，不经过钱包插件
+   （headless、没装扩展、评委只想核对某个地址时都走这条）。
+   语义上它**不是**「已登录」：S.signer 保持 null，所有写操作仍由 send() 拦下。 */
+async function connectReadonly() {
+  const raw = ($("roAddr").value || "").trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(raw)) { toast("地址格式不对：应当是 0x 开头的 40 位十六进制", "err"); return; }
+  if (!S.readC || !S.addr) { toast("还没连上合约：等节点连上，或先在下面「合约地址」里填一个", "err"); return; }
+  let addr; try { addr = ethers.getAddress(raw.toLowerCase()); }
+  catch (e) { toast("这不是一个合法的以太坊地址", "err"); return; }
+  S.account = addr; S.signer = null; S.readonly = true;
+  $("roBox").hidden = true;
+  $("walletBtn").textContent = short(addr) + "（只读）";
+  $("dot").className = "dot on";
+  setMode("只读连接 · " + short(addr), "");
+  // 按钮点不动时按钮自己说明原因：现场不会被误读成「这个功能坏了」
+  $("buyBtn").disabled = true; $("buyBtn").textContent = "只读连接不能投保（投保要钱包签名）";
+  $("fundBtn").disabled = true; $("fundBtn").textContent = "只读连接不能注资（注资要钱包签名）";
+  toast("只读连接：" + short(addr) + "　只看链上数据，不签名、不发交易", "ok");
+  await refreshAll();
+}
+
 /* 写交易的统一封装：等签名 → 等上链 → 报 hash */
 async function send(fn, okMsg) {
-  if (!S.signer) { toast("先连接钱包", "err"); return; }
+  if (!S.signer) { toast(S.readonly ? "当前是只读连接：看数据可以，写交易要点「连接钱包」用插件签名" : "先连接钱包", "err"); return; }
   if (S.chain && !S.chain.isReal) {
     toast("当前连的是本地假链（块高 " + S.chain.blockNumber + "），不是真链 —— 写操作已锁死。去掉网址里的 ?rpc= 参数后刷新。", "err");
     return;
@@ -1293,7 +1340,7 @@ function updateReadouts() {
 async function loadMyPolicies() {
   const box = $("myPolicies");
   if (!S.account) {
-    box.innerHTML = `<div class="empty">连接钱包后，这里会列出你在本合约上的全部保单。</div>`;
+    box.innerHTML = `<div class="empty">连接钱包，或点右上角「连接钱包」粘贴一个地址（只读），这里就会列出该地址在本合约上的全部保单。</div>`;
     return;
   }
   try {
@@ -1473,10 +1520,10 @@ async function loadEvents() {
       const when = ts ? new Date(Number(ts) * 1000) : null;
       const ago = when ? Math.floor((Date.now() - when.getTime()) / 60000) : null;
       rows.push(`<div class="ev${rows.length >= 6 ? " ev-extra" : ""}">
-        <span class="ea">#${Number(l.blockNumber).toLocaleString("en-US")}${ago !== null ? " · " + (ago < 1 ? "刚刚" : ago + " 分钟前") : ""}</span>
+        <span class="ea">#${Number(l.blockNumber).toLocaleString("en-US")}${ago !== null ? `<i>${ago < 1 ? "刚刚" : ago + " 分钟前"}</i>` : ""}</span>
         <span class="tagn en ${EV_STYLE[d.name] || "gray"}">${esc(d.name)}</span>
         <span class="et">${desc}</span>
-        ${l.transactionHash ? `<a class="etx" href="verifier.html?q=${l.transactionHash}${QS.get("rpc") ? "&rpc=" + encodeURIComponent(QS.get("rpc")) : ""}" target="_blank" rel="noopener" title="在本站核验台里看这笔交易 —— ${l.transactionHash}">${shortHash(l.transactionHash)} ↗</a>` : ""}
+        ${l.transactionHash ? `<a class="etx" href="verifier.html?q=${l.transactionHash}${QS.get("rpc") ? "&rpc=" + encodeURIComponent(QS.get("rpc")) : ""}" target="_blank" rel="noopener" title="在链上核验台里打开这笔交易（新开一页）· 完整哈希 ${l.transactionHash}">核验</a>` : ""}
       </div>`);
     }
     if (eventsOpen) box.classList.add("events-open");
@@ -1500,7 +1547,18 @@ async function loadEvents() {
 
 /* ---------------- 事件绑定 ---------------- */
 $("saveBtn").onclick = async () => { if (await attachContract($("addrInput").value)) { toast("合约已连接", "ok"); await refreshPremium(); } };
-$("walletBtn").onclick = () => connectWallet(false);
+/* 点「连接钱包」的三种情况：
+   ① 已经连上钱包 → 重开账户选择弹窗（这是上一轮特意修好的行为，不能退化）
+   ② 没连但有扩展 → 展开输入行，两条路都摆在眼前（粘贴地址只读 / 用插件连接）
+   ③ 没有扩展 → 同样展开输入行，只读这条路照样走得通 */
+$("walletBtn").onclick = () => {
+  if (S.signer) return connectWallet(false);
+  $("roBox").hidden = !$("roBox").hidden;
+  if (!$("roBox").hidden) $("roAddr").focus();
+};
+$("roGo").onclick = connectReadonly;
+$("roWallet").onclick = () => connectWallet(false);
+$("roAddr").addEventListener("keydown", e => { if (e.key === "Enter") connectReadonly(); });
 $("addrInput").addEventListener("keydown", e => { if (e.key === "Enter") $("saveBtn").click(); });
 
 /* 保费和阈值都必须按「区域 × 时长」去链上取，不能拿常量兜底。

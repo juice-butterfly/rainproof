@@ -24,12 +24,16 @@
  *   ⚠️ 演示同理：每场演示要用**新地址**（或用 `--rider=<私钥>` 指定一个还有名额的地址）。
  *
  * 【用法】必须在 04-脚本 目录下跑（否则读不到 .env）
- *   $env:SEPOLIA_RPC='https://rpc.bohr.life'; node rehearse-v2.js            # 只读体检（默认，安全）
- *   $env:SEPOLIA_RPC='https://rpc.bohr.life'; node rehearse-v2.js --apply    # 真的发交易
- *   可选：--rider=<私钥> 固定骑手   /   --use-env-rider 用 .env 的 RIDER_KEY
+ *   node rehearse-v2.js            # 只读体检（默认，安全）——RPC 取 BOT_RPC/V2_RPC，缺省 https://rpc.bohr.life
+ *   node rehearse-v2.js --apply    # 真的发交易
+ *   可选：--rider=<私钥> 固定骑手   /   --use-env-rider 用 .env 的 RIDER_KEY   /   --any-chain 不在 968 上也跑
  *   合约地址可用 $env:V2_ADDRESS 覆盖 .env 里的 CONTRACT_ADDRESS
  *
- * 【环境变量】.env：SEPOLIA_RPC / CONTRACT_ADDRESS / PRIVATE_KEY / RIDER_KEY
+ * 【环境变量】.env：CONTRACT_ADDRESS / PRIVATE_KEY / RIDER_KEY；RPC 用 BOT_RPC（或 V2_RPC）
+ *   ⚠️ 本脚本**不读** `SEPOLIA_RPC`。那个变量名是全局历史包袱（deploy / push / keeper / hook 都共用它，
+ *   值填「当前目标链」），而 `.env.example` 里它指的恰恰是 Sepolia。v2 合约在 **BOT Chain 测试网 968**，
+ *   照抄 .env 会连到 Sepolia → 地址上没有合约 → 深处报 `missing revert data`（exit 2），
+ *   症状和「合约没这个函数」一模一样，极难查。所以这里只认 BOT_RPC / V2_RPC，并对 chainId 与合约代码做前置检查。
  */
 require("dotenv").config();
 const fs = require("fs");
@@ -118,14 +122,30 @@ function planGrid(act) {
   if (!fs.existsSync(ABI_FILE)) throw new Error(`缺少 v2 ABI：${ABI_FILE}（先 npm run compile:v2）`);
   const ABI = JSON.parse(fs.readFileSync(ABI_FILE, "utf8"));
   const act = JSON.parse(fs.readFileSync(ACTUARY_FILE, "utf8"));
-  const url = process.env.SEPOLIA_RPC || "https://rpc.bohr.life";
+  // ★ 不读 SEPOLIA_RPC（见文件头）：v2 合约在 968，.env.example 教的 SEPOLIA_RPC 是 Sepolia，
+  //   照抄就会连错链。要换链请显式给 BOT_RPC / V2_RPC；本地 ganache 副本加 --any-chain。
+  const url = process.env.BOT_RPC || process.env.V2_RPC || "https://rpc.bohr.life";
   const addr = process.env.V2_ADDRESS || process.env.CONTRACT_ADDRESS;
+  if (!addr) {
+    throw new Error("没给合约地址：在 04-脚本/.env 里填 CONTRACT_ADDRESS（968 的 v2 地址），" +
+      "或临时 $env:V2_ADDRESS='0x…'（演示基线：0x89e7C942535930B61cB61631051E8b0bD670596a）");
+  }
 
   // BOT Chain 的 RPC 本机得走系统代理（127.0.0.1:7890）：node 需要
   //   $env:NODE_USE_ENV_PROXY='1'; $env:HTTPS_PROXY='http://127.0.0.1:7890'
   // 而且必须先自己问出 chainId 再建 provider —— JsonRpcProvider 的"自动探测网络"这条路
   // 走的是没被重试包装保护的内部请求，代理偶发掉线时第一步就炸。
   const chainId = Number(await rpcCall(url, "eth_chainId"));
+  // ★ 跑错链要当场喊停，而不是让它烂在合约调用里（原来就是后者：exit 2 + missing revert data）
+  const ALLOW_ANY_CHAIN = ARGV.includes("--any-chain") || process.env.V2_ALLOW_ANY_CHAIN === "1";
+  if (chainId !== 968 && !ALLOW_ANY_CHAIN) {
+    throw new Error(
+      `这个脚本跑的是 BOT Chain 测试网（chainId 968）—— v2 合约部署在那里；` +
+      `当前 RPC（${url}）自己报的是 chainId=${chainId}。\n` +
+      `  968：$env:BOT_RPC='https://rpc.bohr.life'（或 $env:V2_RPC=<任意 968 RPC>）\n` +
+      `  真要在别的链上跑（例如本地 ganache 上的 v2 副本）：加 --any-chain`
+    );
+  }
   const provider = new ethers.JsonRpcProvider(url, { chainId, name: `chain-${chainId}` }, { staticNetwork: true });
   // 每次 RPC 调用再重试 6 次（只读与发送都安全：重试的是 RPC 请求本身，不是"重发交易"——
   // 广播与否由 ethers 自己决定）。
@@ -145,16 +165,26 @@ function planGrid(act) {
     throw last;
   };
   const net = await provider.getNetwork();
+  // ★ 地址与 RPC 必须同链：968 的合约地址 + Sepolia 的 RPC = 这个地址上没有代码，
+  //   再往下第一个 ro.xxx() 就抛 `missing revert data`。—— 与其让人猜，不如这里直说。
+  const code0 = await provider.getCode(addr);
+  if (code0 === "0x" || code0 === "0x0") {
+    throw new Error(
+      `地址 ${addr} 在 chainId=${chainId}（RPC ${url}）上没有合约代码 —— 地址和 RPC 不是同一条链？\n` +
+      `  演示基线：chainId 968 · RPC https://rpc.bohr.life · v2 合约 0x89e7C942535930B61cB61631051E8b0bD670596a\n` +
+      `  若 .env 里的 CONTRACT_ADDRESS 是 968 的地址，就把 RPC 也指到 968（$env:BOT_RPC='https://rpc.bohr.life'）。`
+    );
+  }
   const ro = new ethers.Contract(addr, ABI, provider);
 
   console.log("=".repeat(74));
   console.log(`v2 真链彩排  RPC ${url}  chainId=${net.chainId}  区块 ${await provider.getBlockNumber()}`);
-  console.log(`合约 ${addr}  代码长度 ${(await provider.getCode(addr)).length / 2 - 1} 字节`);
+  console.log(`合约 ${addr}  代码长度 ${code0.length / 2 - 1} 字节`);
   console.log("=".repeat(74));
 
   // ---------- [0] 只读体检（不需要 --apply） ----------
   console.log("\n[0] 只读体检");
-  const code = await provider.getCode(addr);
+  const code = code0;
   code.length > 2 ? ok(`链上有字节码 ${(code.length - 2) / 2} 字节`) : bad("这个地址没有合约代码");
   eq("operator", await ro.operator(), process.env.V2_OPERATOR || (await ro.operator()));
   eq("PAYOUT_MAX", eth(await ro.PAYOUT_MAX()), "0.01");

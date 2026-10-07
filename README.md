@@ -201,7 +201,8 @@ cd 04-脚本
 cp .env.example .env      # 填入 PRIVATE_KEY / CONTRACT_ADDRESS / SEPOLIA_RPC
 node push-rainfall.js --status    # 看链上总览：池子、5 个区域雨量、最近喂价
 node push-rainfall.js             # 真实气象数据喂价（Open-Meteo）
-node push-rainfall.js --demo      # 演示模式：注入模拟暴雨（链上会标记 simulated）
+node push-rainfall.js --demo      # 演示模式：注入模拟暴雨（链上会标记 simulated；现值 +60~130mm，不可逆）
+node push-rainfall.js --refresh   # 同值刷新：累计值不变，只把喂价时刻（lastFeedAt）推到现在
 node feed-verify.js               # 三模型交叉核验（只读、不写链）：认不认这份数据
 node hook-watch.js --once         # 事件钩子：扫一遍链上保单，对新保单做承保复核并留痕
 node ai-collect.js <保单号>        # 采集三模型证据快照 → 09-AI判定留痕/
@@ -292,6 +293,8 @@ python -m http.server 8090 --directory 05-演示站点
    这不是失败 —— 这是它没有为了演示而撒谎的证据。
 2. **演示用的是模拟暴雨**：10 月初的武汉 / 上海够不到 50mm，所以现场演示走 `--demo` 注入模拟数据。
    模拟标记 `simulated: true` 被写进证据哈希，链上永久留痕，不是事后口头解释。
+   喂价过期（`MAX_FEED_AGE = 24h`）时用 `--refresh` **同值重喂**保鲜 —— 数值不动，只推进喂价时刻；
+   再跑 `--demo` 会让累计值继续上涨，把已归档的存证数字推废。
 3. **预言机是单一运营方**：`updateRainfall` 只有 operator 能调。AI 判定层的三模型独立复核是用来
    **交叉验证这个单点**的，不能替代它。
 4. **准备金下限（分版本）**：**v1** —— `reserve` / `setReserve()` / `withdrawPool()` 的守卫都已实现

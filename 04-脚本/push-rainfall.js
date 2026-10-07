@@ -23,6 +23,7 @@
  *   npm run push -- 1               # 只推区域 1（武汉）
  *   npm run push -- --status        # 只读，看链上现状（不花 gas）
  *   npm run push -- --demo          # ★ 演示模式：注入一场模拟暴雨，立刻可触发赔付
+ *   npm run push -- --refresh       # 同值重喂：累计值不变，只把喂价时刻（lastFeedAt）推到现在
  *   npm run push -- --watch 10      # 每 10 分钟自动推一次（真实数据）
  *   npm run push -- --demo --watch 5
  *
@@ -107,6 +108,7 @@ function flagValue(f, def) {
 }
 
 const DEMO = has("--demo");
+const REFRESH = has("--refresh");
 const STATUS_ONLY = has("--status");
 const WATCH_MIN = flagValue("--watch", null);
 // --until=YYYY-MM-DD：把"今天"钉到指定日期。默认真是今天；历史回放必须用它，
@@ -389,7 +391,11 @@ async function main() {
   }
 
   /* ---- 逐区域推送 ---- */
-  console.log(`\n${DEMO ? C.y("【演示模式】注入模拟强降雨") : "【真实数据】Open-Meteo"}  ·  起点 ${RAIN_EPOCH}  ·  ${targets.length} 个区域\n`);
+  console.log(`\n${
+    DEMO ? C.y("【演示模式】注入模拟强降雨")
+    : REFRESH ? C.y("【同值刷新】累计值不变，只推进喂价时刻")
+    : "【真实数据】Open-Meteo"
+  }  ·  起点 ${RAIN_EPOCH}  ·  ${targets.length} 个区域\n`);
 
   const results = [];
   for (const r of targets) {
@@ -411,6 +417,29 @@ async function main() {
         deltaMm: add,
       };
       srcNote = `模拟 +${add}mm`;
+    } else if (REFRESH) {
+      /* 同值重喂：只刷新 lastFeedAt，累计值一动不动。
+         合约守卫是 `require(cumulativeMm >= rainfall[regionId])`（V2.sol:250），
+         填【同一个值】合法 —— 所以展示前想把 24h 新鲜度往后推几次都行，
+         链上数字稳定停在现值，截图 / PPT / 哈希清单里的 101/287/109/303/227 不用重做。
+         （同值重喂不是新花样：07-测试工具/e2e_v2.js:179 就是这么解 24h 过期的。）
+         现值本身就是 --demo 写上去的模拟值，快照仍必须带 simulated: true。 */
+      const lastAt = Number(await readC.lastFeedAt(r.id));
+      const ageH = lastAt ? (Math.floor(Date.now() / 1000) - lastAt) / 3600 : null;
+      mm = current;
+      conf = 90;
+      sources = 3;
+      snapshot = {
+        schema: "rainproof/feed-snapshot@1",
+        regionId: r.id, regionKey: r.key, epoch: RAIN_EPOCH,
+        source: "simulated",
+        simulated: true,          // ★ 现值是模拟暴雨，这条标记不能少
+        refresh: true,            // 声明这是「同值刷新」，不是一次新的观测
+        cumulativeMm: mm,
+        deltaMm: 0,               // 增量 0 —— 没有新降雨，只是把观测时刻推到现在
+      };
+      srcNote = `同值刷新：累计值保持 ${mm}mm，只把喂价时刻推到现在` +
+                (ageH === null ? "" : `（原喂价 ${ageH.toFixed(1)}h 前）`);
     } else {
       const got = await collectRegion(r);
       mm = got.mm;
@@ -485,8 +514,12 @@ async function main() {
 
   console.log("\n" + C.dim("─".repeat(74)));
   console.log(`推送完成：${ok.length}/${results.length} 成功`);
-  if (DEMO) {
-    console.log(C.y("⚠️ 本次推送的是【模拟降雨数据】，仅用于演示。答辩材料里请如实说明。"));
+  if (DEMO || REFRESH) {
+    console.log(C.y(
+      REFRESH
+        ? "⚠️ 本次是【同值刷新】：链上累计值没变（仍是模拟暴雨写上去的模拟值），只把喂价时刻推进到现在。答辩材料里请如实说明。"
+        : "⚠️ 本次推送的是【模拟降雨数据】，仅用于演示。答辩材料里请如实说明。"
+    ));
   }
 
   if (over.length) {

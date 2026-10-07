@@ -52,6 +52,15 @@ const ABI = [
   "function poolBalance() external view returns (uint256)",
   "function PAYOUT() external view returns (uint256)",
   "function THRESHOLD() external view returns (uint256)",
+  // ★ v2 把上面两个拆成了「上限」与「每 24h 阈值」，premiumOf 也多了时长参数。
+  //   同名不同参，所以下面统一用「签名」而不是「属性名」去取（见 readEither）。
+  "function PAYOUT_MAX() external view returns (uint256)",
+  "function THRESHOLD_PER_24H() external view returns (uint256)",
+  "function thresholdOf(uint256 windowHours) external view returns (uint256)",
+  "function premiumOf(uint8 regionId, uint256 windowHours) external view returns (uint256)",
+  "function reserveOf() external view returns (uint256)",
+  "function MAX_FEED_AGE() external view returns (uint64)",
+  "function lastFeedAt(uint8 regionId) external view returns (uint64)",
   "function MIN_CONFIDENCE() external view returns (uint8)",
   "function reserve() external view returns (uint256)",
   "function aiPremium(uint8 regionId) external view returns (uint256)",
@@ -274,7 +283,17 @@ function bar(cur, threshold, width = 30) {
 /* --------------------------------------------------------------- 主流程 */
 
 // 已知真链：chainId → 显示名。RPC 由 .env 的 SEPOLIA_RPC 指定（变量名沿用，指哪条链由它自己答）。
-const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet" };
+const KNOWN_CHAINS = { 11155111: "Sepolia", 677: "BOT Chain Mainnet", 968: "BOT Chain Testnet" };
+
+/* v1 与 v2 的常量名不一样：v2 把 PAYOUT / THRESHOLD 拆成「上限」与「每 24h 阈值」，
+   premiumOf 也多了时长参数（同名不同参）。同一份脚本要同时伺候两条链，
+   所以按「函数签名」依次试，取第一个读得到的；一个都读不到就返回 null（调用方自己兜底）。 */
+async function readEither(c, sigs) {
+  for (const [sig, args] of sigs) {
+    try { return await c.getFunction(sig)(...(args || [])); } catch (e) { /* 这条链上没有这个签名，换下一个 */ }
+  }
+  return null;
+}
 
 async function main() {
   const rpc = process.env.SEPOLIA_RPC || "https://ethereum-sepolia-rpc.publicnode.com";
@@ -301,7 +320,7 @@ async function main() {
   // chainId 能被本地假链伪装（07-测试工具/prep_local_chain.js 就设成 11155111），块高不能。
   const blockNumber = await provider.getBlockNumber();
   const isRealChain = blockNumber >= 1000000;
-  const sym = chainId === 677 ? "BOT" : "SepETH";   // BOT Chain 的原生代币叫 BOT，不是 SepETH
+  const sym = chainId === 677 || chainId === 968 ? "BOT" : "SepETH";   // BOT Chain（主网 677 / 测试网 968）的原生代币叫 BOT，不是 SepETH
   const chainInfo = { isRealChain, chainName, chainId, blockNumber, sym };
 
   /* ---- 只读模式：只看不写 ---- */
@@ -321,7 +340,9 @@ async function main() {
 
   const [onchainOperator, paused, pool, payout, threshold, regionCount, minConfidence, balance] = await Promise.all([
     readC.operator(), readC.paused(), readC.poolBalance(),
-    readC.PAYOUT(), readC.THRESHOLD(), readC.REGION_COUNT(), readC.MIN_CONFIDENCE(),
+    readEither(readC, [["PAYOUT()"], ["PAYOUT_MAX()"]]),
+    readEither(readC, [["THRESHOLD()"], ["THRESHOLD_PER_24H()"]]),
+    readC.REGION_COUNT(), readC.MIN_CONFIDENCE(),
     provider.getBalance(wallet.address),
   ]);
 
@@ -329,7 +350,7 @@ async function main() {
   console.log(`${C.b("喂价者")}  ${wallet.address}`);
   console.log(`合约      ${address}   ${C.dim((isRealChain ? chainName : "⚠️ 本地假链") + " · chainId " + chainId + " · 块高 " + blockNumber)}`);
   console.log(`账户余额  ${formatEther(balance)} ${sym}`);
-  console.log(`资金池    ${formatEther(pool)} ${sym}   ${C.dim(`（每笔赔付 ${formatEther(payout)} ETH，还能赔 ${Number(pool / payout)} 笔）`)}`);
+  console.log(`资金池    ${formatEther(pool)} ${sym}   ${payout ? C.dim(`（单笔上限赔付 ${formatEther(payout)} ${sym}，最多还能赔 ${Number(pool / payout)} 笔）`) : ""}`);
   console.log(`触发阈值  ${threshold} mm   ${C.dim("（保单期间增量口径）")}`);
   console.log(`验收门槛  置信度 ≥ ${minConfidence}   ${C.dim("（低于这个值合约会 revert：feed confidence too low）")}`);
   console.log(C.dim("─".repeat(74)));
@@ -555,35 +576,49 @@ const FEED_KIND = { 0: "喂价", 1: "损失判定" };
 async function printStatus(readC, chainInfo) {
   const sym = chainInfo ? chainInfo.sym : "SepETH";
   const [threshold, payout, pool, paused, operator, regionCount, reserve, minConf] = await Promise.all([
-    readC.THRESHOLD(), readC.PAYOUT(), readC.poolBalance(),
+    readEither(readC, [["THRESHOLD()"], ["THRESHOLD_PER_24H()"]]),
+    readEither(readC, [["PAYOUT()"], ["PAYOUT_MAX()"]]),
+    readC.poolBalance(),
     readC.paused(), readC.operator(), readC.REGION_COUNT(),
-    readC.reserve(), readC.MIN_CONFIDENCE(),
+    readEither(readC, [["reserveOf()"], ["reserve()"]]), readC.MIN_CONFIDENCE(),
   ]);
   console.log(C.dim("─".repeat(74)));
   console.log(`合约状态  ${paused ? C.y("已暂停") : C.g("运行中")}   operator ${operator}`);
-  console.log(`资金池    ${formatEther(pool)} ${sym}   ${C.dim(`（每笔赔付 ${formatEther(payout)} ETH，还能赔 ${Number(pool / payout)} 笔）`)}`);
+  console.log(`资金池    ${formatEther(pool)} ${sym}   ${payout ? C.dim(`（单笔上限赔付 ${formatEther(payout)} ${sym}，最多还能赔 ${Number(pool / payout)} 笔）`) : ""}`);
   console.log(`准备金    ${formatEther(reserve)} ${sym}   ${C.dim("（提款后余额不得低于此线）")}`);
   if (chainInfo) {
     console.log(`所在链    ${chainInfo.isRealChain ? chainInfo.chainName : "⚠️ 本地假链"}` +
       ` · chainId ${chainInfo.chainId} · 块高 ${chainInfo.blockNumber}`);
   }
   console.log(C.dim("─".repeat(74)));
-  console.log(`区域状态（阈值 ${threshold}mm · 验收门槛置信度 ${minConf} · 累计自 ${RAIN_EPOCH} 起算）\n`);
+  // v2 的「喂价新鲜度」：lastFeedAt + MAX_FEED_AGE。超了 24h 就只能先喂价，否则 buyPolicy 会 revert。
+  const maxFeedAge = Number((await readEither(readC, [["MAX_FEED_AGE()"]])) || 0);
+  const nowSec = Math.floor(Date.now() / 1000);
+  console.log(`区域状态（阈值 ${threshold === null ? "—" : threshold}mm · 验收门槛置信度 ${minConf} · 累计自 ${RAIN_EPOCH} 起算）\n`);
   for (let id = 1; id <= Number(regionCount); id++) {
     const r = REGIONS.find((x) => x.id === id);
-    const [mmRaw, prem, risk, fj] = await Promise.all([
-      readC.rainfall(id), readC.premiumOf(id), readC.riskLevel(id), readC.feedJudgements(id),
+    const [mmRaw, prem, risk, fj, feedAtRaw] = await Promise.all([
+      readC.rainfall(id),
+      readEither(readC, [["premiumOf(uint8,uint256)", [id, 24]], ["premiumOf(uint8)", [id]]]),
+      readC.riskLevel(id), readC.feedJudgements(id),
+      maxFeedAge ? readEither(readC, [["lastFeedAt(uint8)", [id]]]) : Promise.resolve(null),
     ]);
     const mm = Number(mmRaw);   // ★ 链上返回 bigint，bar() 里要做除法，必须先转 Number
     const nm = r ? `${r.name}(${r.key})` : `region${id}`;
     const riskStr = (RISK_NAME[Number(risk)] || String(risk)) + (Number(risk) === 2 ? "⛔" : " ");
+    const feedAt = Number(feedAtRaw || 0);
+    const fresh = maxFeedAge
+      ? C.dim(`  · 基线 ${feedAt ? (nowSec - feedAt > maxFeedAge
+          ? "❌ 已过期（buyPolicy 会 revert：stale feed）"
+          : `剩 ${((maxFeedAge - (nowSec - feedAt)) / 3600).toFixed(1)}h`) : "—（还没有喂过价）"}`)
+      : "";
     const fjStr = fj.exists
       ? `${FEED_KIND[Number(fj.kind)] || fj.kind} 置信 ${fj.confidence}/源 ${fj.sources}` +
         C.dim(`  ${new Date(Number(fj.judgedAt) * 1000).toISOString().slice(0, 16).replace("T", " ")}`)
       : C.dim("—（还没有喂过价）");
     console.log(
       `  #${id} ${nm.padEnd(14)} ${String(mm).padStart(5)}mm  ${bar(mm, Number(threshold), 12)}  ` +
-      `${(formatEther(prem) + " ETH").padEnd(10)} ${riskStr.padEnd(6)} ${fjStr}`
+      `${(prem === null ? "—" : formatEther(prem) + " ETH").padEnd(10)} ${riskStr.padEnd(6)} ${fjStr}${fresh}`
     );
   }
   console.log("");

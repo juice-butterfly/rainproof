@@ -615,7 +615,10 @@ async function loadRegions() {
     try {
       const v = Number(await S.readC.rainfall(id));
       vals[id] = v;
-      const pct = Math.min(100, Math.round(v / thr * 100));
+      // 刻度 = 0 → 2×阈值（即 100 mm），所以触发线（50 mm）正好落在条的正中间，
+      // 与 CSS 里 .bar::after 的 left:50% 对齐。这样「还没到线 / 正压在线上 / 冲过线」三种状态肉眼可辨：
+      // 武汉 24mm 只填四分之一、广州 50mm 正好压在触发线上、成都 120mm 直接顶满。
+      const pct = Math.min(100, Math.round(v / (thr * 2) * 100));
       const hit = v >= thr;
       out.push(`<div class="region" data-region="${id}">
         <div class="rtop">

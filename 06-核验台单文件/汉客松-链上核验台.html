@@ -286,7 +286,7 @@
     <b>打不开怎么办：</b>双击本文件即可，无需安装任何东西（真正的单文件，不依赖 ethers）。
     若浏览器拦截本地文件发请求，在文件所在目录执行 <code>python -m http.server 8090</code>，然后访问
     <code>http://127.0.0.1:8090/汉客松-链上核验台.html</code> 打开本页。
-    <br><b>但要说清楚：</b>页面本身离线能开，<b>读链必须联网</b> —— 网络断时只会显示「连不上节点」。
+    <br><b>但要说清楚：</b>页面本身离线能开，<b>读链必须联网</b>。网络断时只会显示「连不上节点」。
   </div>
 </footer>
 
@@ -509,7 +509,7 @@ async function lookupAddress(addr, isPrimary) {
     ${kv(rows)}
     ${isContract ? `<div class="note" style="--note-line:rgba(59,130,246,.26);--note-bg:rgba(59,130,246,.06)">
       <b>代码长度不为 0，说明这个地址上真的躺着一份合约。</b>
-      这就是「部署成功」的硬证据 —— 不看任何界面，只问节点。
+      这就是「部署成功」的硬证据：不看任何界面，只问节点。
     </div>` : ""}
   </div>`;
 
@@ -533,7 +533,7 @@ async function lookupTx(hash) {
     $("logSec").classList.add("hidden");
     $("resultBody").innerHTML = `<div class="panel">
       <div class="ptitle"><span class="tag red">查不到</span></div>
-      <div class="v">节点返回 null —— 这条哈希在 Sepolia 上不存在。</div>
+      <div class="v">节点返回 null：这条哈希在 Sepolia 上不存在。</div>
       <div class="v small" style="margin-top:12px">
         最常见的原因：<b>哈希复制少了/多了字符</b>（完整哈希是 66 个字符：<code>0x</code> + 64 位）、
         混进了空格或尖括号、或者这笔交易还在待打包。
@@ -612,8 +612,7 @@ async function loadLogs(addr) {
   if (!logs.length) {
     $("logPanel").innerHTML = `<div class="empty">
       这个地址到目前为止没有发出过任何事件（logs）。两种可能：
-      ① <b>这个地址不是本项目的合约</b> ——
-      例如脚手架 <code>SimpleStore</code>，它里面根本没有任何 <code>event</code>，所以永远是空的；
+      ① <b>这个地址不是本项目的合约</b>，例如脚手架 <code>SimpleStore</code>，它里面根本没有任何 <code>event</code>，所以永远是空的；
       ② 地址对，但合约确实还没被操作过。先确认地址再来判断。</div>`;
     return;
   }

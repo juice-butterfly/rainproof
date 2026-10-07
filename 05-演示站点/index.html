@@ -330,7 +330,7 @@
     </div>
     <div class="note">
       <strong>演示前必须先把池子喂饱。</strong>收了 1 份保费（0.001）却要赔 10 倍（0.01），
-      池子是空的就第一笔赔付都过不去 —— 这正是我在本地链上验过的那条 <code>insurance pool empty</code>。
+      池子是空的，第一笔赔付都过不去。本地链上验过的那条 <code>insurance pool empty</code> 就是它。
     </div>
   </div>
 </details>
@@ -338,10 +338,10 @@
 <footer>
   <p><b>这一页不依赖任何区块浏览器。</b>合约地址、账户余额、降雨值、事件日志，全部直接向节点提问取得
   （<code>ethereum-sepolia-rpc.publicnode.com</code>）。</p>
-  <p><b>只读模式：</b>没连钱包也能看全部数据 —— 现场万一 MetaMask 出问题，照样能演示「链上有什么」。</p>
+  <p><b>只读模式：</b>没连钱包也能看全部数据。现场万一 MetaMask 出问题，照样能演示「链上有什么」。</p>
   <p><b>诚实说明：</b>喂价脚本是<strong>中心化预言机</strong>，数据可信度取决于运营方。生产环境应改用去中心化预言机网络。
   AI 在链下做三件事：<strong>验收喂进来的天气数据</strong>（三模型交叉比对，离群就拒收）、<strong>按 R1–R5 规则判定该不该赔</strong>、<strong>给五个区域定差异化保费</strong>。
-  它<strong>不判断「人有没有真的受损」</strong> —— 那需要平台的订单数据，属于路线图。
+  它<strong>不判断「人有没有真的受损」</strong>，那需要平台的订单数据，属于路线图。
   每次判定都把输入快照和输出结论各算一个哈希写上链，第三方拿同一份快照重跑，得到的是逐字节相同的结果。</p>
 </footer>
 </div>
@@ -619,15 +619,15 @@ async function send(fn, okMsg) {
   } catch (e) {
     const m = e.reason || e.shortMessage || e.info?.error?.message || e.message || String(e);
     let hint = "";
-    if (/premium mismatch/.test(m))       hint = " —— 保费金额和合约里写死的不一致";
-    else if (/hours out of range/.test(m))hint = " —— 时长必须在合约允许范围内";
-    else if (/bad region/.test(m))        hint = " —— 区域编号不合法";
-    else if (/threshold not met/.test(m)) hint = " —— 这个区域的降雨还没到阈值，还差多少看保单卡片";
-    else if (/already paid/.test(m))      hint = " —— 这张保单已经赔过了";
-    else if (/insurance pool empty/.test(m)) hint = " —— 资金池空了，先注资";
-    else if (/not operator/.test(m))      hint = " —— 这个操作只有 operator（喂价脚本）能做";
-    else if (/contract paused/.test(m))   hint = " —— 合约已暂停";
-    else if (/user rejected|denied/i.test(m)) hint = " —— 你取消了签名";
+    if (/premium mismatch/.test(m))       hint = "：保费金额和合约里写死的不一致";
+    else if (/hours out of range/.test(m))hint = "：时长必须在合约允许范围内";
+    else if (/bad region/.test(m))        hint = "：区域编号不合法";
+    else if (/threshold not met/.test(m)) hint = "：这个区域的降雨还没到阈值，还差多少看保单卡片";
+    else if (/already paid/.test(m))      hint = "：这张保单已经赔过了";
+    else if (/insurance pool empty/.test(m)) hint = "：资金池空了，先注资";
+    else if (/not operator/.test(m))      hint = "：这个操作只有 operator（喂价脚本）能做";
+    else if (/contract paused/.test(m))   hint = "：合约已暂停";
+    else if (/user rejected|denied/i.test(m)) hint = "：你取消了签名";
     toast("交易失败：" + m + hint, "err");
   }
 }

@@ -50,14 +50,13 @@ const MODELS = [
 
 const COLLECT_VERSION = "ai-collect-v1";
 
-const ABI = [
-  "function policies(uint256) external view returns (address rider, uint8 regionId, uint256 startTime, uint256 endTime, uint256 rainfallAtBuy, bool paid, bool exists)",
-  "function rainfall(uint8) external view returns (uint256)",
-  "function rainfallDuring(uint256) external view returns (uint256)",
-  "function THRESHOLD() external view returns (uint256)",
-  "function MIN_CONFIDENCE() external view returns (uint8)",
-  "function regionName(uint8) external pure returns (string)",
-];
+// ABI 一律从 03-合约/*.abi.json 读，不手抄。手抄的那份是 v1 的 Policy 结构体，
+// 而 v2 的结构体在 rider 后面多了 productId / premium 两个字段 —— 拿 v1 的元组去解 v2 的
+// policies()，字段整体错位：p.startTime 解成 regionId(=4)、p.endTime 解成 premium
+// (=0.0003 ether = 3e14 秒)，shDate() 里 toISOString() 直接抛 "Invalid time value"。
+const ABI_DIR = path.join(__dirname, "..", "03-合约");
+const ABI_V1 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsurance.abi.json"), "utf8"));
+const ABI_V2 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsuranceV2.abi.json"), "utf8"));
 
 const ARGV = process.argv.slice(2);
 const POLICY_ID = Number(ARGV.find((a) => /^\d+$/.test(a)));
@@ -160,7 +159,12 @@ function synthModels(region, startDate, targetMm, onchainValue) {
   if (!ADDR) { console.error("缺少 CONTRACT_ADDRESS 环境变量"); process.exit(2); }
 
   const provider = new JsonRpcProvider(RPC);
-  const c = new Contract(ADDR, ABI, provider);
+  // 按链上有没有 v2 的 thresholdOf() 选 ABI：968 / 677 走 v2，
+  // Sepolia 的 v1 与 2024 武汉暴雨回放链走 v1（两边的 Policy 结构体不同，不能混用）。
+  let c = new Contract(ADDR, ABI_V2, provider);
+  let isV2 = true;
+  try { await c.thresholdOf(24); }
+  catch { isV2 = false; c = new Contract(ADDR, ABI_V1, provider); }
   await assertRegionsMatchContract(c);   // 区域表对不上就别往下走
 
   const p = await c.policies(POLICY_ID);
@@ -172,7 +176,8 @@ function synthModels(region, startDate, targetMm, onchainValue) {
   const endDate = UNTIL || shDate(p.endTime);
   const onchainCum = Number(await c.rainfall(p.regionId));
   const incrementMm = Number(await c.rainfallDuring(POLICY_ID));
-  const thresholdMm = Number(await c.THRESHOLD());
+  // v2 的阈值随窗口时长走（24/48/72h → 50/100/150mm），v1 只有一个 THRESHOLD。
+  const thresholdMm = Number(isV2 ? await c.thresholdOf(p.windowHours) : await c.THRESHOLD());
   const minConfidence = Number(await c.MIN_CONFIDENCE());
 
   let models;

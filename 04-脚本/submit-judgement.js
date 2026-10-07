@@ -34,12 +34,13 @@ const ADDR = process.env.CONTRACT_ADDRESS || "";
 const KEY = process.env.PRIVATE_KEY || "";
 const OUT_DIR = process.env.AI_OUT_DIR || path.join(__dirname, "..", "09-AI判定留痕");
 
-const ABI = [
-  "function submitJudgement(uint256 policyId, uint8 decision, uint8 confidence, bytes32 inputHash, bytes32 outputHash, string modelVersion) external",
-  "function judgements(uint256) external view returns (uint8 kind, uint8 decision, uint8 confidence, uint8 sources, uint64 judgedAt, bool exists, bytes32 inputHash, bytes32 outputHash, string modelVersion)",
-  "function policyStatus(uint256) external view returns (string)",
-  "function operator() external view returns (address)",
-];
+// ABI 一律从 03-合约/*.abi.json 读，不手抄。
+// 手抄的那份是 v1 的 submitJudgement（6 个参数），而 v2 在 confidence 后面多了
+// uint8 sources（7 个参数）—— 用 v1 的签名去调 v2，会打到一个不存在的 selector 上，
+// 回执只有 "execution reverted: 0x"，看不出是哪里错了（2026-10-07 在 968 上真踩到）。
+const ABI_DIR = path.join(__dirname, "..", "03-合约");
+const ABI_V1 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsurance.abi.json"), "utf8"));
+const ABI_V2 = JSON.parse(fs.readFileSync(path.join(ABI_DIR, "RainDeliveryInsuranceV2.abi.json"), "utf8"));
 
 (async () => {
   const policyId = Number(process.argv.slice(2).find((a) => /^\d+$/.test(a)));
@@ -65,7 +66,11 @@ const ABI = [
 
   const provider = new JsonRpcProvider(RPC);
   const wallet = new Wallet(KEY, provider);
-  const c = new Contract(ADDR, ABI, wallet);
+  // 按链上有没有 v2 的 thresholdOf() 选 ABI：两边的 submitJudgement 参数个数不同（v2 多 sources）。
+  let c = new Contract(ADDR, ABI_V2, wallet);
+  let isV2 = true;
+  try { await c.thresholdOf(24); }
+  catch { isV2 = false; c = new Contract(ADDR, ABI_V1, wallet); }
 
   const operator = (await c.operator()).toLowerCase();
   if (wallet.address.toLowerCase() !== operator) {
@@ -88,9 +93,11 @@ const ABI = [
   console.log(`inputHash  ${snapHash}`);
   console.log(`outputHash ${outputHash}`);
 
-  const tx = await c.submitJudgement(
-    policyId, judgement.decision, judgement.confidence, snapHash, outputHash, judgement.judgeVersion
-  );
+  const tx = await (isV2
+    ? c.submitJudgement(policyId, judgement.decision, judgement.confidence, judgement.sources,
+                        snapHash, outputHash, judgement.judgeVersion)
+    : c.submitJudgement(policyId, judgement.decision, judgement.confidence,
+                        snapHash, outputHash, judgement.judgeVersion));
   console.log(`交易已发出 ${tx.hash}  等待打包…`);
   const rc = await tx.wait();
   console.log(`✅ 已上链  区块 ${rc.blockNumber}  gas ${rc.gasUsed}`);
@@ -105,8 +112,9 @@ const ABI = [
     ["outputHash", after.outputHash === outputHash],
     ["modelVersion", after.modelVersion === judgement.judgeVersion],
   ];
+  if (isV2) checks.push(["sources", Number(after.sources) === Number(judgement.sources)]);   // v2 才写 sources
   const bad = checks.filter(([, ok]) => !ok).map(([k]) => k);
-  console.log("读回校验    " + (bad.length ? `❌ 不一致：${bad.join(", ")}` : "✅ 6/6 个字段与本地文件一致"));
+  console.log("读回校验    " + (bad.length ? `❌ 不一致：${bad.join(", ")}` : `✅ ${checks.length}/${checks.length} 个字段与本地文件一致`));
   console.log(`提交后状态 ${await c.policyStatus(policyId)}`);
   if (bad.length) process.exit(1);
 })().catch((e) => {

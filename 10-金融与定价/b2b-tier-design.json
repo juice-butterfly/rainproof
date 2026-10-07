@@ -1,0 +1,2627 @@
+{
+  "meta": {
+    "generatedBy": "10-金融与定价/tier_design_b2b.js",
+    "generatedAt": "2026-10-07T05:22:48.749Z",
+    "source": "Open-Meteo Archive (ERA5) 逐小时; cache/ 五城",
+    "dataStart": "2015-10-01",
+    "dataEnd": "2026-09-30",
+    "bootstrap": {
+      "unit": "calendar month",
+      "reps": 4000,
+      "seed": 20261007,
+      "quantile": 0.975
+    },
+    "contract": "03-合约/RainDeliveryInsuranceV2.sol:30-36,172-192",
+    "payoutMaxEth": 0.01,
+    "minPremiumEth": 0.0002,
+    "targetLossRatio": 0.6,
+    "judgeGasEth": 0.00013,
+    "payoutGasEth": 0.00012,
+    "ceilTickEth": 0.0001,
+    "costCalibers": {
+      "conservative": "judge + payout，赔付 gas 摊到每一份（上界）",
+      "expected": "judge + q×payout，赔付 gas 只在出险时付"
+    },
+    "caveat": "块自举的块长固定为 1 个日历月；真实风险记忆尺度与月长不同，本表只做参数不确定性的一阶修正"
+  },
+  "schemes": {
+    "A": {
+      "name": "现行 v2：阈值线性缩放 50×h/24，档位 ×1/×2/×5",
+      "source": "03-合约/RainDeliveryInsuranceV2.sol:172-192",
+      "contractChange": false,
+      "bps": [
+        5000,
+        7500,
+        10000
+      ],
+      "grid": [
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
+          "nWin": 96409,
+          "nHit": 735,
+          "pointRatePct": 0.410491,
+          "p975RatePct": 0.65172,
+          "loadFactor": 1.588,
+          "pointEth": 0.00004105,
+          "p975Eth": 0.00006517,
+          "costRetailEth": 0.00013078,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.16293,
+          "marginRetailEth": 0.00020405
+        },
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 48,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
+          "nWin": 96385,
+          "nHit": 298,
+          "pointRatePct": 0.173263,
+          "p975RatePct": 0.379088,
+          "loadFactor": 2.188,
+          "pointEth": 0.00001733,
+          "p975Eth": 0.00003791,
+          "costRetailEth": 0.00013045,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.126363,
+          "marginRetailEth": 0.00013164
+        },
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 72,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
+          "nWin": 96361,
+          "nHit": 204,
+          "pointRatePct": 0.118824,
+          "p975RatePct": 0.278401,
+          "loadFactor": 2.343,
+          "pointEth": 0.00001188,
+          "p975Eth": 0.00002784,
+          "costRetailEth": 0.00013033,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.0928,
+          "marginRetailEth": 0.00014183
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
+          "nWin": 96409,
+          "nHit": 727,
+          "pointRatePct": 0.399081,
+          "p975RatePct": 0.568346,
+          "loadFactor": 1.424,
+          "pointEth": 0.00003991,
+          "p975Eth": 0.00005683,
+          "costRetailEth": 0.00013068,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.142087,
+          "marginRetailEth": 0.00021248
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 48,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
+          "nWin": 96385,
+          "nHit": 431,
+          "pointRatePct": 0.225139,
+          "p975RatePct": 0.364748,
+          "loadFactor": 1.62,
+          "pointEth": 0.00002251,
+          "p975Eth": 0.00003647,
+          "costRetailEth": 0.00013044,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.121583,
+          "marginRetailEth": 0.00013309
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 72,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
+          "nWin": 96361,
+          "nHit": 207,
+          "pointRatePct": 0.107409,
+          "p975RatePct": 0.226345,
+          "loadFactor": 2.107,
+          "pointEth": 0.00001074,
+          "p975Eth": 0.00002263,
+          "costRetailEth": 0.00013027,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.075448,
+          "marginRetailEth": 0.00014709
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
+          "nWin": 96409,
+          "nHit": 422,
+          "pointRatePct": 0.22975,
+          "p975RatePct": 0.365307,
+          "loadFactor": 1.59,
+          "pointEth": 0.00002298,
+          "p975Eth": 0.00003653,
+          "costRetailEth": 0.00013044,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.121769,
+          "marginRetailEth": 0.00013303
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 48,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
+          "nWin": 96385,
+          "nHit": 183,
+          "pointRatePct": 0.097007,
+          "p975RatePct": 0.188393,
+          "loadFactor": 1.942,
+          "pointEth": 0.0000097,
+          "p975Eth": 0.00001884,
+          "costRetailEth": 0.00013023,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.062798,
+          "marginRetailEth": 0.00015093
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 72,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
+          "nWin": 96361,
+          "nHit": 105,
+          "pointRatePct": 0.054483,
+          "p975RatePct": 0.139856,
+          "loadFactor": 2.567,
+          "pointEth": 0.00000545,
+          "p975Eth": 0.00001399,
+          "costRetailEth": 0.00013017,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.046619,
+          "marginRetailEth": 0.00015585
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
+          "nWin": 96409,
+          "nHit": 1369,
+          "pointRatePct": 0.741632,
+          "p975RatePct": 1.009504,
+          "loadFactor": 1.361,
+          "pointEth": 0.00007416,
+          "p975Eth": 0.00010095,
+          "costRetailEth": 0.00013121,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.252376,
+          "marginRetailEth": 0.00016784
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 48,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
+          "nWin": 96385,
+          "nHit": 747,
+          "pointRatePct": 0.39529,
+          "p975RatePct": 0.670807,
+          "loadFactor": 1.697,
+          "pointEth": 0.00003953,
+          "p975Eth": 0.00006708,
+          "costRetailEth": 0.0001308,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.167702,
+          "marginRetailEth": 0.00020211
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 72,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
+          "nWin": 96361,
+          "nHit": 542,
+          "pointRatePct": 0.281234,
+          "p975RatePct": 0.546681,
+          "loadFactor": 1.944,
+          "pointEth": 0.00002812,
+          "p975Eth": 0.00005467,
+          "costRetailEth": 0.00013066,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.13667,
+          "marginRetailEth": 0.00021468
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
+          "nWin": 96409,
+          "nHit": 573,
+          "pointRatePct": 0.318694,
+          "p975RatePct": 0.530949,
+          "loadFactor": 1.666,
+          "pointEth": 0.00003187,
+          "p975Eth": 0.00005309,
+          "costRetailEth": 0.00013064,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.132737,
+          "marginRetailEth": 0.00021627
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 48,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
+          "nWin": 96385,
+          "nHit": 292,
+          "pointRatePct": 0.163148,
+          "p975RatePct": 0.393539,
+          "loadFactor": 2.412,
+          "pointEth": 0.00001631,
+          "p975Eth": 0.00003935,
+          "costRetailEth": 0.00013047,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.13118,
+          "marginRetailEth": 0.00013017
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 72,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
+          "nWin": 96361,
+          "nHit": 219,
+          "pointRatePct": 0.113635,
+          "p975RatePct": 0.328314,
+          "loadFactor": 2.889,
+          "pointEth": 0.00001136,
+          "p975Eth": 0.00003283,
+          "costRetailEth": 0.00013039,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.109438,
+          "marginRetailEth": 0.00013677
+        }
+      ],
+      "batch": [
+        {
+          "N": 1,
+          "costPerPolicyEth": 0.00013053,
+          "portfolioPremiumEth": 0.0004,
+          "maxCellPremiumEth": 0.0004,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 0.00013078,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00020405
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 0.00013045,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00013164
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 0.00013033,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00014183
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 0.00013068,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00021249
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 0.00013044,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00013309
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 0.00013027,
+              "premiumEth": 0.0003,
+              "marginEth": 0.0001471
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 0.00013044,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00013303
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 0.00013023,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00015093
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 0.00013017,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00015584
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00013121,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00016784
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.0001308,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00020212
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 0.00013066,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00021467
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 0.00013064,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00021627
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 0.00013047,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00013018
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 0.00013039,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00013678
+            }
+          ]
+        },
+        {
+          "N": 10,
+          "costPerPolicyEth": 0.00001353,
+          "portfolioPremiumEth": 0.0003,
+          "maxCellPremiumEth": 0.0002,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 0.00001378,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00012105
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 0.00001345,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014864
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 0.00001333,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015883
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 0.00001368,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00012949
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 0.00001344,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015009
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 0.00001327,
+              "premiumEth": 0.0002,
+              "marginEth": 0.0001641
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 0.00001344,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015003
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 0.00001323,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016793
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 0.00001317,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00017284
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00001421,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00008484
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.0000138,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011912
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 0.00001366,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013167
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 0.00001364,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013327
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 0.00001347,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014718
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 0.00001339,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015378
+            }
+          ]
+        },
+        {
+          "N": 50,
+          "costPerPolicyEth": 0.00000313,
+          "portfolioPremiumEth": 0.0003,
+          "maxCellPremiumEth": 0.0002,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000338,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013145
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000305,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015904
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000293,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016923
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000328,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013989
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000304,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016049
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000287,
+              "premiumEth": 0.0002,
+              "marginEth": 0.0001745
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000304,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016043
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000283,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00017833
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000277,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00018324
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000381,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00009524
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.0000034,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00012952
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000326,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014207
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000324,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014367
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000307,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015758
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000299,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016418
+            }
+          ]
+        },
+        {
+          "N": 100,
+          "costPerPolicyEth": 0.00000183,
+          "portfolioPremiumEth": 0.0003,
+          "maxCellPremiumEth": 0.0002,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000208,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013275
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000175,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016034
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000163,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00017053
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000198,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014119
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000174,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016179
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000157,
+              "premiumEth": 0.0002,
+              "marginEth": 0.0001758
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000174,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016173
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000153,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00017963
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000147,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00018454
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000251,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00009654
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.0000021,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013082
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000196,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014337
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000194,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014497
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000177,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015888
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000169,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016548
+            }
+          ]
+        },
+        {
+          "N": 500,
+          "costPerPolicyEth": 7.9e-7,
+          "portfolioPremiumEth": 0.0003,
+          "maxCellPremiumEth": 0.0002,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000104,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013379
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 7.1e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016138
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 5.9e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00017157
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 9.4e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014223
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 7e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016283
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 5.3e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00017684
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 7e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016277
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 4.9e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00018067
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 4.3e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00018558
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000147,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00009758
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000106,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013186
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 9.2e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014441
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 9e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014601
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 7.3e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015992
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 6.5e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016652
+            }
+          ]
+        },
+        {
+          "N": 1000,
+          "costPerPolicyEth": 6.6e-7,
+          "portfolioPremiumEth": 0.0003,
+          "maxCellPremiumEth": 0.0002,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 9.1e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013392
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 5.8e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016151
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 4.6e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.0001717
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 8.1e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014236
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 5.7e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016296
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 4e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00017697
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 5.7e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.0001629
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 3.6e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.0001808
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 3e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00018571
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000134,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00009771
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 9.3e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013199
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 7.9e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014454
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 7.7e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014614
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 6e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016005
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 5.2e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016665
+            }
+          ]
+        }
+      ],
+      "concentration": {
+        "portfolioPointRatePct": 0.255272,
+        "portfolioP975RatePct": 0.340553,
+        "worstCellKey": "广州 24h",
+        "worstCellP975RatePct": 1.009504,
+        "concentrationPenalty": 2.964,
+        "diversificationCredit": 1.334,
+        "worstCellLoadFactor": 1.361,
+        "extraPremiumPerPolicyEth": 0.0001
+      },
+      "reserve": {
+        "perPolicyExposureEth": 0.01,
+        "meanPerPolicyEth": 0.00002553,
+        "var975PerPolicyEth": 0.00003406,
+        "var99PerPolicyEth": 0.00003567,
+        "portfolioPremiumEth": 0.0003,
+        "var99OverPremium": 0.118902,
+        "shortfall99PerPolicyEth": 0,
+        "closedFormWorstPerPolicyEth": 0.0097
+      },
+      "reachability": [
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
+          "pByTierPct": [
+            0.762377,
+            0.117209,
+            0
+          ],
+          "maxObservedMm": 205.4,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 48,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
+          "pByTierPct": [
+            0.309177,
+            0.0747,
+            0
+          ],
+          "maxObservedMm": 288,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 72,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
+          "pByTierPct": [
+            0.211704,
+            0.051888,
+            0
+          ],
+          "maxObservedMm": 392.4,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
+          "pByTierPct": [
+            0.754079,
+            0.088166,
+            0
+          ],
+          "maxObservedMm": 131.3,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 48,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
+          "pByTierPct": [
+            0.447165,
+            0.006225,
+            0
+          ],
+          "maxObservedMm": 214.7,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 72,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
+          "pByTierPct": [
+            0.214817,
+            0,
+            0
+          ],
+          "maxObservedMm": 258.9,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
+          "pByTierPct": [
+            0.437718,
+            0.043564,
+            0
+          ],
+          "maxObservedMm": 180.9,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 48,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
+          "pByTierPct": [
+            0.189864,
+            0.0083,
+            0
+          ],
+          "maxObservedMm": 202.7,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 72,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
+          "pByTierPct": [
+            0.108965,
+            0,
+            0
+          ],
+          "maxObservedMm": 208,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
+          "pByTierPct": [
+            1.419992,
+            0.126544,
+            0
+          ],
+          "maxObservedMm": 183.7,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 48,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
+          "pByTierPct": [
+            0.775017,
+            0.031125,
+            0
+          ],
+          "maxObservedMm": 215.2,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 72,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
+          "pByTierPct": [
+            0.562468,
+            0,
+            0
+          ],
+          "maxObservedMm": 260.9,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            250
+          ],
+          "pByTierPct": [
+            0.594343,
+            0.086092,
+            0
+          ],
+          "maxObservedMm": 245.9,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 48,
+          "thresholdsMm": [
+            100,
+            200,
+            500
+          ],
+          "pByTierPct": [
+            0.302952,
+            0.046688,
+            0
+          ],
+          "maxObservedMm": 276.1,
+          "tier2Reachable": false
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 72,
+          "thresholdsMm": [
+            150,
+            300,
+            750
+          ],
+          "pByTierPct": [
+            0.22727,
+            0,
+            0
+          ],
+          "maxObservedMm": 288,
+          "tier2Reachable": false
+        }
+      ]
+    },
+    "B": {
+      "name": "建议：阈值按 DDF 次线性（50×(h/24)^0.63 ≈ 50/75/100），档位降到 1/2.5/3.5",
+      "source": "本脚本 §档位 4 的实测可达性推导",
+      "contractChange": true,
+      "bps": [
+        5000,
+        7500,
+        10000
+      ],
+      "grid": [
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            130
+          ],
+          "nWin": 96409,
+          "nHit": 735,
+          "pointRatePct": 0.42579,
+          "p975RatePct": 0.685252,
+          "loadFactor": 1.609,
+          "pointEth": 0.00004258,
+          "p975Eth": 0.00006853,
+          "costRetailEth": 0.00013082,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.171313,
+          "marginRetailEth": 0.00020065
+        },
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 48,
+          "thresholdsMm": [
+            75,
+            125,
+            175
+          ],
+          "nWin": 96385,
+          "nHit": 915,
+          "pointRatePct": 0.537428,
+          "p975RatePct": 0.929679,
+          "loadFactor": 1.73,
+          "pointEth": 0.00005374,
+          "p975Eth": 0.00009297,
+          "costRetailEth": 0.00013112,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.23242,
+          "marginRetailEth": 0.00017592
+        },
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 72,
+          "thresholdsMm": [
+            100,
+            150,
+            190
+          ],
+          "nWin": 96361,
+          "nHit": 781,
+          "pointRatePct": 0.494235,
+          "p975RatePct": 0.9108,
+          "loadFactor": 1.843,
+          "pointEth": 0.00004942,
+          "p975Eth": 0.00009108,
+          "costRetailEth": 0.00013109,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.2277,
+          "marginRetailEth": 0.00017783
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            130
+          ],
+          "nWin": 96409,
+          "nHit": 727,
+          "pointRatePct": 0.400637,
+          "p975RatePct": 0.570876,
+          "loadFactor": 1.425,
+          "pointEth": 0.00004006,
+          "p975Eth": 0.00005709,
+          "costRetailEth": 0.00013069,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.142719,
+          "marginRetailEth": 0.00021223
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 48,
+          "thresholdsMm": [
+            75,
+            125,
+            175
+          ],
+          "nWin": 96385,
+          "nHit": 946,
+          "pointRatePct": 0.554806,
+          "p975RatePct": 0.831191,
+          "loadFactor": 1.498,
+          "pointEth": 0.00005548,
+          "p975Eth": 0.00008312,
+          "costRetailEth": 0.000131,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.207798,
+          "marginRetailEth": 0.00018588
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 72,
+          "thresholdsMm": [
+            100,
+            150,
+            190
+          ],
+          "nWin": 96361,
+          "nHit": 877,
+          "pointRatePct": 0.540416,
+          "p975RatePct": 0.838057,
+          "loadFactor": 1.551,
+          "pointEth": 0.00005404,
+          "p975Eth": 0.00008381,
+          "costRetailEth": 0.00013101,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.209514,
+          "marginRetailEth": 0.00018519
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            130
+          ],
+          "nWin": 96409,
+          "nHit": 422,
+          "pointRatePct": 0.234937,
+          "p975RatePct": 0.374127,
+          "loadFactor": 1.592,
+          "pointEth": 0.00002349,
+          "p975Eth": 0.00003741,
+          "costRetailEth": 0.00013045,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.124709,
+          "marginRetailEth": 0.00013214
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 48,
+          "thresholdsMm": [
+            75,
+            125,
+            175
+          ],
+          "nWin": 96385,
+          "nHit": 423,
+          "pointRatePct": 0.255745,
+          "p975RatePct": 0.439809,
+          "loadFactor": 1.72,
+          "pointEth": 0.00002557,
+          "p975Eth": 0.00004398,
+          "costRetailEth": 0.00013053,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.146603,
+          "marginRetailEth": 0.00012549
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 72,
+          "thresholdsMm": [
+            100,
+            150,
+            190
+          ],
+          "nWin": 96361,
+          "nHit": 337,
+          "pointRatePct": 0.215855,
+          "p975RatePct": 0.419055,
+          "loadFactor": 1.941,
+          "pointEth": 0.00002159,
+          "p975Eth": 0.00004191,
+          "costRetailEth": 0.0001305,
+          "premiumRetailEth": 0.0003,
+          "premiumRetailWei": "300000000000000",
+          "lossRatioAtP975": 0.139685,
+          "marginRetailEth": 0.00012759
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            130
+          ],
+          "nWin": 96409,
+          "nHit": 1369,
+          "pointRatePct": 0.75382,
+          "p975RatePct": 1.029946,
+          "loadFactor": 1.366,
+          "pointEth": 0.00007538,
+          "p975Eth": 0.00010299,
+          "costRetailEth": 0.00013124,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.257486,
+          "marginRetailEth": 0.00016577
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 48,
+          "thresholdsMm": [
+            75,
+            125,
+            175
+          ],
+          "nWin": 96385,
+          "nHit": 2158,
+          "pointRatePct": 1.236707,
+          "p975RatePct": 1.706174,
+          "loadFactor": 1.38,
+          "pointEth": 0.00012367,
+          "p975Eth": 0.00017062,
+          "costRetailEth": 0.00013205,
+          "premiumRetailEth": 0.0006,
+          "premiumRetailWei": "600000000000000",
+          "lossRatioAtP975": 0.284362,
+          "marginRetailEth": 0.00029734
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 72,
+          "thresholdsMm": [
+            100,
+            150,
+            190
+          ],
+          "nWin": 96361,
+          "nHit": 2106,
+          "pointRatePct": 1.276191,
+          "p975RatePct": 1.898761,
+          "loadFactor": 1.488,
+          "pointEth": 0.00012762,
+          "p975Eth": 0.00018988,
+          "costRetailEth": 0.00013228,
+          "premiumRetailEth": 0.0006,
+          "premiumRetailWei": "600000000000000",
+          "lossRatioAtP975": 0.31646,
+          "marginRetailEth": 0.00027785
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            130
+          ],
+          "nWin": 96409,
+          "nHit": 573,
+          "pointRatePct": 0.325436,
+          "p975RatePct": 0.552652,
+          "loadFactor": 1.698,
+          "pointEth": 0.00003254,
+          "p975Eth": 0.00005527,
+          "costRetailEth": 0.00013066,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.138163,
+          "marginRetailEth": 0.00021407
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 48,
+          "thresholdsMm": [
+            75,
+            125,
+            175
+          ],
+          "nWin": 96385,
+          "nHit": 704,
+          "pointRatePct": 0.417337,
+          "p975RatePct": 0.778976,
+          "loadFactor": 1.867,
+          "pointEth": 0.00004173,
+          "p975Eth": 0.0000779,
+          "costRetailEth": 0.00013093,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.194744,
+          "marginRetailEth": 0.00019117
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 72,
+          "thresholdsMm": [
+            100,
+            150,
+            190
+          ],
+          "nWin": 96361,
+          "nHit": 560,
+          "pointRatePct": 0.381897,
+          "p975RatePct": 0.850914,
+          "loadFactor": 2.228,
+          "pointEth": 0.00003819,
+          "p975Eth": 0.00008509,
+          "costRetailEth": 0.00013102,
+          "premiumRetailEth": 0.0004,
+          "premiumRetailWei": "400000000000000",
+          "lossRatioAtP975": 0.212729,
+          "marginRetailEth": 0.00018389
+        }
+      ],
+      "batch": [
+        {
+          "N": 1,
+          "costPerPolicyEth": 0.00013103,
+          "portfolioPremiumEth": 0.0005,
+          "maxCellPremiumEth": 0.0006,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 0.00013082,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00020065
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 0.00013112,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00017591
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 0.00013109,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00017783
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 0.00013069,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00021222
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 0.000131,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00018588
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 0.00013101,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00018518
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 0.00013045,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00013214
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 0.00013053,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00012549
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 0.0001305,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00012759
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00013124,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00016577
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.00013205,
+              "premiumEth": 0.0006,
+              "marginEth": 0.00029733
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 0.00013228,
+              "premiumEth": 0.0006,
+              "marginEth": 0.00027784
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 0.00013066,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00021407
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 0.00013093,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00019117
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 0.00013102,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00018389
+            }
+          ]
+        },
+        {
+          "N": 10,
+          "costPerPolicyEth": 0.00001403,
+          "portfolioPremiumEth": 0.0003,
+          "maxCellPremiumEth": 0.0004,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 0.00001382,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011765
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 0.00001412,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00009291
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 0.00001409,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00009483
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 0.00001369,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00012922
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 0.000014,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010288
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 0.00001401,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010218
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 0.00001345,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014914
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 0.00001353,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014249
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 0.0000135,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014459
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00001424,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00008277
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.00001505,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00021433
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 0.00001528,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00019484
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 0.00001366,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013107
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 0.00001393,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010817
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 0.00001402,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010089
+            }
+          ]
+        },
+        {
+          "N": 50,
+          "costPerPolicyEth": 0.00000363,
+          "portfolioPremiumEth": 0.0003,
+          "maxCellPremiumEth": 0.0004,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000342,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00012805
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000372,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010331
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000369,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010523
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000329,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013962
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 0.0000036,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011328
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000361,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011258
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000305,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015954
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000313,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015289
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 0.0000031,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015499
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000384,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00009317
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000465,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00012473
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000488,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00020524
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000326,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014147
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000353,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011857
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000362,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011129
+            }
+          ]
+        },
+        {
+          "N": 100,
+          "costPerPolicyEth": 0.00000233,
+          "portfolioPremiumEth": 0.0003,
+          "maxCellPremiumEth": 0.0004,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000212,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00012935
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000242,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010461
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000239,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010653
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000199,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014092
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 0.0000023,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011458
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000231,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011388
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000175,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016084
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000183,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015419
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 0.0000018,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015629
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000254,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00009447
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000335,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00012603
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000358,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00020654
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000196,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014277
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000223,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011987
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000232,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011259
+            }
+          ]
+        },
+        {
+          "N": 500,
+          "costPerPolicyEth": 0.00000129,
+          "portfolioPremiumEth": 0.0003,
+          "maxCellPremiumEth": 0.0004,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000108,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013039
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000138,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010565
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000135,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010757
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 9.5e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014196
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000126,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011562
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000127,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011492
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 7.1e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016188
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 7.9e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015523
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 7.6e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015733
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.0000015,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00009551
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000231,
+              "premiumEth": 0.0003,
+              "marginEth": 0.00012707
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000254,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00020758
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 9.2e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014381
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000119,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00012091
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000128,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011363
+            }
+          ]
+        },
+        {
+          "N": 1000,
+          "costPerPolicyEth": 0.00000116,
+          "portfolioPremiumEth": 0.0003,
+          "maxCellPremiumEth": 0.0004,
+          "rows": [
+            {
+              "regionKey": "wuhan",
+              "hours": 24,
+              "costPerPolicyEth": 9.5e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00013052
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000125,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00010578
+            },
+            {
+              "regionKey": "wuhan",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000122,
+              "premiumEth": 0.0002,
+              "marginEth": 0.0001077
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 24,
+              "costPerPolicyEth": 8.2e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014209
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000113,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011575
+            },
+            {
+              "regionKey": "shanghai",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000114,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011505
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 24,
+              "costPerPolicyEth": 5.8e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00016201
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 48,
+              "costPerPolicyEth": 6.6e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015536
+            },
+            {
+              "regionKey": "beijing",
+              "hours": 72,
+              "costPerPolicyEth": 6.3e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00015746
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 24,
+              "costPerPolicyEth": 0.00000137,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00009564
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000218,
+              "premiumEth": 0.0003,
+              "marginEth": 0.0001272
+            },
+            {
+              "regionKey": "guangzhou",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000241,
+              "premiumEth": 0.0004,
+              "marginEth": 0.00020771
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 24,
+              "costPerPolicyEth": 7.9e-7,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00014394
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 48,
+              "costPerPolicyEth": 0.00000106,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00012104
+            },
+            {
+              "regionKey": "chengdu",
+              "hours": 72,
+              "costPerPolicyEth": 0.00000115,
+              "premiumEth": 0.0002,
+              "marginEth": 0.00011376
+            }
+          ]
+        }
+      ],
+      "concentration": {
+        "portfolioPointRatePct": 0.536749,
+        "portfolioP975RatePct": 0.689503,
+        "worstCellKey": "广州 72h",
+        "worstCellP975RatePct": 1.898761,
+        "concentrationPenalty": 2.754,
+        "diversificationCredit": 1.285,
+        "worstCellLoadFactor": 1.488,
+        "extraPremiumPerPolicyEth": 0.0002
+      },
+      "reserve": {
+        "perPolicyExposureEth": 0.01,
+        "meanPerPolicyEth": 0.00005367,
+        "var975PerPolicyEth": 0.00006895,
+        "var99PerPolicyEth": 0.0000717,
+        "portfolioPremiumEth": 0.0003,
+        "var99OverPremium": 0.238987,
+        "shortfall99PerPolicyEth": 0,
+        "closedFormWorstPerPolicyEth": 0.0097
+      },
+      "reachability": [
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            130
+          ],
+          "pByTierPct": [
+            0.762377,
+            0.117209,
+            0.061198
+          ],
+          "maxObservedMm": 205.4,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 48,
+          "thresholdsMm": [
+            75,
+            125,
+            175
+          ],
+          "pByTierPct": [
+            0.949318,
+            0.162888,
+            0.088188
+          ],
+          "maxObservedMm": 288,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "wuhan",
+          "regionName": "武汉",
+          "hours": 72,
+          "thresholdsMm": [
+            100,
+            150,
+            190
+          ],
+          "pByTierPct": [
+            0.810494,
+            0.211704,
+            0.144249
+          ],
+          "maxObservedMm": 392.4,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            130
+          ],
+          "pByTierPct": [
+            0.754079,
+            0.088166,
+            0.006223
+          ],
+          "maxObservedMm": 131.3,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 48,
+          "thresholdsMm": [
+            75,
+            125,
+            175
+          ],
+          "pByTierPct": [
+            0.981481,
+            0.208539,
+            0.047725
+          ],
+          "maxObservedMm": 214.7,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "shanghai",
+          "regionName": "上海",
+          "hours": 72,
+          "thresholdsMm": [
+            100,
+            150,
+            190
+          ],
+          "pByTierPct": [
+            0.910119,
+            0.214817,
+            0.126607
+          ],
+          "maxObservedMm": 258.9,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            130
+          ],
+          "pByTierPct": [
+            0.437718,
+            0.043564,
+            0.020745
+          ],
+          "maxObservedMm": 180.9,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 48,
+          "thresholdsMm": [
+            75,
+            125,
+            175
+          ],
+          "pByTierPct": [
+            0.438865,
+            0.108938,
+            0.036313
+          ],
+          "maxObservedMm": 202.7,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "beijing",
+          "regionName": "北京",
+          "hours": 72,
+          "thresholdsMm": [
+            100,
+            150,
+            190
+          ],
+          "pByTierPct": [
+            0.349727,
+            0.108965,
+            0.055002
+          ],
+          "maxObservedMm": 208,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            130
+          ],
+          "pByTierPct": [
+            1.419992,
+            0.126544,
+            0.048751
+          ],
+          "maxObservedMm": 183.7,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 48,
+          "thresholdsMm": [
+            75,
+            125,
+            175
+          ],
+          "pByTierPct": [
+            2.238938,
+            0.392177,
+            0.076775
+          ],
+          "maxObservedMm": 215.2,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "guangzhou",
+          "regionName": "广州",
+          "hours": 72,
+          "thresholdsMm": [
+            100,
+            150,
+            190
+          ],
+          "pByTierPct": [
+            2.185531,
+            0.562468,
+            0.171231
+          ],
+          "maxObservedMm": 260.9,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 24,
+          "thresholdsMm": [
+            50,
+            100,
+            130
+          ],
+          "pByTierPct": [
+            0.594343,
+            0.086092,
+            0.026968
+          ],
+          "maxObservedMm": 245.9,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 48,
+          "thresholdsMm": [
+            75,
+            125,
+            175
+          ],
+          "pByTierPct": [
+            0.730404,
+            0.153551,
+            0.054988
+          ],
+          "maxObservedMm": 276.1,
+          "tier2Reachable": true
+        },
+        {
+          "regionKey": "chengdu",
+          "regionName": "成都",
+          "hours": 72,
+          "thresholdsMm": [
+            100,
+            150,
+            190
+          ],
+          "pByTierPct": [
+            0.581148,
+            0.22727,
+            0.138023
+          ],
+          "maxObservedMm": 288,
+          "tier2Reachable": true
+        }
+      ]
+    }
+  }
+}

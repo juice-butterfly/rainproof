@@ -346,11 +346,14 @@ const FALLBACK_ADDR = "0x89e7C942535930B61cB61631051E8b0bD670596a";
 
 // 事件名 → 样式
 const EV_STYLE = { ClaimPaid:"gold", PolicyBought:"blue", RainfallUpdated:"", PoolFunded:"gold",
-                   PoolWithdrawn:"gold", OperatorChanged:"", PausedSet:"" };
+                   PoolWithdrawn:"gold", OperatorChanged:"", PausedSet:"",
+                   JudgementSubmitted:"gold", UnderwritingDecision:"blue", FeedRejected:"", ReserveSet:"" };
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const short = a => (a && a.length > 12 ? a.slice(0,6) + "…" + a.slice(-4) : a);
+// 哈希缩短显示（完整的 32 字节值放进 title，鼠标悬停就能看到）—— 前 10 后 6 位够区分了
+const shortHash = h => (h && String(h).length > 18 ? String(h).slice(0,10) + "…" + String(h).slice(-6) : String(h));
 const fmtEth = w => Number(ethers.formatEther(w)).toLocaleString("en-US", { maximumFractionDigits: 6 });
 
 const S = { addr:null, c:null, readC:null, provider:null, signer:null, account:null, chainOk:false, meta:null,
@@ -684,6 +687,9 @@ async function loadMyPolicies() {
       const [p, status, short] = await Promise.all([
         S.readC.policies(id), S.readC.policyStatus(id), S.readC.shortfall(id)
       ]);
+      // 判定记录单独 try：这份附加信息读不到时，不该把整张保单列表变成错误页
+      let jm = null;
+      try { jm = await S.readC.judgements(id); } catch (e) { jm = null; }
       const name = await S.readC.regionName(p.regionId);
       const from = new Date(Number(p.startTime) * 1000), to = new Date(Number(p.endTime) * 1000);
       const fmt = d => `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
@@ -695,6 +701,19 @@ async function loadMyPolicies() {
       // 否则现场只能把它解释成「这个功能坏了」—— 而这恰恰是判定层存在的最好证明。
       const NOBTN = { paid:"已赔付", pending_judgement:"待 AI 判定", denied:"AI 判定不赔",
                       low_confidence:"置信度不足", expired:"已过期", not_found:"不存在" };
+      // AI 判定卡：把链上那条判定记录翻成人话 —— 判定 / 置信度 / 两个证据哈希 / 模型版本。
+      // 数据全部来自链上 judgements(id)，不依赖任何离线文件，评委可以自己调 eth_call 对一遍。
+      // 注意：合约的 sources 字段没有写入接口（submitJudgement 不带该参数），所以这里不显示"源数"。
+      const aiLine = (jm && jm.exists) ? `<div class="pmeta" style="margin-top:6px;border-top:1px solid rgba(255,255,255,.08);padding-top:6px">
+              <b>AI 判定</b>
+              <span class="tag ${Number(jm.decision) === 1 ? "gold" : "warn"}" style="margin:0 4px">${Number(jm.decision) === 1 ? "赔付 PAY" : "不赔 DENY"}</span>
+              · 置信度 <b>${jm.confidence}</b>
+              · ${Number(jm.kind) === 1 ? "损失判定" : "喂价验收"}
+              · 输入 <span title="${jm.inputHash}">${shortHash(jm.inputHash)}</span>
+              · 输出 <span title="${jm.outputHash}">${shortHash(jm.outputHash)}</span>
+              · ${esc(jm.modelVersion)}
+              ${Number(jm.judgedAt) ? `　·　${new Date(Number(jm.judgedAt) * 1000).toLocaleString("zh-CN", { hour12:false })}` : ""}
+            </div>` : "";
       rows.push(`<div class="pol ${status}">
         <div class="prow">
           <div>
@@ -710,6 +729,7 @@ async function loadMyPolicies() {
               ${status === "low_confidence" ? `　·　AI 置信度低于合约验收门槛，按规则不予赔付` : ""}
               ${status === "paid" ? `　·　已收到 ${fmtEth(S.meta.payout)} SepETH` : ""}
             </div>
+            ${aiLine}
           </div>
           <button class="btn sm ${claimable ? "gold" : ""}" data-claim="${id}"
             ${claimable ? "" : "disabled"}>${claimable ? "申请赔付 " + fmtEth(S.meta.payout) + " SepETH" : (NOBTN[status] || "未达条件")}</button>
@@ -760,6 +780,18 @@ async function loadEvents() {
       else if (d.name === "PoolWithdrawn")desc = `提取 ${fmtEth(d.args[1])} SepETH`;
       else if (d.name === "OperatorChanged") desc = `operator ${short(d.args[0])} → ${short(d.args[1])}`;
       else if (d.name === "PausedSet")    desc = `合约${d.args[0] ? "已暂停" : "已恢复"}`;
+      // ↓ 判定层的事件过去只有事件名、没有内容（走 else 兜底），评委看不出 AI 判了什么。
+      else if (d.name === "JudgementSubmitted")
+        desc = `保单 #${d.args[0]} · ${Number(d.args[1]) === 1 ? "损失判定" : "喂价验收"} · `
+             + `${Number(d.args[2]) === 1 ? "赔付 PAY" : "不赔 DENY"} · 置信度 ${d.args[3]} · `
+             + `输入 ${shortHash(d.args[4])} 输出 ${shortHash(d.args[5])} · ${d.args[6]}`;
+      else if (d.name === "UnderwritingDecision")
+        desc = `${await S.readC.regionName(d.args[0])} 承保定价：保费 ${fmtEth(d.args[2])} SepETH · `
+             + `${["正常","加价","拒保"][Number(d.args[1])] || "档 " + d.args[1]} · 依据 ${shortHash(d.args[3])}`;
+      else if (d.name === "FeedRejected")
+        desc = `${await S.readC.regionName(d.args[0])} 喂价被拒（置信度 ${d.args[1]} / ${d.args[2]} 个源）· 依据 ${shortHash(d.args[3])}`;
+      else if (d.name === "ReserveSet")
+        desc = `准备金下限设为 ${fmtEth(d.args[0])} SepETH`;
       else desc = d.name;
       const ts = times[l.blockNumber];
       const when = ts ? new Date(Number(ts) * 1000) : null;

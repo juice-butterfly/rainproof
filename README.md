@@ -96,7 +96,13 @@ AI 判定登记后不影响已生效的赔付条件。详见下面「已知边�
   逐日序列，只在公共日期上比「自 RAIN_EPOCH 起的累计值」，多数落在中位数 ± 容差内才认这份数据；
   `push-rainfall.js` 写链前调它，不认就走 `rejectFeed` 留证（**拒收也是一种上链动作**）。
   2026-10-07 首跑即真拒收一次（广州），见 `02-作战与答辩/汉客松-交易哈希清单.md` §三。
-- **测试**：`check-canonical.js`、`check-ai.js`（29 项 + 1369 个用例的硬约束扫描，含「每条留痕的哈希都能当场重算」）、`check-feed-verify.js`（喂价闸门判定 12 项，含「极差超容差但三个都离中位数很近 → 必须判一致」这条回归用例）、
+- **事件钩子（承保复核）**：`04-脚本/hook-watch.js` —— 链上一出现 `PolicyBought`，AI 层就对这份保单
+  自动做一次**独立复核**并留痕到 `09-AI判定留痕/承保复核-policy<id>.json`：查窗口时长是否在合约允许的
+  24/48/72 内、基线单调（投保时 ≤ 现值）、喂价新鲜度（> 24h 标红）、三模型是否认这份天气形势，
+  以及链上累计值与三模型中位数的背离（阈值 60%，与判定层 R2 同口径）。
+  **它不改链上状态、不阻断投保、也不代替判定** —— 判该不该赔是 `ai-judge.js` 的事。
+  「拿不到数」记 `REVIEW_PARTIAL`，不假装查过；同一份留痕隔天重跑得到同一个 `reviewHash`。
+- **测试**：`check-canonical.js`、`check-ai.js`（29 项 + 1369 个用例的硬约束扫描，含「每条留痕的哈希都能当场重算」）、`check-feed-verify.js`（喂价闸门判定 12 项 + 承保复核判定 7 项，含「极差超容差但三个都离中位数很近 → 必须判一致」这条回归用例）、
   `check-ui.js`（前端契约：降雨看板刻度与触发线对齐、保障时长三档下拉、三个页面 DOM 引用完整）、
   `e2e_contract.js`（v1 合约，73 项断言）、`e2e_v2.js`（v2 合约，101 项断言）。
 - **真链部署与端到端彩排**：Sepolia 部署、真实气象数据喂价、AI 判定上链、赔付出款，
@@ -167,6 +173,7 @@ node push-rainfall.js --status    # 看链上总览：池子、5 个区域雨量
 node push-rainfall.js             # 真实气象数据喂价（Open-Meteo）
 node push-rainfall.js --demo      # 演示模式：注入模拟暴雨（链上会标记 simulated）
 node feed-verify.js               # 三模型交叉核验（只读、不写链）：认不认这份数据
+node hook-watch.js --once         # 事件钩子：扫一遍链上保单，对新保单做承保复核并留痕
 node ai-collect.js <保单号>        # 采集三模型证据快照 → 09-AI判定留痕/
 node ai-judge.js <保单号>          # 确定性判定 → 判定结果 JSON
 node submit-judgement.js <保单号>  # 重算核对后把判定提交上链

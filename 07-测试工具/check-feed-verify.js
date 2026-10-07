@@ -11,6 +11,7 @@
 const path = require("path");
 const { gradeModels, fetchModelSeries, compareOnCommonDates, MODELS } =
   require(path.join(__dirname, "..", "04-脚本", "feed-verify.js"));
+const { reviewPolicy } = require(path.join(__dirname, "..", "04-脚本", "hook-watch.js"));
 
 let pass = 0, fail = 0;
 function t(name, cond, extra) {
@@ -118,7 +119,67 @@ t("模型 id 顺序 = ecmwf_ifs025 / gfs_seamless / icon_seamless",
     cmp.dates.length === 2 && cmp.perModel[1].mm === 10, JSON.stringify(cmp.perModel));
 }
 
-console.log(`\n${fail ? "❌" : "✅"} feed-verify 判定规则：${pass} 项通过 / ${fail} 项失败`);
+/* -------------------------------------------- 10-. 承保复核判定（hook-watch.js） */
+/* 这份纯函数就是 `PolicyBought` 事件钩子的判定核心：链上参数 + 喂价新鲜度 + 三模型 */
+
+console.log("\n承保复核判定（hook-watch.js 的 reviewPolicy，纯函数）");
+
+const modelsOk = { status: "agree", medianMm: 20, agree: true };
+
+// 10. 全部通过
+{
+  const r = reviewPolicy({ windowHours: 72, rainfallAtBuyMm: 10, onchainMm: 30, feedAgeSec: 3600, models: modelsOk });
+  t("窗口/基线/喂价/三模型都过 → REVIEW_OK",
+    r.verdict === "REVIEW_OK" && r.flagged.length === 0 && r.checks.baselineWithinModels === true,
+    JSON.stringify(r.checks));
+}
+
+// 11. 喂价超过 24 小时 → 标红
+{
+  const r = reviewPolicy({ windowHours: 72, rainfallAtBuyMm: 10, onchainMm: 30, feedAgeSec: 25 * 3600, models: modelsOk });
+  t("喂价 25 小时前 → stale-feed 标红",
+    r.verdict === "REVIEW_FLAG" && r.flagged.includes("stale-feed"), JSON.stringify(r.flagged));
+}
+
+// 12. 三模型互相不认 → 标红
+{
+  const r = reviewPolicy({ windowHours: 24, rainfallAtBuyMm: 0, onchainMm: 5, feedAgeSec: 600,
+    models: { status: "diverge", medianMm: null, agree: false } });
+  t("三模型 diverge → models-not-agreeing 标红",
+    r.verdict === "REVIEW_FLAG" && r.flagged.includes("models-not-agreeing"), JSON.stringify(r.flagged));
+}
+
+// 13. 链上基线背离三模型中位数（成都那单的实测形状：120mm vs 6.5mm）
+{
+  const r = reviewPolicy({ windowHours: 72, rainfallAtBuyMm: 6, onchainMm: 120, feedAgeSec: 600,
+    models: { status: "majority", medianMm: 6.5, agree: true } });
+  t("链上 120mm vs 中位数 6.5mm → 背离 1746.15% 且标红",
+    Math.abs(r.deviationPct - 1746.15) < 0.01 && r.flagged.includes("baseline-deviates-from-models"),
+    String(r.deviationPct));
+}
+
+// 14. 「不知道」不等于「不合格」：喂价未知 + 三模型没取数 → 部分复核
+{
+  const r = reviewPolicy({ windowHours: 72, rainfallAtBuyMm: 0, onchainMm: 5, feedAgeSec: null, models: null });
+  t("喂价未知 + 三模型未取数 → REVIEW_PARTIAL（既不误报通过、也不误报存疑）",
+    r.verdict === "REVIEW_PARTIAL" && r.checks.feedFresh === null && r.checks.modelsAgree === null && r.flagged.length === 0,
+    JSON.stringify(r));
+}
+
+// 15. 投保时的基线不可能高于链上现值（累计只增不减）
+{
+  const r = reviewPolicy({ windowHours: 72, rainfallAtBuyMm: 50, onchainMm: 30, feedAgeSec: 600, models: modelsOk });
+  t("投保时 50mm > 链上现值 30mm → baseline-above-onchain 标红",
+    r.flagged.includes("baseline-above-onchain"), JSON.stringify(r.flagged));
+}
+
+// 16. 窗口时长越界（合约只允许 24/48/72）→ 标红
+{
+  const r = reviewPolicy({ windowHours: 12, rainfallAtBuyMm: 0, onchainMm: 5, feedAgeSec: 600, models: modelsOk });
+  t("窗口 12h → window-out-of-range 标红", r.flagged.includes("window-out-of-range"), JSON.stringify(r.flagged));
+}
+
+console.log(`\n${fail ? "❌" : "✅"} feed-verify 判定 + 承保复核判定：${pass} 项通过 / ${fail} 项失败`);
 
 /* ------------------------------------------------------------ 可选：真拉一次 */
 if (process.argv.includes("--live")) {

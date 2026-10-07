@@ -283,7 +283,7 @@
     <div class="chainbar">
       <span><span class="dot" id="dot"></span><span id="netText">未连接</span></span>
       <span>区块 <b id="blk">—</b></span>
-      <button class="btn sm" id="walletBtn">连接钱包</button>
+      <button class="btn sm" id="walletBtn" title="连接钱包；已连接时点它会打开钱包的账户选择弹窗">连接钱包</button>
     </div>
   </div>
   <div class="rail">
@@ -621,7 +621,26 @@ async function attachContract(addr, quiet) {
 async function connectWallet(silent) {
   if (!window.ethereum) { toast("这台机器上没有浏览器钱包扩展（MetaMask）。只读模式仍可查看全部链上数据。", "err"); return; }
   try {
+    // 显式点击（silent=false）时先要一次权限弹窗。原因：这条站点已授权过的话，
+    // eth_requestAccounts 会直接返回当前账户、什么都不弹 —— 而用户点这个按钮就是想换账户，
+    // 不弹窗就等于「改不了账户」。wallet_requestPermissions 是唯一能重新打开
+    // 「选择哪些账户可以连接本站」界面的标准方法（MetaMask 文档：eth_requestAccounts 只在
+    // 未授权时弹窗）。老钱包不支持这个方法时抛别的错误，不能因此拦路。
+    if (!silent) {
+      try {
+        await window.ethereum.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
+      } catch (e) {
+        if (e && e.code === 4001) return;   // 用户在弹窗里点了取消：保持现状，不当错误
+      }
+    }
     const accts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    // 换了账户：整页状态（我的保单、在保敞口、可赔付额）都是按账户渲染的，必须整页重来。
+    // 钱包通常会发 accountsChanged（文件末尾有监听），但换账户不能只指望事件 —— 事件漏了
+    // 就会用旧账户的数据配新账户的签名。
+    if (S.account && accts[0] && accts[0].toLowerCase() !== S.account.toLowerCase()) {
+      location.reload();
+      return;
+    }
     S.account = accts[0];
 
     // 网络

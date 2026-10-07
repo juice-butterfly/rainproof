@@ -9,11 +9,11 @@
     "e2e": "node e2e_contract.js",
     "check-canonical": "node check-canonical.js",
     "check-ai": "node check-ai.js",
-    "check-rainboard": "node check-rainboard.js",
+    "check-ui": "node check-ui.js",
     "ai:collect": "node ../04-脚本/ai-collect.js",
     "ai:judge": "node ../04-脚本/ai-judge.js",
     "ai:submit": "node ../04-脚本/submit-judgement.js",
-    "test": "npm run check-canonical && npm run check-ai && npm run check-rainboard && npm run e2e"
+    "test": "npm run check-canonical && npm run check-ai && npm run check-ui && npm run e2e"
   },
   "dependencies": {
     "ethers": "^6.13.0",

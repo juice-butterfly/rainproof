@@ -213,8 +213,12 @@
             <select id="regionSel" style="width:100%"></select>
           </div>
           <div style="flex:0 1 130px">
-            <label class="mlabel k" for="hoursInput">保障时长（小时）</label>
-            <input id="hoursInput" type="number" min="1" max="72" value="72" style="width:100%">
+            <label class="mlabel k" for="hoursInput">保障时长</label>
+            <select id="hoursInput" style="width:100%">
+              <option value="24">24 小时（1 天）</option>
+              <option value="48">48 小时（2 天）</option>
+              <option value="72" selected>72 小时（3 天，最长）</option>
+            </select>
           </div>
         </div>
         <div class="row" style="margin-top:14px;justify-content:space-between">
@@ -487,9 +491,11 @@ async function attachContract(addr, quiet) {
     $("premiumShow").textContent = fmtEth(S.meta.premium) + " SepETH";
     $("payoutShow").textContent  = fmtEth(S.meta.payout) + " SepETH";
     $("threshShow").textContent  = S.meta.threshold + " mm";
-    $("hoursInput").max = Number(S.meta.maxH);
-    $("hoursInput").min = Number(S.meta.minH);
-    if (Number($("hoursInput").value) > Number(S.meta.maxH)) $("hoursInput").value = Number(S.meta.maxH);
+    // 保障时长是产品设计的三档（下拉固定 24/48/72，见 02-作战与答辩/定价-时长差异化设计.md），
+    // 这里只保证选中项没超出合约允许的范围。
+    const hMax = Number(S.meta.maxH);
+    const hOk = [...$("hoursInput").options].map(o => Number(o.value)).filter(v => v <= hMax);
+    if (hOk.length && Number($("hoursInput").value) > hMax) $("hoursInput").value = String(hOk[hOk.length - 1]);
     $("cfgHint").innerHTML = `已连上合约 <span class="mono">${esc(addr)}</span>（代码 ${(code.length-2)/2} 字节）。`
       + (S.meta.paused ? ' <span class="tag red">合约已暂停</span>' : "");
   } catch (e) {

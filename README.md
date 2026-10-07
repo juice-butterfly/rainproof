@@ -87,7 +87,7 @@
   `ai-collect.js`（三模型证据快照）、`ai-judge.js`（确定性判定，大模型只写解释）、
   `submit-judgement.js`（提交前重算核对 + 提交后读回校验）。
 - **测试**：`check-canonical.js`、`check-ai.js`（29 项 + 1369 个用例的硬约束扫描，含「每条留痕的哈希都能当场重算」）、
-  `e2e_contract.js` 扩到 73 项断言。
+  `check-ui.js`（前端契约：降雨看板刻度与触发线对齐、保障时长三档下拉、三个页面 DOM 引用完整），`e2e_contract.js` 扩到 73 项断言。
 - **真链部署与端到端彩排**：Sepolia 部署、真实气象数据喂价、AI 判定上链、赔付出款，
   完整留痕见 [`08-截图存证/真链留痕-2026-10-06.md`](08-截图存证/真链留痕-2026-10-06.md)。
 - **差异化承保定价**：`04-脚本/set-premium.js` 把精算输出算成链上保费，
@@ -138,11 +138,12 @@ cd ../04-脚本   && npm install
 
 ```bash
 cd 07-测试工具
-npm test          # = check-canonical && check-ai && e2e_contract
+npm test          # = check-canonical && check-ai && check-ui && e2e_contract
 ```
 
 - `check-canonical.js`：确定性哈希口径（递归键排序、数值精度）自检
 - `check-ai.js`：判定规则 R1–R5 + 1369 个用例的硬约束扫描（任何一格出现「PAY 且置信度低于门槛」即失败）
+- `check-ui.js`：前端契约 —— 降雨看板刻度与触发线必须指同一个地方（修过的 bug 不复发）、保障时长只能是 24/48/72 三档下拉、三个页面 JS 引用的 id/class 都真实存在（防 UI 改版让按钮静默失效）
 - `e2e_contract.js`：本地链上跑完整业务流，73 项断言
 
 ### 连真链（Sepolia）

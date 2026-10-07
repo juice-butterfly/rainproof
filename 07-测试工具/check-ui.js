@@ -1,0 +1,91 @@
+// 前端契约检查：页面上的三件事必须和代码/产品设计保持一致。
+//
+// ① 降雨看板的「刻度」与「触发线」必须指同一个地方
+//    真实修过的 bug：条子按 0→阈值 画（阈值落在条尾），触发线却写死在 left:50%（=25mm），
+//    于是页面上「50 在块的最后、触发线却在中间」—— 视觉上自相矛盾。结论：错的是公式不是线。
+// ② 保障时长只能是三档下拉（24/48/72）
+//    产品设计上短窗口档的公平保费比一次交易的手续费还便宜 51 倍，所以只卖 24/48/72
+//    （见 02-作战与答辩/定价-时长差异化设计.md）。自由输入会让人选出 1~72 的任意值。
+// ③ 页面 JS 里引用的 DOM id / class 必须真实存在
+//    UI 改版最常见的坏法是改了 id 或 class，JS 就静默失效 —— 现场表现是"按钮点了没反应"。
+//
+// 跑法：node 07-测试工具/check-ui.js    （也挂在 npm test 里）
+const fs = require("fs");
+const path = require("path");
+
+let pass = 0, fail = 0;
+const ok = (t, c, x = "") => { if (c) { pass++; console.log("  [OK] " + t); } else { fail++; console.log("  [FAIL] " + t + (x ? "  -> " + x : "")); } };
+
+const DEMO = path.join(__dirname, "..", "05-演示站点");
+const index = fs.readFileSync(path.join(DEMO, "index.html"), "utf8");
+
+console.log("\n[① 降雨看板] 刻度与触发线必须指同一个地方");
+{
+  const m = index.match(/const pct = Math\.min\(100, Math\.round\(v \/ \(thr \* 2\) \* 100\)\);/);
+  ok("填充公式是 v / (阈值 × 2) × 100", !!m, m ? "" : "没找到，公式可能又被改回 v/thr（那会让触发线落到中间）");
+  ok("触发线 .bar::after 在 left:50%", /\.bar::after\{[^}]*left:50%/.test(index));
+  ok("触发线标签 .bar::before 在 calc(50% + 6px)", /\.bar::before\{[^}]*left:calc\(50% \+ 6px\)/.test(index));
+
+  // 拿真实链上五个区域的雨量算一遍：50mm 必须正好压在触发线上
+  const thr = 50;
+  const vals = [["武汉", 24], ["上海", 34], ["北京", 0], ["广州", 50], ["成都", 120]];
+  const pct = v => Math.min(100, Math.round(v / (thr * 2) * 100));
+  console.log("\n  阈值 50mm，条子满格 = 100mm，触发线在 50%：");
+  for (const [n, v] of vals) {
+    const p = pct(v);
+    console.log(`    ${n.padEnd(3)} ${String(v).padStart(3)} mm  → 填 ${String(p).padStart(3)}%   ${p === 50 ? "← 正好压在触发线上" : p > 50 ? "（冲过触发线）" : ""}`);
+  }
+  ok("50mm 的填充比例 == 触发线位置 50%", pct(50) === 50);
+  ok("24mm 明显在触发线左侧", pct(24) < 50, String(pct(24)));
+  ok("120mm 顶满条子", pct(120) === 100, String(pct(120)));
+  ok("没有区域被算成负数", vals.every(([, v]) => pct(v) >= 0));
+}
+
+console.log("\n[② 保障时长] 只能是三档下拉 24/48/72");
+{
+  ok("hoursInput 是 <select> 不是自由输入框", /<select id="hoursInput"/.test(index) && !/<input id="hoursInput"/.test(index));
+  const blk = index.match(/<select id="hoursInput"[\s\S]*?<\/select>/);
+  const opts = blk ? [...blk[0].matchAll(/value="(\d+)"/g)].map(m => m[1]) : [];
+  ok("档位正好是 24 / 48 / 72（按顺序）", opts.join(",") === "24,48,72", opts.join(",") || "没解析到 options");
+  ok("默认选中 72 小时", blk ? /value="72"[^>]*selected/.test(blk[0]) : false);
+  ok("JS 用 .value 读它（select 没有 valueAsNumber）", !/hoursInput"\)\.valueAsNumber/.test(index) && /Number\(\$\("hoursInput"\)\.value\)/.test(index));
+  ok("档位说明与设计页一致（上限 72）", /72 小时/.test(index));
+}
+
+console.log("\n[③ DOM 契约] 页面 JS 引用的 id / class 必须真实存在");
+{
+  const files = [
+    ["05-演示站点/index.html", path.join(DEMO, "index.html")],
+    ["05-演示站点/verifier.html", path.join(DEMO, "verifier.html")],
+    ["06-核验台单文件/汉客松-链上核验台.html", path.join(__dirname, "..", "06-核验台单文件", "汉客松-链上核验台.html")],
+  ];
+  for (const [name, p] of files) {
+    const src = fs.readFileSync(p, "utf8");
+
+    const ids = new Set(), classes = new Set();
+    for (const m of src.matchAll(/\bid\s*=\s*["']([^"']+)["']/g)) ids.add(m[1]);
+    for (const m of src.matchAll(/\bclass\s*=\s*["']([^"']*)["']/g)) for (const c of m[1].split(/\s+/)) if (c) classes.add(c);
+
+    // 只取内联脚本（跳过 <script src=...>）
+    const scripts = [];
+    for (const m of src.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)) if (!/\bsrc\s*=/.test(m[1])) scripts.push(m[2]);
+    const js = scripts.join("\n");
+
+    const usedIds = new Set(), usedCls = new Set();
+    for (const m of js.matchAll(/\$\(\s*["'`]([^"'`]+)["'`]\s*\)/g)) usedIds.add(m[1]);
+    for (const m of js.matchAll(/getElementById\(\s*["'`]([^"'`]+)["'`]\s*\)/g)) usedIds.add(m[1]);
+    for (const m of js.matchAll(/querySelector(?:All)?\(\s*["'`]\.([A-Za-z0-9_-]+)/g)) usedCls.add(m[1]);
+
+    const missIds = [...usedIds].filter(x => !ids.has(x));
+    const missCls = [...usedCls].filter(x => !classes.has(x));
+    ok(`${name}：引用的 ${usedIds.size} 个 id / ${usedCls.size} 个 class 都在`, missIds.length + missCls.length === 0,
+       [...missIds.map(x => "id:" + x), ...missCls.map(x => "class:" + x)].join(", "));
+    if (missIds.length || missCls.length) console.log(`    （${scripts.length} 段内联脚本 / ${js.length} 字符 / HTML 里 ${ids.size} 个 id · ${classes.size} 个 class）`);
+  }
+}
+
+console.log("\n" + "=".repeat(56));
+console.log(`结果：${pass} 项通过 / ${fail} 项失败`);
+console.log(fail === 0 ? "前端契约没被改坏" : "契约破了，别提交");
+console.log("=".repeat(56));
+process.exit(fail === 0 ? 0 : 1);

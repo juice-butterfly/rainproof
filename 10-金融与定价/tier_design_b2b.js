@@ -107,6 +107,7 @@ function main() {
     meta: {
       generatedBy: '10-金融与定价/tier_design_b2b.js',
       generatedAt: new Date().toISOString(),
+      sourceMtime: A.sourceMtime(),
       source: 'Open-Meteo Archive (ERA5) 逐小时; cache/ 五城',
       dataStart: A.DATA_START, dataEnd: A.DATA_END,
       bootstrap: { unit: 'calendar month', reps: REPS, seed: SEED, quantile: 0.975 },

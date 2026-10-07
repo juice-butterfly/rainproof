@@ -37,6 +37,7 @@ const ALLOWED_EXTRA = new Set([
   0.00013, 0.00012,                     // 判定/赔付 gas
   0.00050948, 0.00159475,               // VaR99/份（12h/24h 新值；72h 旧值，正文用来做对比）
   0.00013053, 0.00013051,               // N=1 每份固定成本（新；旧值用于对比）
+  0.00013027, 0.00013144,               // 20 个平台代付格 N=1 固定成本的 min/max（区间端点，正文做"换哪一格结论都一样"用）
   0.00003278, 0.00010142,               // 平台团体 97.5% 风险保费区间端点（12h/24h）
   0.00003692, 0.00019083,               // 同上（72h 旧值）
   0.000009, 0.00000066,                 // N=1000 摊薄后的固定成本
@@ -103,10 +104,22 @@ for (const r of [...new Set(eng.payload.retail.map((x) => x.regionId + '/' + x.h
 const bandBps = eng.payload.bands.flatMap((b) => (b.nMax === 1 ? [] : [Number(((1 - Number(b.premiumEth) / Number(eng.payload.retail.find((r) => r.regionId === b.regionId && r.hours === b.hours && r.segId === b.segId).premiumEth)) * 10000).toFixed(0))]));
 const unsellable = eng.payload.retail.filter((r) => r.premiumWei === '0').length;
 
+// "地区极差"必须固定其余维度（渠道/身份）才配叫"地区"极差。
+// 本仓真错过一次：把跨渠道的 2.750×/3.750× 记在"地区"名下（见 `定价体系-v3.md` §4.1）。
+// 固定维度的取值 = κ=1.00 的众包自助渠道 segId=3。
+const SELF_SERVE_SEG = 3;
+const regionSpreads = {};
+for (const h of [...new Set(eng.payload.retail.map((r) => r.hours))]) {
+  const g = eng.payload.retail.filter((r) => r.hours === h && r.segId === SELF_SERVE_SEG).map((r) => Number(r.premiumEth));
+  regionSpreads[h] = Math.max(...g) / Math.min(...g);
+}
+
 const scalars = {
   '全表极差': { value: allSpread, dp: 3, expect: '3.750' },
   '格内极差下界': { value: Math.min(...cellSpreads), dp: 2, expect: '1.89' },
   '格内极差上界': { value: Math.max(...cellSpreads), dp: 2, expect: '3.19' },
+  '地区极差12h（固定众包自助）': { value: regionSpreads[12], dp: 3, expect: '1.453' },
+  '地区极差24h（固定众包自助）': { value: regionSpreads[24], dp: 3, expect: '1.544' },
   '最深批量折扣(bps)': { value: Math.max(...bandBps), dp: 0, expect: '7857' },
   '不卖格数': { value: unsellable, dp: 0, expect: '0' },
 };
@@ -123,6 +136,9 @@ const MUST = {
   '3.750': ['提交材料/产品说明与商业模式.md', '提交材料/项目介绍.md', '提交材料/评委问答.md', 'README.md', '10-金融与定价/定价体系-v3.md'],
   '1.89': ['10-金融与定价/定价体系-v3.md', '提交材料/产品说明与商业模式.md'],
   '3.19': ['10-金融与定价/定价体系-v3.md', '提交材料/产品说明与商业模式.md'],
+  // 地区极差（固定众包自助渠道）—— 与上面的"全表极差"是两个不同的数，别再混
+  '1.453': ['10-金融与定价/定价体系-v3.md'],
+  '1.544': ['10-金融与定价/定价体系-v3.md'],
 };
 for (const [needle, files] of Object.entries(MUST)) {
   for (const rel of files) {

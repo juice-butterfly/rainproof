@@ -395,10 +395,16 @@ function main() {
         segId: seg.id, segKey: seg.key, riderTier: seg.riderTier, channel: seg.channel,
         riderName: seg.riderName, channelName: seg.channelName, segName: seg.name,
         selectivity: seg.selectivity, why: seg.why,
+        // ⚠️ 三个名字不是一个东西，别混（命名三分）：
+        //   p₁            = 二元第一档触发率 = nHit / nWin（"有没有到第 1 档线"）
+        //   E[f]          = 档位加权期望赔付比例 = Σ(命中档位 × 该档赔付比例) / nWin
+        //   E[f]|timing   = 上面的 E[f] 再按 κ 做月度择时加权（= pointRatePct，定价用的就是它）
+        // 对外材料里"24h 无条件触发概率 0.4377%~1.4200%"用的是 p₁；`B端档位设计与不亏损证明.md`
+        // §1.2 同一行并列的"命中/窗口"是 p₁、"点估计 p"是 E[f] —— 相差约 1.9 倍，是口径差不是算错。
         nWin: cell.nWin, nHit: cell.nHit, nHitByTier: cell.nHitByTier, nImm: cell.nImm,
-        uncondPointRatePct: round(cell.pointRate * 100, 6),
-        imminentRatePct: round(cell.imminentRate * 100, 6),
-        pointRatePct: round(cell.bySeg[si].pointRate * 100, 6),
+        uncondPointRatePct: round(cell.pointRate * 100, 6),      // E[f]（无条件）
+        imminentRatePct: round(cell.imminentRate * 100, 6),      // 诊断量，不参与定价
+        pointRatePct: round(cell.bySeg[si].pointRate * 100, 6),  // E[f]|timing
         upperRatePct: round(cell.bySeg[si].upperRate * 100, 6),
         var99RatePct: round(cell.bySeg[si].var99Rate * 100, 6),
         vsUncond: cell.bySeg[si].vsUncond,
@@ -508,6 +514,7 @@ function main() {
     meta: {
       generatedBy: '10-金融与定价/pricing_engine.js',
       generatedAt: new Date().toISOString(), version: 'v3',
+      sourceMtime: A.sourceMtime(),
       source: 'Open-Meteo Archive (ERA5) 逐小时，五城各 96,432 小时',
       dataStart: A.DATA_START, dataEnd: A.DATA_END,
       bootstrap: { unit: 'calendar month', reps: REPS, seed: SEED, quantile: 0.975 },
@@ -707,11 +714,23 @@ function selfCheck(rep) {
   }
 
   // ── 4.6 固定成本论断（"成本主导"的前提）──
+  // N→∞ 时"赔付 gas × 出险率"这一项不摊薄，所以摊薄倍数有上界、且**逐格不同**：
+  // 实测逐格 84×~326×（最低 广州 24h 认证+平台、最高 北京 12h/24h 平台团体），
+  // 不存在一个"通用"的 198× —— 那是武汉 12h 平台团体这一格的值。
+  // 旧写法只查 cells[0]，把单格样本当成了全局性质，这里改成对全部 channel=1 的格取下界。
+  const batchCells = rep.cells.filter((r) => r.channel === 1);
+  const batchRatios = batchCells.map((r) => {
+    const a = r.batch.find((b) => b.N === 1).costPerPolicyEth;
+    const z = r.batch.find((b) => b.N === 1000).costPerPolicyEth;
+    return { key: `${r.regionName} ${r.hours}h ${r.segKey}`, ratio: a / z };
+  });
+  const minRatio = Math.min(...batchRatios.map((x) => x.ratio));
+  const maxRatio = Math.max(...batchRatios.map((x) => x.ratio));
+  const worstRatio = batchRatios.find((x) => x.ratio === minRatio);
   const anyCell = rep.cells[0];
-  const c1 = anyCell.batch[0].costPerPolicyEth, c1000 = anyCell.batch.find((b) => b.N === 1000).costPerPolicyEth;
-  // N→∞ 时"赔付 gas × 出险率"这一项不摊薄，所以摊薄有上界，实测 198×，不是 1000×
-  // （72h 时代是 204×；换 12h/24h 后出险率量级变了，上界跟着变，这是数据的性质不是回归）
-  ok('批量把每份固定成本摊薄 ≥180 倍', c1 / c1000 >= 180, `${(c1 / c1000).toFixed(0)}x`);
+  const c1 = anyCell.batch[0].costPerPolicyEth;
+  ok('批量把每份固定成本摊薄 ≥80 倍（逐格下界，不是单格样本）', minRatio >= 80,
+    `min=${minRatio.toFixed(1)}x（${worstRatio.key}）max=${maxRatio.toFixed(1)}x`);
   const g = rep.cells.filter((r) => r.segKey === 't2c1');
   const upSorted = g.map((r) => r.upperPayoutEth).sort((a, b) => a - b);
   const upMed = upSorted[(upSorted.length - 1) >> 1];
@@ -765,7 +784,7 @@ function printReport(rep) {
   }
 
   console.log('\n── §2 价格表（N=1 零售价；「—」= 不可售；批量列仅平台代付渠道有）' + '─'.repeat(42));
-  console.log('区域   时长  seg   κ     点估计p   97.5%上界  vs无条件  N=1价   批量最优价  约束  每份毛利');
+  console.log('区域   时长  seg   κ     E[f]|timing 97.5%上界  vs无条件  N=1价   批量最优价  约束  每份毛利');
   for (const r of rep.cells) {
     const best = r.batch.length > 1 ? r.batch[r.batch.length - 1] : null;
     console.log(
@@ -840,8 +859,11 @@ function emitMarkdown(rep, outPath) {
     `> 数据 ${rep.meta.dataStart} ~ ${rep.meta.dataEnd}，自举 ${rep.meta.bootstrap.reps} 次，种子 ${rep.meta.bootstrap.seed}`,
     `> 复算：\`cd 10-金融与定价 && node pricing_engine.js --md && node pricing_engine.js --self-check\``, '');
 
-  L.push('## 一、零售价（we i 单位见 `pricing-engine.json` 的 `payload.retail`）', '');
-  L.push('| 区域 | 时长 | seg | 渠道 | κ | 点估计 p | 97.5% 上界 | vs 无条件 | N=1 价(ETH) | 约束 |');
+  L.push('## 一、零售价（wei 单位见 `pricing-engine.json` 的 `payload.retail`）', '');
+  L.push('> **概率有三个名字，别混**：`p₁` = 二元第一档触发率（= `nHit / nWin`）；'
+    + '`E[f]` = 档位加权期望赔付比例；`E[f]|timing` = 再按 κ 做月度择时加权。'
+    + '下表用的是 `E[f]|timing`；对外材料里"24h 无条件触发概率 0.4377%~1.4200%"用的是 `p₁`。', '');
+  L.push('| 区域 | 时长 | seg | 渠道 | κ | `E[f]`\\|timing | 97.5% 上界 | vs 无条件 | N=1 价(ETH) | 约束 |');
   L.push('|---|---|---|---|---|---|---|---|---|---|');
   for (const r of rep.cells) {
     L.push(`| ${r.regionName} | ${r.hours}h | \`${r.segKey}\` | ${r.segName} | ${r.selectivity.toFixed(2)} | `
@@ -885,7 +907,7 @@ function emitMarkdown(rep, outPath) {
   L.push('> 「更强」列随时段口径翻转：72h 口径下季节碾压（37.5× vs 5.4~12.3×），'
     + '本表（国标 12h/24h）下两者同量级、临灾略高。**没有哪个时点维度稳定占优**，'
     + '所以不按"谁更强"挑加价对象 —— 见文件头「为什么删掉临灾档」。', '');
-  L.push('| 区域 | 时长 | 无条件 p | 临灾条件 p | 临灾加载 | 季节 κ=1.0 p | 季节加载 | 本口径更强 |');
+  L.push('| 区域 | 时长 | `E[f]` 无条件 | 临灾条件 p | 临灾加载 | 季节 κ=1.0 p | 季节加载 | 本口径更强 |');
   L.push('|---|---|---|---|---|---|---|---|');
   for (const r of rep.cells.filter((r) => r.segKey === 't2c1')) {
     const last = rep.cells.find((x) => x.regionId === r.regionId && x.hours === r.hours && x.segKey === 't0c0');

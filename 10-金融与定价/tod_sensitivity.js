@@ -32,7 +32,19 @@ const SHIFT_PEAK = (h) => (h >= 11 && h < 13) || (h >= 17 && h < 19);
 /** times[i] = "YYYY-MM-DDTHH:00" → 小时数 */
 const hourOf = (iso) => Number(iso.slice(11, 13));
 
-/** 窗口内属于该班次的小时数（与窗口起点有关，但周期化之后是常数） */
+/**
+ * 窗口内属于该班次的小时数。
+ *
+ * ⚠️ 这算出来的是「**日均**班次小时数」，不是「窗口起点那一刻的实际班次小时数」：
+ *   12h 窗口一律回传 5、24h 窗口一律回传 10（= `round(班次总小时数 × 窗口长 / 24)`）。
+ *   真实情况下 12h 窗落在班次内的小时数在 **0~10** 之间（只有 2/24 个起点恰好是 5）：
+ *     · 起点 10:00 的窗全在班次内 → 等比档线本应是 `30 × 10/12 = 25mm`，代码仍用 `12.5mm`（**放松 2×**）；
+ *     · 起点 22:00 的窗完全不含班次小时 → 本应"有雨即赔"，代码仍要 `12.5mm`（**必然不命中**）。
+ *   ⇒ `tod-sensitivity.json` 的 `pShiftPct` / `expShiftPct`（main / peak 两列）是**混合量**，
+ *     偏差方向不确定，**不要直接进图表或对外材料**。
+ *     自检只断言 `shiftHours === round(10h/24)` —— 断的是"近似的算术"，不是"近似的合理性"。
+ *     （见 `全仓只读审计报告-2026-10-07.md` 的 I5；重写班次算法会动 167 项断言，收益不抵风险，故本轮只标注不改。）
+ */
 function shiftHoursIn(windowHours, inShift) {
   let c = 0;
   for (let h = 0; h < 24; h++) if (inShift(h)) c++;
@@ -79,7 +91,10 @@ function scan(times, mm10, windowHours, inShift) {
   shares.sort((a, b) => a - b);
   const q = (p) => (shares.length ? shares[Math.min(shares.length - 1, Math.floor(p * shares.length))] : 0);
   return {
-    n, shiftHours: sh, proratedBounds: pb,
+    n, shiftHours: sh,
+    // ⚠️ `proratedBounds` 的单位是**十分位毫米（0.1 mm）**，不是 mm —— 它与 `audit_numbers.js` 的整数十分位口径一致。
+    // 例：武汉 12h 存的是 `[300, 700]`，人读是 30 / 70 mm。**引用或画图前先 ÷10**。
+    proratedBounds: pb,
     pAllPct: (100 * hitAll) / n, expAllPct: (100 * expAll) / n,
     pShiftPct: (100 * hitShift) / n, expShiftPct: (100 * expShift) / n,
     paidWindows: shares.length,
@@ -204,7 +219,7 @@ if (require.main === module) {
   const fails = selfCheck(rep);
   const fs = require('fs'), path = require('path');
   fs.writeFileSync(path.join(__dirname, 'tod-sensitivity.json'),
-    JSON.stringify({ ...rep, generatedAt: new Date().toISOString() }, null, 2) + '\n');
+    JSON.stringify({ ...rep, generatedAt: new Date().toISOString(), sourceMtime: A.sourceMtime() }, null, 2) + '\n');
   console.log(`\n落盘 10-金融与定价/tod-sensitivity.json（${((Date.now() - t0) / 1000).toFixed(1)}s）`);
   process.exit(fails ? 1 : 0);
 }

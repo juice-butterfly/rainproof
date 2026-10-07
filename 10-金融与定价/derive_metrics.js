@@ -78,6 +78,7 @@ function main() {
   const out = {
     meta: {
       generatedAt: new Date().toISOString(),
+      sourceMtime: A.sourceMtime(),
       payoutEth: PAYOUT,
       premiumDefaultEth: PREMIUM_DEFAULT,
       minPremiumEth: MIN_PREMIUM,
@@ -238,7 +239,12 @@ function main() {
     }
     const mult = pOf[6] > 0 ? pOf[72] / pOf[6] : Infinity;   // 72h 相对 6h 的公平保费倍数
     out.arbitrage[region.key] = {
+      // ⚠️ `pByWindow["1"]`（1 小时窗）**五城恒为 0，不是数据缺失**：`ARB_WINDOWS` 的阈值是 24/48/72 口径的
+      // 累计毫米数，1 小时窗在本数据集里永远到不了，所以 `hits = 0`。**画图时必须把这个点删掉**
+      // （对数轴上 log(0) 会断线或压扁其余点），并在图注写明"1h 窗不适用，已略去"。
+      // 见 `全仓只读审计报告-2026-10-07.md` 第 158 行 / 第 16 条。
       pByWindow: Object.fromEntries(ARB_WINDOWS.map((h) => [h, round(pOf[h], 8)])),
+      pByWindowNote: '窗口 "1" 恒为 0（1h 窗到不了这些阈值），图表须删该点',
       maxMmByWindow: maxMm,
       multiple72over6: Number.isFinite(mult) ? round(mult, 1) : null,
       premiumOnchain: out.v1[region.key].premiumOnchain,

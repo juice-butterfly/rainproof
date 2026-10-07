@@ -48,6 +48,26 @@ function loadCity(region) {
   return { times, mm10, meta: { latitude: raw.latitude, longitude: raw.longitude, elevation: raw.elevation } };
 }
 
+/**
+ * 数据源新鲜度：`cache/` 下本样本区间缓存文件里**最新**的 mtime。
+ *
+ * 为什么需要它：产物里的 `generatedAt` 只说明"脚本什么时候跑的"，**判不出"数是不是旧的"** ——
+ * 曾经出现过三个产物 `generatedAt` 17:30 而文件 mtime 19:03（Δ1h33m）的情况，
+ * 也出现过产物 mtime 早于生成它的脚本 38 分钟的情况。把 `sourceMtime` 与 `generatedAt`
+ * 一起写进产物，任何"数比代码旧"都能一眼看出来。
+ */
+function sourceMtime() {
+  try {
+    const files = fs.readdirSync(CACHE_DIR).filter((f) => f.endsWith(`-${DATA_START}_${DATA_END}.json`));
+    let newest = 0;
+    for (const f of files) {
+      const m = fs.statSync(path.join(CACHE_DIR, f)).mtimeMs;
+      if (m > newest) newest = m;
+    }
+    return newest ? new Date(newest).toISOString() : null;
+  } catch { return null; }
+}
+
 /** 滚动窗口命中：返回 {windows, hits}，全程整数 */
 function countHits(mm10, windowHours) {
   const sum10 = THRESHOLD * 10; // 阈值换算到同一单位
@@ -193,6 +213,7 @@ function main() {
   const report = {
     meta: {
       generatedAt: new Date().toISOString(),
+      sourceMtime: sourceMtime(),
       thresholdMm: THRESHOLD,
       durations: DURATIONS,
       dataStart: DATA_START,
@@ -298,17 +319,23 @@ const round = (v, n) => Math.round(v * 10 ** n) / 10 ** n;
 // 任何一条失败都说明滑动窗口/阈值口径被改坏了，此时本脚本的其他输出一律不可信。
 function selfCheck(report) {
   const EXPECT = {
-    wuhan: { 72: 4596, 24: 0 },
-    shanghai: { 72: 4391 },
-    beijing: { 72: 2198 },
-    guangzhou: { 72: 11153 },
-    chengdu: { 72: 3588 },
+    // 24h 的五城期望值不是"另外采一次数"，而是 **同一条链上两套实现必须相等** 的交叉校验：
+    // `windows[h].hits`（滑动窗口扫描路径）必须等于下方 TIER_EXPECT 的 `counts[0] + counts[1]`
+    // （tierStats 分档路径，2026-10-07 由一个不复用 tierStats 的独立实现复算过）。
+    // 两路任何一处被改坏都会立刻红。
+    wuhan: { 72: 4596, 24: 735 },      // = 622 + 113
+    shanghai: { 72: 4391, 24: 727 },   // = 642 + 85
+    beijing: { 72: 2198, 24: 422 },    // = 380 + 42
+    guangzhou: { 72: 11153, 24: 1369 },// = 1247 + 122
+    chengdu: { 72: 3588, 24: 573 },    // = 490 + 83
   };
   let pass = 0, fail = 0;
   console.log('\n── 自检（--self-check）──');
   for (const [key, wants] of Object.entries(EXPECT)) {
     for (const [h, want] of Object.entries(wants)) {
-      if (!want) continue;
+      // ⚠️ 这里必须是 === undefined，不能写 `if (!want)`：
+      // 期望值 0（如 wuhan 24h、各城 tier2 计数）会被 falsy 判断吞掉 → 死断言。
+      if (want === undefined) continue;
       const got = report.cities[key]?.windows?.[h]?.hits;
       const ok = got === want;
       console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${key} ${h}h hits = ${got}（期望 ${want}）`);
@@ -330,7 +357,7 @@ function selfCheck(report) {
 
   // A7 分档（合约 v2）：档位计数与期望赔付必须逐格对得上
   // 期望值于 2026-10-07 由一个**独立实现**（不复用 tierStats，显式三档 if-else）逐城复算，
-  // 15 格全部在 8 位小数内一致。任何一格不符 = 分档口径被改坏了。
+  // 下表 10 格（链上 v2 实际存在的时长）全部在 8 位小数内一致。任何一格不符 = 分档口径被改坏了。
   const TIER_EXPECT = {
     'wuhan|24': { counts: [622, 113, 0, 95674], exp: 0.00410491 },
     'wuhan|72': { counts: [154, 50, 0, 96157], exp: 0.00118824 },
@@ -359,7 +386,7 @@ function selfCheck(report) {
 // 供 `derive_metrics.js` 复用同一套口径（改这里必须同时想清楚那边）
 module.exports = {
   DATA_START, DATA_END, DURATIONS, THRESHOLD, TIERS,
-  toDecimillimetres, loadCity, countHits, windowSums,
+  toDecimillimetres, loadCity, countHits, windowSums, sourceMtime,
   monthIndex, bootstrapCI, boundaryWindows, thresholdBasis10, tierStats,
 };
 

@@ -98,7 +98,11 @@ async function main() {
   }
 
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || 'http://127.0.0.1:8545');
-  const signer = await provider.getSigner(Number(arg('signer', '0')));
+  // 真链（BOT Chain 968 等公共 RPC）没有解锁账户，`eth_sendTransaction` 会被拒 ——
+  // 有 PRIVATE_KEY 就自己签名；本地 ganache 有解锁账户，走原来的 getSigner。
+  const signer = process.env.PRIVATE_KEY
+    ? new ethers.Wallet(process.env.PRIVATE_KEY, provider)
+    : await provider.getSigner(Number(arg('signer', '0')));
   const c = new ethers.Contract(addr, abi, signer);
   // reasonHash：与 04-脚本/set-premium.js 同一套纪律 —— 依据串可复算
   const reasonHash = ethers.id(

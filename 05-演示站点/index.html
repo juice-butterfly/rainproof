@@ -1049,6 +1049,8 @@ async function attachContract(addr, quiet) {
       ? '实赔按国标档位打折：<strong>暴雨 50% / 大暴雨 75%</strong>。<br><span class="en">Claims use the post-purchase increase: the reading at purchase is the baseline, and only new rainfall ≥ the threshold enters judgement. A payout is scaled by tier — 50% / 75%.</span>'
       : '实赔按国标档位打折：<strong>暴雨 50% / 大暴雨 75% / 特大暴雨 100%</strong>。<br><span class="en">Claims use the post-purchase increase: the reading at purchase is the baseline, and only new rainfall ≥ the threshold enters judgement. A payout is scaled by tier — 50% / 75% / 100%.</span>');
     markHoursChips();
+    // 真值看板的「阈值（Nh 窗口）」标签取自这步算出来的 S.meta：?rain=real 直进时先重画一次，免得停在选项还是静态 72h 的那一刻
+    if ($("realBoard") && !$("realBoard").hidden) renderReal();
     $("cfgHint").innerHTML = `已连上合约 <span class="mono">${esc(addr)}</span>（代码 ${(code.length-2)/2} 字节）`
       + (S.kind === "v3" ? " · <b>v3</b>" : "")
       + (S.meta.paused ? ' <span class="tag red">合约已暂停</span>' : "");
@@ -1254,24 +1256,47 @@ async function loadRegions() {
     }
     if (meas.length) {
       S.rainSig = sig;
-      const cur = meas.find(m => m.id === sel) || meas[0];
-      const ticks = [0, 1, 2, 3, 4].map(i =>
-        `<span class="tick" style="bottom:${i * 25}%">${Math.round(thr * 2 * i / 4)}</span>`).join("");
-      box.innerHTML = `
+      box.innerHTML = boardHTML(meas, sel, thr, hours);
+      bindBoardClicks(box);
+    }
+  }
+  markSelRegion();
+  applyRain();
+  updateReadouts();
+  // 真值看板用的是同一份阈值与选中城市，跟着一起重画（否则切城市、切时长时它还停在上一版）
+  const rb = $("realBoard");
+  if (rb && !rb.hidden) renderReal();
+}
+
+/* 看板 HTML 的唯一出处：链上读数（#rainBoard）与真值快照（#realBoard）共用同一套柱子、刻度、图例 ——
+   两个面板一个像图、一个像表格，看着就像换了套东西。meas 每项：
+   { id, label, v, pct, belowPct, hit, capped, bad, tag }（bad = 闸门拒收，柱子画淡、不画越线高亮）。 */
+function boardHTML(meas, sel, thr, hours, opt = {}) {
+  const cur = meas.find(m => m.id === sel) || meas[0];
+  const ticks = [0, 1, 2, 3, 4].map(i =>
+    `<span class="tick" style="bottom:${i * 25}%">${Math.round(thr * 2 * i / 4)}</span>`).join("");
+  const legend = opt.real
+    ? `<span class="sw"><span class="sq m"></span>阈值线以下：实测累计，未进入结算</span>
+       <span class="sw"><span class="sq y"></span>越过阈值线的那一段：会被结算的部分</span>
+       <span class="sp">这是 Open-Meteo Archive 自 ${esc(opt.epoch || "")} → ${esc(opt.until || "")} 的实测快照；柱子画淡的那些被喂价闸门拒收，链上不会收下这个数</span>`
+    : `<span class="sw"><span class="sq m"></span>阈值线以下：已记录，未进入结算</span>
+       <span class="sw"><span class="sq y"></span>越过阈值线的那一段：会被结算的部分</span>
+       <span class="sp">触发赔的是<b>投保后的增量</b>（基线 = 投保当刻的链上读数）；越线 ≠ 现在投保就能赔</span>`;
+  return `
         <div class="chips">
           ${meas.map(m => `<button class="chip${m.id === cur.id ? " on" : ""}${m.hit ? " over" : ""}"
-             data-region="${m.id}" title="${esc(m.label)} · 累计 ${m.v} mm（#${m.id}）"
+             data-region="${m.id}"${m.bad ? ' style="opacity:.5"' : ""} title="${esc(m.label)} · ${opt.real ? "真值" : "累计"} ${m.v} mm（#${m.id}）"
              ><span class="dotq"></span>${esc(m.label)}</button>`).join("")}
         </div>
         <div class="readline" style="margin-top:var(--s5)">
           <div>
-            <div class="hero-lb">${esc(cur.label)} · 累计降雨</div>
+            <div class="hero-lb">${esc(cur.label)} · ${opt.real ? "真值累计（写链值）" : "累计降雨"}</div>
             <div class="hero">${cur.v}<u>mm</u></div>
           </div>
           <div class="kvbox"><span class="k">距阈值线</span><span class="v">${cur.hit ? "已越 " + (cur.v - thr) : thr - cur.v}<small>mm</small></span></div>
           <div class="kvbox"><span class="k">阈值（${hours}h 窗口）</span><span class="v">${thr}<small>mm</small></span></div>
           <div class="kvbox"><span class="k">满量程</span><span class="v">${thr * 2}<small>mm</small></span></div>
-          <div class="kvbox" style="margin-left:auto"><span class="k">背景雨幕</span><span class="tag measure">由此行驱动</span></div>
+          <div class="kvbox" style="margin-left:auto"><span class="k">${opt.real ? "数据来源" : "背景雨幕"}</span><span class="tag measure">${opt.real ? "Open-Meteo Archive" : "由此行驱动"}</span></div>
         </div>
         <div class="gauge">
           <div class="axis">${ticks}</div>
@@ -1281,8 +1306,8 @@ async function loadRegions() {
               ${meas.map(m => `<div class="colwrap${m.id === cur.id ? " on" : ""}" data-region="${m.id}"
                  title="${esc(m.label)} · #${m.id} · ${m.v} mm">
                  <div class="colv" style="bottom:calc(${m.pct}% + 6px)">${m.v}</div>
-                 <div class="pbar" style="height:${m.pct}%">
-                   ${m.hit ? `<div class="above" style="bottom:${m.belowPct}%;height:${100 - m.belowPct}%"></div>` : ""}
+                 <div class="pbar" style="height:${m.pct}%${m.bad ? ";opacity:.45" : ""}">
+                   ${m.hit && !m.bad ? `<div class="above" style="bottom:${m.belowPct}%;height:${100 - m.belowPct}%"></div>` : ""}
                    <div class="below" style="height:${m.belowPct}%"></div>
                    ${m.capped ? '<div class="spill" style="top:2px"></div>' : ""}
                  </div></div>`).join("")}
@@ -1291,22 +1316,18 @@ async function loadRegions() {
         </div>
         <div class="foot5">
           ${meas.map(m => `<div class="c${m.id === cur.id ? " on" : ""}" data-region="${m.id}">
-             <b>${esc(m.label)}</b><span>#${m.id} · ${m.v} mm</span></div>`).join("")}
+             <b>${esc(m.label)}</b><span>#${m.id} · ${m.v} mm${m.tag ? " · " + esc(m.tag) : ""}</span></div>`).join("")}
         </div>
         <div class="legend">
-          <span class="sw"><span class="sq m"></span>阈值线以下：已记录，未进入结算</span>
-          <span class="sw"><span class="sq y"></span>越过阈值线的那一段：会被结算的部分</span>
-          <span class="sp">触发赔的是<b>投保后的增量</b>（基线 = 投保当刻的链上读数）；越线 ≠ 现在投保就能赔</span>
+          ${legend}
         </div>`;
-      // 柱、柱脚、城市片都点得动：选中它 = 换背景雨幕、换主读数、换保费
-      box.querySelectorAll("[data-region]").forEach(el => {
-        el.onclick = () => selectRegion(Number(el.dataset.region));
-      });
-    }
-  }
-  markSelRegion();
-  applyRain();
-  updateReadouts();
+}
+
+/* 柱、柱脚、城市片都点得动：选中它 = 换背景雨幕、换主读数、换保费 */
+function bindBoardClicks(box) {
+  box.querySelectorAll("[data-region]").forEach(el => {
+    el.onclick = () => selectRegion(Number(el.dataset.region));
+  });
 }
 
 /* 换查看的城市：写回下拉框再走它自己的 onchange —— 保费、刻度、雨幕、看板一起跟着更新 */
@@ -1337,23 +1358,34 @@ function renderReal() {
   const stat = {
     agree:    ["三模型一致", "three models agree"],
     majority: ["多数模型一致", "majority agree"],
-    diverge:  ["离散度超容差 · 闸门会拒收", "spread too wide — the gate rejects it"]
+    diverge:  ["离散度超容差 · 闸门拒收", "spread too wide — the gate rejects it"]
   };
-  const rows = r.regions.map(x => {
+  // 和链上看板用同一个阈值口径（当前选中时长那一档），柱子才是同一把尺子
+  const thr = Number(S.meta && S.meta.threshold) || 50;
+  const hours = Number($("hoursInput").value) || 24;
+  const meas = r.regions.filter(x => x.mm != null).map(x => {
+    const v = x.mm;
+    // 与 loadRegions 里同一条刻度口径：0 → 2×阈值，阈值线落在满量程一半
+    const pct = Math.min(100, Math.round(v / (thr * 2) * 100));
+    const belowPct = Math.min(100, Math.round(thr / Math.min(Math.max(v, thr), thr * 2) * 100));
     const s = stat[x.status] || [x.status, x.status];
     const onchain = (S.rainVals && S.rainVals[x.id] != null) ? S.rainVals[x.id] : null;
-    return `<div class="r"><span class="l">${esc(x.name)}<span class="eni">#${x.id} ${esc(x.nameEn || "")}</span></span>`
-      + `<span class="v2 money">${x.mm == null ? "—" : x.mm + " mm"}`
-      + `<span class="eni">${x.gateMm != null ? `闸门核验 ${x.gateMm} mm（最近 ${x.gateDays || 14} 天三模型）· ` : ""}${esc(s[0])} · ${esc(s[1])} · ${x.sources} 源 / sources · 置信 ${x.confidence}`
-      + (onchain != null ? ` · 链上现值 ${onchain} mm / on-chain now` : "") + `</span></span></div>`;
-  }).join("");
+    return {
+      id: x.id, label: x.name, v, pct, belowPct, hit: v >= thr, capped: v > thr * 2,
+      bad: x.status === "diverge",
+      tag: `${s[0]} · ${x.sources} 源 · 置信 ${x.confidence}`
+        + (x.gateMm != null ? ` · 闸门核验 ${x.gateMm}mm/${x.gateDays || 14}天` : "")
+        + (onchain != null ? ` · 链上现值 ${onchain}mm` : "")
+    };
+  });
   box.innerHTML = `<div class="note dim">真值累计降雨（写链值）· Open-Meteo Archive · epoch ${esc(r.epoch)} → ${esc(r.until)}`
     + ` · 抓取于 ${esc(r.generatedAt)}<span class="eni">real cumulative rainfall · snapshot baked into this file</span></div>`
-    + `<div class="spec">${rows}</div>`
-    + `<div class="note dim">左边这列是 archive 自 epoch 起的累计 —— 与真喂上链的那个数同口径；行内「闸门核验」是三模型在最近 14 天上的旁证，`
+    + boardHTML(meas, Number($("regionSel").value) || 1, thr, hours, { real: true, epoch: r.epoch, until: r.until })
+    + `<div class="note dim">柱子是 archive 自 epoch 起的累计 —— 与真喂上链的那个数同口径；柱脚小字里的「闸门核验」是三模型在最近 14 天上的旁证，`
     + `所以两个数天然不同值。链上赔不赔看的是「投保后的增量 ≥ 阈值」，所以真值模式下的赔付就是这段真实累计的增量；`
-    + `每行末尾的状态是喂价闸门对这份快照的判定 —— 只有没被拒收的才写得进链。`
-    + `<span class="en">The left column is the archive cumulative since epoch — the same quantity that gets fed on-chain; the gate check covers only the last 14 days, so the two numbers differ by design. A payout reads the post-purchase increase, so in real mode the payout is the increase of this real cumulative series. Each row's status is the feed gate's verdict: only non-rejected values can be written on-chain.</span></div>`;
+    + `被拒收的柱子画淡了 —— 链上不会收下那个数。`
+    + `<span class="en">The bars are the archive cumulative since epoch — the same quantity that gets fed on-chain; the gate check covers only the last 14 days, so the two numbers differ by design. A payout reads the post-purchase increase, so in real mode the payout is the increase of this real cumulative series. Rejected columns are drawn faded: the chain never takes that number.</span></div>`;
+  bindBoardClicks(box);
 }
 
 /* 两个按键：演示值（本页一直连的那条链）与真值（上面那份快照）。只切左栏这块面板，不动别的读数。 */
@@ -1407,13 +1439,13 @@ function applyRain() {
   document.documentElement.style.setProperty("--rain", Math.pow(t, 0.6).toFixed(3));
 }
 
-/* 标出哪一行在驱动背景雨幕：城市片、柱子、柱脚三处同步高亮 */
+/* 标出哪一行在驱动背景雨幕：城市片、柱子、柱脚三处同步高亮（链上看板与真值看板都是同一套 DOM） */
 function markSelRegion() {
   const sel = String(Number($("regionSel").value) || 1);
-  document.querySelectorAll("#rainBoard .region").forEach(el => {
+  document.querySelectorAll("#rainBoard .region, #realBoard .region").forEach(el => {
     el.classList.toggle("is-sel", el.dataset.region === sel);
   });
-  document.querySelectorAll("#rainBoard .chip, #rainBoard .colwrap, #rainBoard .foot5 .c").forEach(el => {
+  document.querySelectorAll("#rainBoard .chip, #rainBoard .colwrap, #rainBoard .foot5 .c, #realBoard .chip, #realBoard .colwrap, #realBoard .foot5 .c").forEach(el => {
     el.classList.toggle("on", el.dataset.region === sel);
   });
   document.querySelectorAll("#regionChips .chip").forEach(el => {

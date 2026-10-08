@@ -769,7 +769,7 @@
   <span><b>雨证 · RainProof</b> · 参数化降雨险</span>
   <span>BOT Chain <b>677</b></span>
   <span>合约 <b id="footAddr" title="0x89e7C942535930B61cB61631051E8b0bD670596a">0x89e7…596a</b></span>
-  <span>节点 <b>rpc.botchain.ai</b></span>
+  <span>节点 <b id="footNode">rpc.botchain.ai</b></span>
   <span class="sp">不依赖任何区块浏览器 · 数据直接向公共节点提问<span class="eni">No block explorer needed — every number is read straight from the public node</span></span>
 </footer>
 
@@ -796,11 +796,14 @@ const ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{
 const QS = new URLSearchParams(location.search);
 // ?rpc=… 可临时指定节点（本地链联调用，例如 http://127.0.0.1:8545）
 const RPC_OVERRIDE = QS.get("rpc");
-// ★ 诚实的单节点：默认读主网 677（rpc.botchain.ai）—— 2026-10-08 起 v3 就是演示基线。968 也没有可验证的第二个公共 RPC（thirdweb / ankr / ws 都试过，不是连不上就是链 ID 不对），
-//   所以这里不写"自动轮换节点"这种做不到的承诺。节点抖了就换网络，或用 ?rpc=<你确信可达的节点> 临时顶一下；
-//   读节点失败不会把页面卡死 —— 轮询每 12 秒自己重试（见文件末尾）。
+// ★ 事实（2026-10-08 实测）：主网 RPC `rpc.botchain.ai` **必须走代理才通**（直连 curl 返回 000）；
+//   测试网 `rpc.bohr.life` 反过来，直连就通（走代理反而 000）。所以默认按顺序试：
+//   先主网 677（v3 是演示基线），连不上就退到测试网 968（v2 那 6 张已赔保单的留痕）。
+//   退到 968 时页面会在顶部横幅里写明当前是测试网，并弹一条提示——不会假装自己还在主网。
+//   想强制指定节点：?rpc=<你确信可达的节点>（本地假链联调也走这个参数）。
 const RPC_NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
-  "https://rpc.botchain.ai"
+  "https://rpc.botchain.ai",
+  "https://rpc.bohr.life"
 ];
 const CHAIN_ID = 677n;
 // ★ chainId 可以被本地假链伪装（07-测试工具/prep_local_chain.js 就把 ganache 设成 11155111），
@@ -873,15 +876,22 @@ function toast(msg, kind) {
 function setMode(text, cls) { const e = $("modeTag"); e.textContent = text; e.className = "tag " + (cls || ""); }
 
 /* ---------------- 只读 provider（永远可用） ---------------- */
+// 单个节点最多等 8 秒。主网节点在"没有代理"的网络里会一直挂着不回（实测直连 rpc.botchain.ai = 000），
+// 不设上限的话下一条回退节点永远轮不上，页面就停在"正在读取"。
+const withTimeout = (p, ms) => {
+  let t;
+  return Promise.race([p, new Promise((_, rj) => { t = setTimeout(() => rj(new Error("timeout")), ms); })])
+    .finally(() => clearTimeout(t));
+};
 async function getReadProvider() {
   for (const url of RPC_NODES) {
     try {
       const p = new ethers.JsonRpcProvider(url);
-      const n = await p.getNetwork();
+      const n = await withTimeout(p.getNetwork(), 8000);
       const cid = Number(n.chainId);
       const chainName = KNOWN_CHAINS[cid];
       if (!chainName) continue;
-      const bn = await p.getBlockNumber();
+      const bn = await withTimeout(p.getBlockNumber(), 8000);
       S.chain = { url, chainId: cid, chainName, blockNumber: bn, isReal: bn >= MIN_REAL_BLOCK };
       return p;
     } catch (e) { /* 试下一个 */ }
@@ -924,6 +934,13 @@ async function boot() {
     } else {
       $("netText").textContent = (S.chain && S.chain.chainName) || "—";
     }
+    // rpc.botchain.ai 在没有代理的网络里连不上（2026-10-08 实测：直连 curl = 000，走 7890 = 200），
+    // 这时 getReadProvider 会自动退到测试网 968。必须说出来，别让人以为看的是主网数据。
+    if (S.chain && S.chain.chainId === 968 && !RPC_OVERRIDE) {
+      toast("主网节点 rpc.botchain.ai 不可达，已自动切到测试网 968（v2 口径）/ mainnet RPC unreachable — fell back to testnet 968");
+    }
+    // 页脚写的节点名要跟实际连的一致，否则读着 968、页脚还写着 rpc.botchain.ai。
+    if (S.chain && $("footNode")) $("footNode").textContent = S.chain.url.replace(/^https?:\/\//, "");
   } catch (e) {
     $("dot").className = "dot err";
     $("netText").textContent = "节点连不上";

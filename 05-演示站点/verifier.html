@@ -377,10 +377,13 @@ const QS = new URLSearchParams(location.search);
 // 演示页的「核验 ↗」链接会把当前 rpc 一起带过来，否则点过去会去查默认节点，
 // 别的链上的交易当然「查不到」。
 const RPC_OVERRIDE = QS.get("rpc");
-// ★ 诚实的单节点：默认读主网 677（rpc.botchain.ai，v3 演示基线）。968 也没有可验证的第二个公共 RPC，所以页面不写"自动轮换节点"这种做不到的承诺。
-//   主网 677 用 https://rpc.botchain.ai；节点抖了就换网络，或用 ?rpc=<你确信可达的节点> 临时顶一下。
+// ★ 事实（2026-10-08 实测）：主网 RPC `rpc.botchain.ai` **必须走代理才通**（直连 curl = 000，走 7890 = 200）；
+//   测试网 `rpc.bohr.life` 反过来，直连就通。所以默认按顺序试：先主网 677，连不上再退到测试网 968。
+//   退到 968 只是"还能查"，链名会照实显示（BOT Chain Testnet），不会假装是主网。
+//   想强制指定节点：?rpc=<你确信可达的节点>。
 const NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
-  "https://rpc.botchain.ai"
+  "https://rpc.botchain.ai",
+  "https://rpc.bohr.life"
 ];
 // ★ 2026-10-06：原来这里是赛前脚手架的 SimpleStore 地址 0x5f7040…82dc（已经不在链上用了）。
 //   改成真链部署地址（968 与 677 同址：0x89e7…596a），否则点「合约」按钮会查一个空地址。
@@ -535,7 +538,7 @@ async function chainStatus(silent) {
     $("connText").textContent = "连不上节点 / node unreachable";
     $("lat").textContent = "—";
     if (!silent) showErr("连不上 BOT Chain 节点 / cannot reach the BOT Chain node: " + e.message,
-      "检查网络。这一页访问的是 <b>rpc.botchain.ai</b>，是公共节点，通常能直连。");
+      "检查网络。这一页先试 <b>rpc.botchain.ai</b>（主网，实测必须走代理），再试 <b>rpc.bohr.life</b>（测试网，直连可达）。两个都不通时，改用仓库里的截图存证。");
     throw e;
   }
 }
@@ -591,7 +594,8 @@ async function lookupAddress(addr, isPrimary) {
    不命中 / 超时 / 对方拒跨域，一律静默 —— 绝不改变「查不到」这个结论，也不拖慢渲染（异步补写）。*/
 const OTHER_CHAINS = [
   { url: "https://ethereum-sepolia-rpc.publicnode.com", name: "Sepolia（第一阶段 v1 留痕）" },
-  { url: "https://rpc.botchain.ai", name: "BOT Chain 主网 677" }
+  { url: "https://rpc.botchain.ai", name: "BOT Chain 主网 677" },
+  { url: "https://rpc.bohr.life", name: "BOT Chain 测试网 968" }
 ];
 async function probeOtherChains(hash) {
   const slot = document.getElementById("probeHint");

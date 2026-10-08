@@ -770,6 +770,7 @@
   <span>BOT Chain <b>677</b></span>
   <span>合约 <b id="footAddr" title="0x89e7C942535930B61cB61631051E8b0bD670596a">0x89e7…596a</b></span>
   <span>节点 <b id="footNode">rpc.botchain.ai</b></span>
+  <span class="sp">⚠️ 主网节点 <code>rpc.botchain.ai</code> 在国内<b>需开代理</b>才能直连；没开代理时页面会自动退到测试网 968（数据同样全部来自链上）<span class="eni">Mainnet RPC needs a proxy in some networks — the page then falls back to testnet 968 automatically</span></span>
   <span class="sp">不依赖任何区块浏览器 · 数据直接向公共节点提问<span class="eni">No block explorer needed — every number is read straight from the public node</span></span>
 </footer>
 
@@ -782,6 +783,11 @@
     每次判定都把输入快照和输出结论各算一个哈希写上链，第三方拿同一份快照重跑，得到的是逐字节相同的结果。</p>
     <p>这一页不依赖任何区块浏览器：合约地址、账户余额、降雨值、事件日志，全部直接向节点提问取得
     （<code>rpc.botchain.ai</code>）。</p>
+    <p><b>想看主网 677，请先开代理。</b>国内直连 <code>rpc.botchain.ai</code> 实测不通（直连超时、走代理 200）。
+    页面因此按「主网 677 → Vercel 只读中转 → 测试网 968」三层并行探测（每条比前一条晚 1.2 秒出发，
+    哪个先答上就用哪个），并在顶部如实标出**当前读的是哪条链** —— 退到 968 时会写明
+    <b>BOT Chain Testnet</b>，不会假装还在主网。没有代理时也能把整套演示看完：数据全部真实来自链上，
+    只是合约换成了 v2、保单换成了那 6 张已赔的。</p>
   </div>
 </details>
 </div>
@@ -955,13 +961,15 @@ async function boot() {
     // rpc.botchain.ai 在没有代理的网络里连不上（2026-10-08 实测：直连 curl = 000，走 7890 = 200），
     // 这时 getReadProvider 会自动退到测试网 968。必须说出来，别让人以为看的是主网数据。
     if (S.chain && S.chain.chainId === 968 && !RPC_OVERRIDE) {
-      toast("主网节点 rpc.botchain.ai 不可达，已自动切到测试网 968（v2 口径）/ mainnet RPC unreachable — fell back to testnet 968");
+      toast("主网节点 rpc.botchain.ai 不可达（国内需开代理才能直连），已自动切到测试网 968（v2 口径）/ mainnet RPC needs a proxy here — fell back to testnet 968");
     }
     // 页脚写的节点名要跟实际连的一致，否则读着 968、页脚还写着 rpc.botchain.ai。
     if (S.chain && $("footNode")) $("footNode").textContent = S.chain.url.replace(/^https?:\/\//, "");
   } catch (e) {
     $("dot").className = "dot err";
-    $("netText").textContent = "节点连不上";
+    $("netText").textContent = "节点连不上（主网需开代理）";
+    // 三层都连不上时，别让人对着三个「—」猜原因 —— 直说怎么办。
+    toast("三层节点都连不上：主网 rpc.botchain.ai 在国内需开代理，Vercel 中转与测试网 rpc.bohr.life 也不可达。请先在这台机器上开代理，然后刷新。", "err");
   }
 
   // 地址优先用 URL 参数 / 浏览器里记着的；但记着的那个可能指向换链前的旧部署（没代码），

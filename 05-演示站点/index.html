@@ -999,17 +999,25 @@ async function attachContract(addr, quiet) {
     // 时长档先按合约的 hoursAllowed(h) 白名单收窄（v2 = {24,48,72}、v3 = {12,24}）。
     // 顺序很重要：v3 的 entryThresholdOf() 只对合约允许的档位有定义，拿 72 去问会 revert，
     // 一 revert 就把整块元信息拖垮（整页读数是「—」）—— 2026-10-08 第一次改的时候踩的就是这个坑。
+    // 候选档位是**固定的四档**，能卖哪几档由链上 hoursAllowed(h) 说了算：v3 = {12,24}、v2 = {24,48,72}。
+    // 以前是遍历静态 select 的选项（只有 24/48/72），于是 v3 只能把 48/72 标灰、看不到 12 小时档；
+    // 现在按链上的答案重建选项 —— 界面上出现的档位恰好就是合约肯卖的那几档。
+    const HOUR_LABEL = { 12: "12 小时 / 12 h", 24: "24 小时（1 天） / 24 h",
+                         48: "48 小时（2 天） / 48 h", 72: "72 小时（3 天，最长） / 72 h" };
+    const hourCands = [12, 24, 48, 72];
     const allowed = [];
-    for (const o of [...$("hoursInput").options]) {
-      const v = Number(o.value);
-      let ok = true;
+    for (const v of hourCands) {
+      let ok = false;
       try { ok = await S.readC.hoursAllowed(v); } catch (e) { ok = false; }
-      o.disabled = !ok;
       if (ok) allowed.push(v);
     }
-    if (allowed.length && !allowed.includes(Number($("hoursInput").value))) {
-      $("hoursInput").value = String(allowed[allowed.length - 1]);
-    }
+    // 一档都问不出来（v1 没这个 getter / 节点抖）⇒ 不当作白名单，四档照旧可选。
+    const hourList = allowed.length ? allowed : hourCands;
+    const sel = $("hoursInput");
+    const keep = Number(sel.value);
+    sel.innerHTML = hourList.map(v => `<option value="${v}">${HOUR_LABEL[v] || v + " 小时 / " + v + " h"}</option>`).join("");
+    if (keep && hourList.includes(keep)) sel.value = String(keep);
+    else sel.value = String(hourList[hourList.length - 1]);
     const hNow = Number($("hoursInput").value) || 72;
     // 冷却期 / 分档数 / 暂停状态是展示项：老版本合约少一个 getter 不该把整页读数变成「—」。
     const soft = async (fn, dflt) => { try { return await fn(); } catch (e) { return dflt; } };
@@ -1368,18 +1376,16 @@ function renderReal() {
   }
 })();
 
-/* 时长片：与 #hoursInput 的三个选项一一对应（原生 select 仍留在 DOM 里，门禁 check-ui ② 要求它在）。
-   合约不允许的档位（v3 只承保 12/24 小时，所以 48/72 会被标灰）在这里跟着 select 的 disabled 一起灰掉，
-   免得看板高亮着一个点不动的档位。 */
+/* 时长片：档位表直接取自 #hoursInput 的选项 —— 元信息那步已经按链上 hoursAllowed(h) 把选项重建过，
+   所以 968 上的 v2 是 24/48/72、677 上的 v3 是 12/24；合约不卖的档位根本不会出现在界面上。
+   （原生 select 仍留在 DOM 里当唯一真相：门禁 check-ui ② 要求它在，投保路径也从它读 hours。） */
 function markHoursChips() {
-  const h = String(Number($("hoursInput").value) || 72);
   const sel = $("hoursInput");
-  $("hoursChips").innerHTML = $("hoursInput") && [24, 48, 72].map(x => {
-    const opt = [...sel.options].find(o => Number(o.value) === x);
-    const bad = !opt || opt.disabled;
-    return `<button class="chip${String(x) === h ? " on" : ""}" data-hours="${x}"`
-      + (bad ? ' disabled style="opacity:.35;cursor:not-allowed" title="合约不允许这个时长"' : "")
-      + `>${x}h</button>`;
+  if (!sel) return;
+  const h = Number(sel.value);
+  $("hoursChips").innerHTML = [...sel.options].map(o => {
+    const x = Number(o.value);
+    return `<button class="chip${x === h ? " on" : ""}" data-hours="${x}">${x}h</button>`;
   }).join("");
 }
 

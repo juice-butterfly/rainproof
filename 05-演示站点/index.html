@@ -991,9 +991,11 @@ async function attachContract(addr, quiet) {
 
   // 元信息
   try {
-    // 先认版本：v3 有 entryThresholdOf(hours)（单值入口线）与 thresholdOf(hours, tier)（分档梯子），
-    // v2 只有 thresholdOf(hours) 单值。认错版本下面就会一路读空 —— 2026-10-08 在本地 v3 上实测就是这样。
-    S.kind = typeof S.readC.entryThresholdOf === "function" ? "v3" : "v2";
+    // 版本只能靠「问链」认，不能看 ABI 里有没有这个名字 —— 页面里的 ABI 是 v2∪v3 的并集，
+    // ethers 是按 ABI 建函数表的（不看链上代码），所以对 968 上的 v2 合约同样存在 entryThresholdOf。
+    // 2026-10-08：就是这一处让 v2 整页读数变成「—」并弹「读不出参数」，v2 是演示基线，必须认对。
+    // 24 小时在 v3 上是合法档位（返回 50）；v2 上没这个函数，调用即抛 ⇒ 认成 v2。
+    try { await S.readC.entryThresholdOf(24); S.kind = "v3"; } catch (e) { S.kind = "v2"; }
     // 时长档先按合约的 hoursAllowed(h) 白名单收窄（v2 = {24,48,72}、v3 = {12,24}）。
     // 顺序很重要：v3 的 entryThresholdOf() 只对合约允许的档位有定义，拿 72 去问会 revert，
     // 一 revert 就把整块元信息拖垮（整页读数是「—」）—— 2026-10-08 第一次改的时候踩的就是这个坑。
@@ -1019,7 +1021,7 @@ async function attachContract(addr, quiet) {
       minH:     await S.readC.MIN_HOURS(),
       maxH:     await S.readC.MAX_HOURS(),
       cooling:  Number(await soft(() => S.readC.coolingPeriod(), 0n)),
-      tiers:    Number(await soft(() => (typeof S.readC.TIER_COUNT === "function" ? S.readC.TIER_COUNT() : 3n), 3n)),
+      tiers:    Number(S.kind === "v3" ? await soft(() => S.readC.TIER_COUNT(), 2n) : 3n),
       paused:   await soft(() => S.readC.paused(), false)
     };
     $("premiumShow").textContent = fmtEth(S.meta.premium) + " " + SYM();

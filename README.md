@@ -333,7 +333,7 @@ python -m http.server 8090 --directory 05-演示站点
 
 演示页、核验台、PPT 与截图读的都是这一条链：`05-演示站点/index.html` 里 `CHAIN_ID = 968n`，
 且页面用 **chainId + 块高双重确认**身份（块高太小一律判为本地假链，并锁死投保 / 注资）。
-主网 677 尚未部署（operator 余额 0）。
+主网 677 **已部署 v3**（2026-10-08 10:06 +0800）：`0x89e7C942535930B61cB61631051E8b0bD670596a`，部署 tx `0x54fc1e694748338d63a2e9f6f46cf2c8623eaa141b71a10904a7b56dc3b9f436`（区块 25,921,072 · gas 3,518,186 = 0.0704 BOT），运行时 15,823 字节；链上实测两档阈值 `entryThresholdOf(24)=50` / `thresholdOf(24,1)=100`、`TIER_COUNT=2`、`coolingPeriod=259200`（3 天）、`MIN_PREMIUM=0.00002`。968 上的 v2 仍是演示基线，两链同址不同合约。
 
 ### 第一阶段留痕：Sepolia `11155111`（v1）
 

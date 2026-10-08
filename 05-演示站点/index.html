@@ -797,12 +797,16 @@ const QS = new URLSearchParams(location.search);
 // ?rpc=… 可临时指定节点（本地链联调用，例如 http://127.0.0.1:8545）
 const RPC_OVERRIDE = QS.get("rpc");
 // ★ 事实（2026-10-08 实测）：主网 RPC `rpc.botchain.ai` **必须走代理才通**（直连 curl 返回 000）；
-//   测试网 `rpc.bohr.life` 反过来，直连就通（走代理反而 000）。所以默认按顺序试：
-//   先主网 677（v3 是演示基线），连不上就退到测试网 968（v2 那 6 张已赔保单的留痕）。
-//   退到 968 时页面会在顶部横幅里写明当前是测试网，并弹一条提示——不会假装自己还在主网。
+//   测试网 `rpc.bohr.life` 反过来，直连就通（走代理反而 000）。Vercel 上的只读中转
+//   rainproof-juice-68d3.vercel.app/api/rpc 机房直连主网，但有代理的网络不需要它（实测本机直连 *.vercel.app = 000）。
+//   所以候选按优先级排：主网 677（v3 是演示基线）> 中转 > 测试网 968（v2 那 6 张已赔保单的留痕）。
+//   探测是**并行阶梯**（见 getReadProvider）：每条比前一条晚 1.2 秒出发，既保留优先级，
+//   又不会为一个连不上的节点白等 8 秒。退到 968 时页面会写明当前是测试网，不假装还在主网。
 //   想强制指定节点：?rpc=<你确信可达的节点>（本地假链联调也走这个参数）。
+const VERCEL_RELAY = "https://rainproof-juice-68d3.vercel.app/api/rpc";
 const RPC_NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
   "https://rpc.botchain.ai",
+  VERCEL_RELAY,
   "https://rpc.bohr.life"
 ];
 const CHAIN_ID = 677n;
@@ -883,20 +887,34 @@ const withTimeout = (p, ms) => {
   return Promise.race([p, new Promise((_, rj) => { t = setTimeout(() => rj(new Error("timeout")), ms); })])
     .finally(() => clearTimeout(t));
 };
+// 每条候选比前一条晚这么多毫秒"出发"。作用是同时拿到两个好处：
+// ① 优先级仍然有效——主网能在 1.2 秒内答上（正常情况 200~800ms）就绝不会被备选顶掉；
+// ② 主网彻底连不上时，第二条不用等它超时（以前是干等 8 秒），1.2 秒就开始探，页面很快就出数。
+const NODE_GRACE = 1200;
+// 一条候选要过两道关才算数：chainId 必须登记在 KNOWN_CHAINS（挡住打错的域名/中间人），
+// 块高必须够大（挡住本地假链——它的 chainId 可以伪装，块高伪装不了）。
+async function probeNode(url) {
+  const p = new ethers.JsonRpcProvider(url);
+  const n = await withTimeout(p.getNetwork(), 8000);
+  const cid = Number(n.chainId);
+  const chainName = KNOWN_CHAINS[cid];
+  if (!chainName) throw new Error("未登记的链 " + cid + "（" + url + "）");
+  const bn = await withTimeout(p.getBlockNumber(), 8000);
+  return { provider: p, chain: { url, chainId: cid, chainName, blockNumber: bn, isReal: bn >= MIN_REAL_BLOCK } };
+}
 async function getReadProvider() {
-  for (const url of RPC_NODES) {
-    try {
-      const p = new ethers.JsonRpcProvider(url);
-      const n = await withTimeout(p.getNetwork(), 8000);
-      const cid = Number(n.chainId);
-      const chainName = KNOWN_CHAINS[cid];
-      if (!chainName) continue;
-      const bn = await withTimeout(p.getBlockNumber(), 8000);
-      S.chain = { url, chainId: cid, chainName, blockNumber: bn, isReal: bn >= MIN_REAL_BLOCK };
-      return p;
-    } catch (e) { /* 试下一个 */ }
+  const attempts = RPC_NODES.map((url, i) => new Promise((res, rej) => {
+    setTimeout(() => probeNode(url).then(res, rej), i * NODE_GRACE);
+  }));
+  try {
+    // Promise.any：谁先答上就用谁；全部失败才抛错。慢的那些即使后来才失败也无所谓，
+    // 它们只是被忽略——注意别在前面的节点上再叠加顺序等待，那正是以前白等 8 秒的原因。
+    const hit = await Promise.any(attempts);
+    S.chain = hit.chain;
+    return hit.provider;
+  } catch (e) {
+    throw new Error("连不上 BOT Chain 节点");
   }
-  throw new Error("连不上 BOT Chain 节点");
 }
 
 /* 假链报警：不可忽略的红色横幅 + 冻结所有写操作。

@@ -1315,7 +1315,7 @@ function selectRegion(id) {
    再由 04-脚本/feed-verify.js 那把闸门判定「三模型是否一致、能不能上链」。
    数据不在运行时联网取：快照由 07-测试工具/snapshot-real-rainfall.js 生成后内嵌进本文件（现场不依赖网络、
    也不依赖 FlClash 代理），面板上写明纪元、区间与抓取时刻。 */
-const REAL_RAIN = {"schema":"rainproof/real-rainfall@1","generatedAt":"2026-10-08 09:50:02 +0800","epoch":"2026-09-01","until":"2026-10-08","source":"Open-Meteo Archive API · ECMWF / GFS / ICON","note":"真实观测累计值（不是链上那组模拟暴雨）；status 是 feed-verify 闸门的三模型一致性判定。","regions":[{"id":1,"key":"wuhan","name":"武汉","nameEn":"Wuhan","mm":25.9,"status":"majority","confidence":84,"sources":2,"medianMm":25.9,"toleranceMm":5.2,"spreadMm":20.9,"perModel":[]},{"id":2,"key":"shanghai","name":"上海","nameEn":"Shanghai","mm":67.2,"status":"agree","confidence":92,"sources":3,"medianMm":67.2,"toleranceMm":13.4,"spreadMm":8.5,"perModel":[]},{"id":3,"key":"beijing","name":"北京","nameEn":"Beijing","mm":40,"status":"majority","confidence":84,"sources":2,"medianMm":40,"toleranceMm":8,"spreadMm":23.9,"perModel":[]},{"id":4,"key":"guangzhou","name":"广州","nameEn":"Guangzhou","mm":65.1,"status":"majority","confidence":84,"sources":2,"medianMm":65.1,"toleranceMm":13,"spreadMm":42.7,"perModel":[]},{"id":5,"key":"chengdu","name":"成都","nameEn":"Chengdu","mm":null,"status":"diverge","confidence":40,"sources":3,"medianMm":16,"toleranceMm":3.2,"spreadMm":13,"perModel":[]}]};
+const REAL_RAIN = {"schema":"rainproof/real-rainfall@1","generatedAt":"2026-10-08 10:21:12 +0800","epoch":"2026-09-01","until":"2026-10-08","source":"Open-Meteo Archive API · ECMWF / GFS / ICON","note":"mm = Open-Meteo archive 自 epoch 起的真实累计（与写进链上的那个数同口径）；gateMm 是 feed-verify 闸门在最近 14 天三模型上的核验值，status/confidence/sources 是那份核验的判定 —— 只有不是 diverge 的才写得进链。","regions":[{"id":1,"key":"wuhan","name":"武汉","nameEn":"Wuhan","mm":67,"gateMm":25.9,"gateDays":14,"status":"majority","confidence":84,"sources":2,"medianMm":25.9,"toleranceMm":5.2,"spreadMm":20.9,"perModel":[]},{"id":2,"key":"shanghai","name":"上海","nameEn":"Shanghai","mm":128,"gateMm":67.2,"gateDays":14,"status":"agree","confidence":92,"sources":3,"medianMm":67.2,"toleranceMm":13.4,"spreadMm":8.5,"perModel":[]},{"id":3,"key":"beijing","name":"北京","nameEn":"Beijing","mm":39,"gateMm":40,"gateDays":14,"status":"majority","confidence":84,"sources":2,"medianMm":40,"toleranceMm":8,"spreadMm":23.9,"perModel":[]},{"id":4,"key":"guangzhou","name":"广州","nameEn":"Guangzhou","mm":162,"gateMm":65.1,"gateDays":14,"status":"majority","confidence":84,"sources":2,"medianMm":65.1,"toleranceMm":13,"spreadMm":42.7,"perModel":[]},{"id":5,"key":"chengdu","name":"成都","nameEn":"Chengdu","mm":173,"gateMm":null,"gateDays":14,"status":"diverge","confidence":40,"sources":3,"medianMm":16,"toleranceMm":3.2,"spreadMm":13,"perModel":[]}]};
 
 function renderReal() {
   const box = $("realBoard");
@@ -1336,15 +1336,16 @@ function renderReal() {
     const onchain = (S.rainVals && S.rainVals[x.id] != null) ? S.rainVals[x.id] : null;
     return `<div class="r"><span class="l">${esc(x.name)}<span class="eni">#${x.id} ${esc(x.nameEn || "")}</span></span>`
       + `<span class="v2 money">${x.mm == null ? "—" : x.mm + " mm"}`
-      + `<span class="eni">${esc(s[0])} · ${esc(s[1])} · ${x.sources} 源 / sources · 置信 ${x.confidence}`
+      + `<span class="eni">${x.gateMm != null ? `闸门核验 ${x.gateMm} mm（最近 ${x.gateDays || 14} 天三模型）· ` : ""}${esc(s[0])} · ${esc(s[1])} · ${x.sources} 源 / sources · 置信 ${x.confidence}`
       + (onchain != null ? ` · 链上现值 ${onchain} mm / on-chain now` : "") + `</span></span></div>`;
   }).join("");
-  box.innerHTML = `<div class="note dim">真实累计降雨 · Open-Meteo Archive · epoch ${esc(r.epoch)} → ${esc(r.until)}`
+  box.innerHTML = `<div class="note dim">真值累计降雨（写链值）· Open-Meteo Archive · epoch ${esc(r.epoch)} → ${esc(r.until)}`
     + ` · 抓取于 ${esc(r.generatedAt)}<span class="eni">real cumulative rainfall · snapshot baked into this file</span></div>`
     + `<div class="spec">${rows}</div>`
-    + `<div class="note dim">链上赔不赔看的是「投保后的增量 ≥ 阈值」，所以真值模式下的赔付就是这段真实累计的增量；`
+    + `<div class="note dim">左边这列是 archive 自 epoch 起的累计 —— 与真喂上链的那个数同口径；行内「闸门核验」是三模型在最近 14 天上的旁证，`
+    + `所以两个数天然不同值。链上赔不赔看的是「投保后的增量 ≥ 阈值」，所以真值模式下的赔付就是这段真实累计的增量；`
     + `每行末尾的状态是喂价闸门对这份快照的判定 —— 只有没被拒收的才写得进链。`
-    + `<span class="en">A payout reads the post-purchase increase, so in real mode the payout is the increase of this real cumulative series. Each row's status is the feed gate's verdict: only non-rejected values can be written on-chain.</span></div>`;
+    + `<span class="en">The left column is the archive cumulative since epoch — the same quantity that gets fed on-chain; the gate check covers only the last 14 days, so the two numbers differ by design. A payout reads the post-purchase increase, so in real mode the payout is the increase of this real cumulative series. Each row's status is the feed gate's verdict: only non-rejected values can be written on-chain.</span></div>`;
 }
 
 /* 两个按键：演示值（本页一直连的那条链）与真值（上面那份快照）。只切左栏这块面板，不动别的读数。 */

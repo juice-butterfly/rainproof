@@ -28,6 +28,25 @@ const NAME_EN = {
   guangzhou: 'Guangzhou', chengdu: 'Chengdu',
 };
 
+// 交付值（与 04-脚本/push-rainfall.js:155-217 同口径）：Open-Meteo **archive** 自 epoch 到 until 的累计 —— 
+// 这才是真正会被写进链上的那个数。feed-verify 的三模型核验只在【最近 14 天】上做旁证，所以两个数天然不同值，
+// 面板必须把两个都标清楚，否则会和链上读数对不上。（push-rainfall.js 没有 require.main 守卫，没法直接 require 复用它。）
+async function fetchArchiveSum(region, epoch, until) {
+  const url = 'https://archive-api.open-meteo.com/v1/archive' +
+    `?latitude=${region.lat}&longitude=${region.lon}` +
+    `&daily=precipitation_sum&timezone=Asia%2FShanghai&start_date=${epoch}&end_date=${until}`;
+  const r = await fetch(url, { headers: { 'User-Agent': 'rain-insurance-oracle/1.0' } });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  const times = (j && j.daily && j.daily.time) || [];
+  const vals = (j && j.daily && j.daily.precipitation_sum) || [];
+  let sum = 0, days = 0;
+  for (let i = 0; i < times.length; i++) {
+    if (times[i] >= epoch && typeof vals[i] === 'number') { sum += vals[i]; days++; }
+  }
+  return { mm: Math.max(0, Math.round(sum)), days };
+}
+
 const nowCst = () => new Date(Date.now() + 8 * 3600e3);
 const today = () => nowCst().toISOString().slice(0, 10);
 const stamp = () => nowCst().toISOString().slice(0, 19).replace('T', ' ') + ' +0800';
@@ -43,14 +62,19 @@ const stamp = () => nowCst().toISOString().slice(0, 19).replace('T', ' ') + ' +0
     try {
       const series = await fetchModelSeries(r, until, epoch);
       const g = gradeModels(series);
+      let delivered = null;
+      try { delivered = await fetchArchiveSum(r, epoch, until); } catch (_) { /* 面板显示 — */ }
       regions.push({
         id: r.id, key: r.key, name: r.name, nameEn: NAME_EN[r.key],
-        mm: g.mm, status: g.status, confidence: g.confidence, sources: g.sources,
+        mm: delivered ? delivered.mm : null,          // ← 会写进链的那个数（archive 自 epoch 起）
+        gateMm: g.mm,                                  // ← 闸门三模型核验值（只覆盖最近 14 天）
+        gateDays: 14,
+        status: g.status, confidence: g.confidence, sources: g.sources,
         medianMm: g.medianMm, toleranceMm: g.toleranceMm, spreadMm: g.spreadMm,
         perModel: (g.perModel || []).map((p) => ({ label: p.label, mm: p.mm })),
       });
       const mark = g.status === 'diverge' ? '⛔ 闸门会拒收' : '✅ 可写链';
-      console.log(`  #${r.id} ${r.name}  ${g.status}  ${g.mm} mm  置信 ${g.confidence}  源 ${g.sources}  ${mark}`);
+      console.log(`  #${r.id} ${r.name}  写链值 ${delivered ? delivered.mm + ' mm' : '—'}（archive 自 ${epoch}） · 闸门核验 ${g.status} ${g.mm} mm（最近 14 天） 置信 ${g.confidence} 源 ${g.sources}  ${mark}`);
     } catch (e) {
       failed++;
       regions.push({
@@ -68,7 +92,7 @@ const stamp = () => nowCst().toISOString().slice(0, 19).replace('T', ' ') + ' +0
     epoch,
     until,
     source: 'Open-Meteo Archive API · ECMWF / GFS / ICON',
-    note: '真实观测累计值（不是链上那组模拟暴雨）；status 是 feed-verify 闸门的三模型一致性判定。',
+    note: 'mm = Open-Meteo archive 自 epoch 起的真实累计（与写进链上的那个数同口径）；gateMm 是 feed-verify 闸门在最近 14 天三模型上的核验值，status/confidence/sources 是那份核验的判定 —— 只有不是 diverge 的才写得进链。',
     regions,
   };
 

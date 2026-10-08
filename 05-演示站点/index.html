@@ -767,9 +767,9 @@
 
 <footer class="foot">
   <span><b>雨证 · RainProof</b> · 参数化降雨险</span>
-  <span>BOT Chain <b>968</b></span>
+  <span>BOT Chain <b>677</b></span>
   <span>合约 <b id="footAddr" title="0x89e7C942535930B61cB61631051E8b0bD670596a">0x89e7…596a</b></span>
-  <span>节点 <b>rpc.bohr.life</b></span>
+  <span>节点 <b>rpc.botchain.ai</b></span>
   <span class="sp">不依赖任何区块浏览器 · 数据直接向公共节点提问<span class="eni">No block explorer needed — every number is read straight from the public node</span></span>
 </footer>
 
@@ -781,7 +781,7 @@
     （AI 层在链下做的三件事见右栏）。它<b>不判断「人有没有真的受损」</b>，那需要平台的订单数据，属于路线图。
     每次判定都把输入快照和输出结论各算一个哈希写上链，第三方拿同一份快照重跑，得到的是逐字节相同的结果。</p>
     <p>这一页不依赖任何区块浏览器：合约地址、账户余额、降雨值、事件日志，全部直接向节点提问取得
-    （<code>rpc.bohr.life</code>）。</p>
+    （<code>rpc.botchain.ai</code>）。</p>
   </div>
 </details>
 </div>
@@ -796,18 +796,18 @@ const ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{
 const QS = new URLSearchParams(location.search);
 // ?rpc=… 可临时指定节点（本地链联调用，例如 http://127.0.0.1:8545）
 const RPC_OVERRIDE = QS.get("rpc");
-// ★ 诚实的单节点：968 目前没有可验证的第二个公共 RPC（thirdweb / ankr / ws 都试过，不是连不上就是链 ID 不对），
+// ★ 诚实的单节点：默认读主网 677（rpc.botchain.ai）—— 2026-10-08 起 v3 就是演示基线。968 也没有可验证的第二个公共 RPC（thirdweb / ankr / ws 都试过，不是连不上就是链 ID 不对），
 //   所以这里不写"自动轮换节点"这种做不到的承诺。节点抖了就换网络，或用 ?rpc=<你确信可达的节点> 临时顶一下；
 //   读节点失败不会把页面卡死 —— 轮询每 12 秒自己重试（见文件末尾）。
 const RPC_NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
-  "https://rpc.bohr.life"
+  "https://rpc.botchain.ai"
 ];
-const CHAIN_ID = 968n;
+const CHAIN_ID = 677n;
 // ★ chainId 可以被本地假链伪装（07-测试工具/prep_local_chain.js 就把 ganache 设成 11155111），
 //   但区块高度伪装不了：BOT Chain 已经 2500 万+，本地假链从 0 开始。这是唯一可靠的"真链判据"。
 const MIN_REAL_BLOCK = 1000000;
 // 已知真链：chainId → 显示名。RPC 指向哪条链（NODES / ?rpc= 参数）就在这里登记一行。
-// 968 = BOT Chain 测试网（演示、彩排、承保层证据都在这一条链上）；677 = 主网；11155111 只在本地联调时出现
+// 677 = BOT Chain 主网（2026-10-08 起是演示基线，跑 v3 合约）；968 = 测试网（v2 那 6 张已赔保单的留痕仍在，?rpc=https://rpc.bohr.life 可切过去看）；11155111 只在本地联调时出现
 const KNOWN_CHAINS = { 968: "BOT Chain Testnet", 677: "BOT Chain Mainnet", 11155111: "Sepolia" };
 // 钱包里没加过这条链时，用这些参数帮它加进去（wallet_addEthereumChain）。
 // 现场演示最怕的就是"请先去 MetaMask 添加网络"，所以让页面自己把这条路补上。
@@ -823,7 +823,7 @@ const CHAIN_META = {
               explorer:"https://sepolia.etherscan.io" }
 };
 const LS_KEY = "hanxong_contract_addr";
-// ★ 本次真链部署地址（BOT Chain 测试网 968 · 2026-10-07）。主网 677 上会是同一个地址 ——
+// ★ 真链部署地址（968 与 677 同址 —— CREATE 出来的地址只由部署者与 nonce 决定，与链无关）。
 //   CREATE 出来的地址只由部署者与 nonce 决定，与链无关。没有任何 ?addr= 参数、浏览器里也没记过
 //   地址时，页面会退回这里 —— 否则现场演示会卡在"请先填合约地址"那一步。
 //   换链/换地址重新部署后改这一行，或用 ?addr=0x... 临时覆盖。
@@ -1310,7 +1310,7 @@ function selectRegion(id) {
 }
 
 /* ---------------- 真值面板：真实观测值 vs 链上演示值 ----------------
-   链上那组（968 演示链）是模拟暴雨：喂价快照与链上事件里都标着 simulated = true，五城累计 101/287/109/303/227 mm。
+   链上那组也可能是模拟暴雨（968 演示链上就是：五城 101/287/109/303/227 mm，快照与链上事件都标 simulated = true）；677 主网这组是真值。
    这一栏显示同一时刻的**真实观测**：Open-Meteo Archive 的三个数值模型各自算一遍「epoch → 今天」的累计，
    再由 04-脚本/feed-verify.js 那把闸门判定「三模型是否一致、能不能上链」。
    数据不在运行时联网取：快照由 07-测试工具/snapshot-real-rainfall.js 生成后内嵌进本文件（现场不依赖网络、

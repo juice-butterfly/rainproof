@@ -296,15 +296,15 @@
     </div>
   </div>
   <p class="subtitle">
-    这一页直接向公开节点提问，把链上的原始数据取回来显示。<b style="color:var(--dim)">它不经过 scan.bohr.life，
+    这一页直接向公开节点提问，把链上的原始数据取回来显示。<b style="color:var(--dim)">它不经过 scan.botchain.ai，
     也不经过任何后端索引服务。</b>请求的是
-    <code id="rpcShown">https://rpc.bohr.life</code>
+    <code id="rpcShown">https://rpc.botchain.ai</code>
   </p>
 </header>
 
 <!-- ========== 查询 ========== -->
 <section class="sec">
-  <p style="color:var(--dim);font-size:13px;margin:0 0 12px">This page asks a public node directly and prints the raw on-chain answer, payload untouched. <b>No scan.bohr.life, no backend indexer.</b></p>
+  <p style="color:var(--dim);font-size:13px;margin:0 0 12px">This page asks a public node directly and prints the raw on-chain answer, payload untouched. <b>No scan.botchain.ai, no backend indexer.</b></p>
       <h2>查询 / Query<em>粘地址查合约 / 粘哈希查交易，自动识别 · Paste an address or a tx hash — auto-detected</em></h2>
 
   <div class="searchrow">
@@ -348,13 +348,13 @@
 <footer>
   <div class="foot">
     <span><b>雨证 · RainProof · 链上核验台 / verifier</b></span>
-    <span>chainId <b>968</b></span>
+    <span>chainId <b>677</b></span>
     <span>合约 Contract <b>0x89e7…596a</b></span>
     <span class="sp">不依赖任何区块浏览器 / No block explorer needed</span>
   </div>
   <details>
     <summary>这一页为什么能当证据 / 打不开怎么办 · Why this page counts as evidence</summary>
-    <p><b>为什么要有这一页： / Why this page exists:</b>BOT Chain 自己的浏览器是 <code>scan.bohr.life</code>，但它显示的是「它认为的事实」；
+    <p><b>为什么要有这一页： / Why this page exists:</b>BOT Chain 自己的浏览器是 <code>scan.botchain.ai</code>（968 测试网是 scan.bohr.life），但它显示的是「它认为的事实」；
   这一页把 <code>eth_getLogs</code> 与 <code>eth_call</code> 的原始返回直接摆出来，字段一个不改。
   <b>这一页绕开全部中间商，直接问节点要数据 —— 浏览器打不开也能验。</b></p>
     <p><b>打不开怎么办： / If it will not open:</b>双击本文件即可，无需安装任何东西（只依赖同目录的 <code>ethers.umd.min.js</code>）。
@@ -377,13 +377,13 @@ const QS = new URLSearchParams(location.search);
 // 演示页的「核验 ↗」链接会把当前 rpc 一起带过来，否则点过去会去查默认节点，
 // 别的链上的交易当然「查不到」。
 const RPC_OVERRIDE = QS.get("rpc");
-// ★ 诚实的单节点：968 没有可验证的第二个公共 RPC，所以页面不写"自动轮换节点"这种做不到的承诺。
+// ★ 诚实的单节点：默认读主网 677（rpc.botchain.ai，v3 演示基线）。968 也没有可验证的第二个公共 RPC，所以页面不写"自动轮换节点"这种做不到的承诺。
 //   主网 677 用 https://rpc.botchain.ai；节点抖了就换网络，或用 ?rpc=<你确信可达的节点> 临时顶一下。
 const NODES = RPC_OVERRIDE ? [RPC_OVERRIDE] : [
-  "https://rpc.bohr.life"
+  "https://rpc.botchain.ai"
 ];
 // ★ 2026-10-06：原来这里是赛前脚手架的 SimpleStore 地址 0x5f7040…82dc（已经不在链上用了）。
-//   改成真链部署的 RainDeliveryInsuranceV2（BOT Chain 测试网 968），否则点「合约」按钮会查一个空地址。
+//   改成真链部署地址（968 与 677 同址：0x89e7…596a），否则点「合约」按钮会查一个空地址。
 const DEFAULT_QUERY = "0x89e7C942535930B61cB61631051E8b0bD670596a";
 // ★ 真链判据：chainId 可以被本地假链伪装（prep_local_chain.js 就设成 11155111），块高不能。
 //   BOT Chain 已经 2500 万+，本地假链从 0 开始。
@@ -535,7 +535,7 @@ async function chainStatus(silent) {
     $("connText").textContent = "连不上节点 / node unreachable";
     $("lat").textContent = "—";
     if (!silent) showErr("连不上 BOT Chain 节点 / cannot reach the BOT Chain node: " + e.message,
-      "检查网络。这一页访问的是 <b>rpc.bohr.life</b>，是公共节点，通常能直连。");
+      "检查网络。这一页访问的是 <b>rpc.botchain.ai</b>，是公共节点，通常能直连。");
     throw e;
   }
 }
@@ -651,7 +651,7 @@ async function lookupTx(hash) {
       <div class="v small" style="margin-top:10px">
         本页只读一条链（<code>${esc(S.rpc)}</code>）。若这条哈希来自<b>第一阶段 Sepolia 留痕</b>
         （<code>08-截图存证/真链留痕-2026-10-06.md</code> 里区块 11,85x,xxx 那几张表）或本机联调链，
-        它在 968（本页读的 v2 演示基线）上本来就不存在 —— <b>哈希和地址必须跟链一起说</b>。 / It simply does not exist on 968 (the v2 demo baseline this page reads) — always quote a hash together with its chain.
+        它在上一条链（比如 968 上的 v2）上本来就不存在 —— <b>哈希和地址必须跟链一起说</b>。 / It simply does not exist on the other chain — always quote a hash together with its chain.
       </div>
       <div class="v small" style="margin-top:12px">
         最常见的原因：<b>哈希复制少了/多了字符</b>（完整哈希是 66 个字符：<code>0x</code> + 64 位）、
